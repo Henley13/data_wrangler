@@ -4,6 +4,7 @@
 """We collect metadata on data.gouv.fr about numerous datasets and store it in a xml format."""
 
 # libraries
+import os
 import requests
 import math
 import sys
@@ -11,13 +12,13 @@ import traceback
 from lxml import etree, objectify
 print("\n")
 
-
 # variables
 directory = "../data/metadata/"
 # url_api = "https://www.data.gouv.fr/api/1/datasets/?page_size=10&page=1"
 url_api = "https://www.data.gouv.fr/api/1/datasets/?page_size=50&page=1&format="
-formats = ["CSV", "csv", "JSON", "json", "SHP", "shp", "ZIP", "XLS", "xls", "HTML"]
-datasets_collected = 0
+formats_file = ["CSV", "csv", "JSON", "json", "SHP", "shp", "ZIP", "XLS", "xls", "HTML"]
+d_formats_file = {}
+datasets_collected_total = 0
 errors = []
 
 # Functions
@@ -143,7 +144,10 @@ def create_xml(data):
         xml_writer.write(obj_xml)
     return
 
-
+# check if the output directory exists
+if not os.path.isdir(directory):
+    os.mkdir(directory)
+    print(directory, "created")
 # get general data from data.gouv API
 r = requests.get("https://www.data.gouv.fr/api/1/datasets/?page_size=1&page=1")
 d = r.json()
@@ -152,41 +156,51 @@ r = requests.get(url_api)
 d = r.json()
 n_datasets_loaded = d["total"]
 page_size = d["page_size"]
-print("nombre total de datasets :", n_datasets)
-print("nombre total de datasets chargées:", n_datasets_loaded)
-print("nombre de datasets par page :", page_size)
-print("nombre de pages à charger :", math.ceil(n_datasets_loaded / page_size))
-print("starting url :", r.url)
+print("total number of datasets :", n_datasets)
+print("datasets per page :", page_size)
 print("\n")
 
 # get data from data.gouv API and iterate over the different pages
-while datasets_collected < n_datasets_loaded:
-    # load the json
-    r = requests.get(url_api)
-    if r.status_code == 500:
-        break
+for format_file in formats_file:
+    url_api_format = url_api + format_file
+    r = requests.get(url_api_format)
     d = r.json()
-    page = d["page"]
-    page_size = d["page_size"]
-    url_api = d["next_page"]
-    print("----- processing page", page, "-----")
-    # build an XML per dataset included all metadata needed
-    for data in d["data"]:
-        try:
-            create_xml(data)
-            datasets_collected += 1
-        except ValueError:
-            exc_info = sys.exc_info()
-            print("ValueError :", data["page"])
-            traceback.print_exception(*exc_info)
-            n_datasets_loaded -= 1
-            errors.append(data["page"])
-            pass
+    n_datasets_loaded = d["total"]
+    datasets_collected = 0
+    print("total number of loaded datasets :", n_datasets_loaded)
+    print("page to load :", math.ceil(n_datasets_loaded / page_size))
+    print("starting url :", r.url)
+    print("\n")
+    while datasets_collected < n_datasets_loaded:
+        # load the json
+        r = requests.get(url_api_format)
+        if r.status_code == 500:
+            break
+        d = r.json()
+        page = d["page"]
+        page_size = d["page_size"]
+        url_api_format = d["next_page"]
+        print("----- processing page", page, "-----")
+        # build an XML per dataset included all metadata needed
+        for data in d["data"]:
+            try:
+                create_xml(data)
+                datasets_collected += 1
+            except ValueError:
+                exc_info = sys.exc_info()
+                print("ValueError :", data["page"])
+                traceback.print_exception(*exc_info)
+                n_datasets_loaded -= 1
+                errors.append(data["page"])
+                pass
+    datasets_collected_total += datasets_collected
+    d_formats_file[format_file] = datasets_collected
+    print("\n")
 
-
-print("\n")
+print("--------------------------------------------------------------")
 print("errors :", len(errors))
 with open('../data/APIerrors.txt', mode='wt', encoding='utf-8') as f:
     f.write('\n'.join(errors))
-print(datasets_collected, "datasets (meta)collected (", round(datasets_collected / n_datasets * 100, 2), "% )")
-
+print(datasets_collected_total, "(meta)collected datasets (", round(datasets_collected_total / n_datasets * 100, 2), "% )")
+for i in d_formats_file:
+    print(i, ":", d_formats_file[i], "files, (", round(d_formats_file[i] / n_datasets * 100, 2), "% )")
