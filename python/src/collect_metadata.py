@@ -197,7 +197,7 @@ for format_file in formats_file:
     d_formats_file[format_file] = datasets_collected
     print("\n")
 
-print("--------------------------------------------------------------")
+print("-------------------------------------------------------------")
 print("errors :", len(errors))
 with open('../data/APIerrors.txt', mode='wt', encoding='utf-8') as f:
     f.write('\n'.join(errors))
