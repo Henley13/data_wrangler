@@ -1,5 +1,6 @@
 python/data
 python/old
-python/src/test*
+python/src/test_1.py
+python.src/test_2.py
 python/*.xml
 !.gitignore
