@@ -148,6 +148,7 @@ def create_xml(data):
 if not os.path.isdir(directory):
     os.mkdir(directory)
     print(directory, "created")
+    print("\n")
 # get general data from data.gouv API
 r = requests.get("https://www.data.gouv.fr/api/1/datasets/?page_size=1&page=1")
 d = r.json()
@@ -202,5 +203,10 @@ print("errors :", len(errors))
 with open('../data/APIerrors.txt', mode='wt', encoding='utf-8') as f:
     f.write('\n'.join(errors))
 print(datasets_collected_total, "(meta)collected datasets (", round(datasets_collected_total / n_datasets * 100, 2), "% )")
+l = []
 for i in d_formats_file:
-    print(i, ":", d_formats_file[i], "files, (", round(d_formats_file[i] / n_datasets * 100, 2), "% )")
+    x = i + " : " + str(d_formats_file[i]) + " files, (" + str(round(d_formats_file[i] / n_datasets * 100, 2)) + "%)"
+    l.append(x)
+    print(x)
+with open('../data/metadata_log.txt', mode='wt', encoding='utf-8') as f:
+    f.write("\n".join(l))
