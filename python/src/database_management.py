@@ -5,6 +5,7 @@
 
 # libraries
 import subprocess
+import os
 import time
 from lxml import etree
 from BaseXClient import BaseXClient
@@ -18,23 +19,25 @@ format_condition = "where $format = ('CSV', 'csv')"
 url_destination_condition = "where $url_destination = 'file'"
 # list_url_destination = ["file", "remote", "api"]
 
+# on drago it's easier to launch the server directly through the bash
 # launch the server
-no_server = True
-server = subprocess.Popen("basexserver", stdout=subprocess.PIPE)
-while no_server:
-    time.sleep(1)
-    for line in server.stdout:
-        if "Server was started" in line.decode("utf-8"):
-            no_server = False
-            break
-print("server launched", "\n")
+#no_server = True
+#server = subprocess.Popen("basexserver", stdout=subprocess.PIPE)
+#while no_server:
+#    time.sleep(1)
+#    for line in server.stdout:
+#        if "Server was started" in line.decode("utf-8"):
+#            no_server = False
+#            break
+#print("server launched", "\n")
 
 # open session
 session = BaseXClient.Session("localhost", 1984, 'admin', 'admin')
 print("session opened...", "\n")
 
+# TODO rendre le code consistant en local et sur drago.
 # create database
-session.execute("CREATE DB metadata ../data/metadata/")
+session.execute("CREATE DB metadata ../aimbert/python/data/metadata/")
 print(session.info())
 
 # build and execute the xquery
@@ -42,7 +45,7 @@ l = list()
 #####################################################################
 l.append("xquery")
 l.append("<results> {")
-l.append("for $table in collection('/metadata')//tables/table")
+l.append("for $table in collection('metadata')//tables/table")
 l.append("let $id := $table/id")
 l.append("let $url := $table/url")
 l.append("let $url_destination := $table/url_destination")

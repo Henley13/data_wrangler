@@ -38,8 +38,13 @@ def download(url, title):
     try:
         local_file_name = os.path.join(directory, title)
         with open(local_file_name, 'wb') as local_istream:
-            with closing(urlopen(url)) as remote_file:
-                shutil.copyfileobj(remote_file, local_istream)
+            try:
+                with closing(urlopen(url)) as remote_file:
+                    shutil.copyfileobj(remote_file, local_istream)
+            except UnicodeEncodeError:
+                s -= 1
+                print("UnicodeEncodeError")
+                list_errors.append(url)
     except error.HTTPError as err:
         s -= 1
         print(err.code)
@@ -72,7 +77,7 @@ if not os.path.isdir(directory):
 # get the url list
 tree = etree.parse("../url_csv.xml")
 url_list = [url.text for url in tree.xpath("/results/table/url")]
-print("nombre de liens :", len(url_list))
+print("nombre de liens :", len(url_list), "\n")
 for table in tree.xpath("/results/table"):
     url, id = table[0].text, table[1].text
     title = str(id) + "." + fileformat
@@ -85,7 +90,7 @@ for table in tree.xpath("/results/table"):
 
 print("\n")
 print("errors :", len(list_errors))
-with open('../data/HTTPErrors.txt', mode='wt', encoding='utf-8') as f:
+with open('../data/HTTPError&UnicodeEncodeError.txt', mode='wt', encoding='utf-8') as f:
     f.write('\n'.join(list_errors))
 print("nombre de table téléchargées :", str(s))
 directory_size(directory)
