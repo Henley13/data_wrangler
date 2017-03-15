@@ -40,13 +40,17 @@ def download(url, title):
         with open(local_file_name, 'wb') as local_istream:
             with closing(urlopen(url)) as remote_file:
                 shutil.copyfileobj(remote_file, local_istream)
-    except (error.HTTPError, error.URLError) as err:
+    except error.HTTPError as err:
         s -= 1
         print(err.code)
         list_errors.append(url)
     except UnicodeEncodeError:
         s -= 1
         print("UnicodeEncodeError")
+        list_errors.append(url)
+    except error.URLError:
+        s -= 1
+        print("URLError")
         list_errors.append(url)
     return
 
