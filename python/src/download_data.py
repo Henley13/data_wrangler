@@ -1,7 +1,7 @@
 #!/bin/python3
 # coding: utf-8
 
-""" Download data from their url."""
+""" We download data from their url."""
 
 # libraries
 import os
@@ -16,10 +16,12 @@ print("\n")
 
 # variables
 directory = "../data/data_collected"
+filename = "../url_csv.xml"
+fileformat = "csv"
 list_errors = []
 s = 0
 
-# function
+# functions
 
 
 def download(url, title):
@@ -32,7 +34,7 @@ def download(url, title):
     print(url)
     global list_errors
     global s
-    time.sleep(20)
+    # time.sleep(20)
     try:
         local_file_name = os.path.join(directory, title)
         with open(local_file_name, 'wb') as local_istream:
@@ -61,30 +63,19 @@ def directory_size(path):
     print("\n")
     return size
 
+# check if the output directory exists
+if not os.path.isdir(directory):
+    os.mkdir(directory)
+    print(directory, "created")
+    print("\n")
 
-# TODO vérifier la concordance entre les fichiers et les id.
-
-# get url list - csv
-tree = etree.parse(os.path.join("..", "url_csv.xml"))
-url_list = [url.text for url in tree.xpath("/urls/result/url")]
+# get the url list
+tree = etree.parse("../url_csv.xml")
+url_list = [url.text for url in tree.xpath("/results/table/url")]
 print("nombre de liens :", len(url_list))
-for table in tree.xpath("/urls/result"):
+for table in tree.xpath("/results/table"):
     url, id = table[0].text, table[1].text
-    title = str(id) + ".csv"
-    download(url, title)
-    s += 1
-    if s % 100 == 0:
-        x = directory_size(directory)
-        if x > 400000000000:
-            sys.exit("Fichiers trop gros!")
-
-# get url list - json
-tree = etree.parse(os.path.join("..", "url_json.xml"))
-url_list = [url.text for url in tree.xpath("/urls/result/url")]
-print("nombre de liens :", len(url_list))
-for table in tree.xpath("/urls/result"):
-    url, id = table[0].text, table[1].text
-    title = str(id) + ".json"
+    title = str(id) + "." + fileformat
     download(url, title)
     s += 1
     if s % 100 == 0:
@@ -98,11 +89,3 @@ with open('../data/HTTPErrors.txt', mode='wt', encoding='utf-8') as f:
     f.write('\n'.join(list_errors))
 print("nombre de table téléchargées :", str(s))
 directory_size(directory)
-
-# test csv
-#url_csv = "https://www.data.gouv.fr/s/resources/compte-administratif-2013-annexes-elements-du-bilan-detail-fonctionnement/20170308-170753/Onglet_25_CA2013_Annexes.csv"
-#download(url_csv, "test.csv")
-
-# test json
-#url_json = "https://inspire.data.gouv.fr/api/geogw/services/556c5d51330f1fcd48335c41/feature-types/Geoportail_WMS_Preview:OUVERTURE_VISUELLE/download?format=GeoJSON&projection=WGS84"
-#download(url_json, "test.json")

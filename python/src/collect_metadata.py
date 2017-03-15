@@ -14,10 +14,11 @@ print("\n")
 
 # variables
 directory = "../data/metadata/"
-# url_api = "https://www.data.gouv.fr/api/1/datasets/?page_size=10&page=1"
-url_api = "https://www.data.gouv.fr/api/1/datasets/?page_size=50&page=1&format="
-formats_file = ["CSV", "csv", "JSON", "json", "SHP", "shp", "ZIP", "XLS", "xls", "HTML"]
-d_formats_file = {}
+page_size = 50
+url_organization = "https://www.data.gouv.fr/api/1/organizations/?sort=-datasets&page_size=" + str(page_size) + "&page=1"
+id_organizations = []
+organizations_collected_total = 0
+url_api_template = "https://www.data.gouv.fr/api/1/datasets/?page_size=" + str(page_size) + "&page=1&organization="
 datasets_collected_total = 0
 errors = []
 
@@ -144,27 +145,44 @@ def create_xml(data):
         xml_writer.write(obj_xml)
     return
 
+# get the id for each organization
+r = requests.get("https://www.data.gouv.fr/api/1/organizations/?sort=-datasets&page_size=1&page=1")
+d = r.json()
+n_organizations = d["total"]
+print("number of organizations :", n_organizations)
+print("\n")
+while organizations_collected_total < n_organizations:
+    # load the json
+    r = requests.get(url_organization)
+    if r.status_code == 500:
+        break
+    d = r.json()
+    url_organization = d["next_page"]
+    # get the id
+    for data in d["data"]:
+        id_organizations.append(data["id"])
+        organizations_collected_total += 1
+# check if all the organizations have been correctly collected
+if len(id_organizations) != n_organizations:
+    sys.exit("Organizations are missing!")
+
 # check if the output directory exists
 if not os.path.isdir(directory):
     os.mkdir(directory)
     print(directory, "created")
     print("\n")
+
 # get general data from data.gouv API
 r = requests.get("https://www.data.gouv.fr/api/1/datasets/?page_size=1&page=1")
 d = r.json()
 n_datasets = d["total"]
-r = requests.get(url_api)
-d = r.json()
-n_datasets_loaded = d["total"]
-page_size = d["page_size"]
 print("total number of datasets :", n_datasets)
-print("datasets per page :", page_size)
 print("\n")
 
 # get data from data.gouv API and iterate over the different pages
-for format_file in formats_file:
-    url_api_format = url_api + format_file
-    r = requests.get(url_api_format)
+for id_organization in id_organizations:
+    url_api_organization = url_api_template + str(id_organization)
+    r = requests.get(url_api_organization)
     d = r.json()
     n_datasets_loaded = d["total"]
     datasets_collected = 0
@@ -174,13 +192,13 @@ for format_file in formats_file:
     print("\n")
     while datasets_collected < n_datasets_loaded:
         # load the json
-        r = requests.get(url_api_format)
+        r = requests.get(url_api_organization)
         if r.status_code == 500:
             break
         d = r.json()
         page = d["page"]
         page_size = d["page_size"]
-        url_api_format = d["next_page"]
+        url_api_organization = d["next_page"]
         print("----- processing page", page, "-----")
         # build an XML per dataset included all metadata needed
         for data in d["data"]:
@@ -195,7 +213,6 @@ for format_file in formats_file:
                 errors.append(data["page"])
                 pass
     datasets_collected_total += datasets_collected
-    d_formats_file[format_file] = datasets_collected
     print("\n")
 
 print("-------------------------------------------------------------")
@@ -203,10 +220,3 @@ print("errors :", len(errors))
 with open('../data/APIerrors.txt', mode='wt', encoding='utf-8') as f:
     f.write('\n'.join(errors))
 print(datasets_collected_total, "(meta)collected datasets (", round(datasets_collected_total / n_datasets * 100, 2), "% )")
-l = []
-for i in d_formats_file:
-    x = i + " : " + str(d_formats_file[i]) + " files, (" + str(round(d_formats_file[i] / n_datasets * 100, 2)) + "%)"
-    l.append(x)
-    print(x)
-with open('../data/metadata_log.txt', mode='wt', encoding='utf-8') as f:
-    f.write("\n".join(l))
