@@ -34,7 +34,7 @@ session = BaseXClient.Session("localhost", 1984, 'admin', 'admin')
 print("session opened...", "\n")
 
 # create database
-session.execute("CREATE DB metadata /home/arthur/arthur_imbert/python/data/metadata/")
+session.execute("CREATE DB metadata ../data/metadata/")
 print(session.info())
 
 # build and execute the xquery
