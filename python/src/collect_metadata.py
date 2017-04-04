@@ -1,28 +1,16 @@
 #!/bin/python3
 # coding: utf-8
 
-"""We collect metadata on data.gouv.fr about numerous datasets and store it in a xml format."""
+""" We collect metadata on data.gouv.fr about numerous datasets and store it in a xml format. """
 
 # libraries
 import os
 import requests
 import math
 import sys
-import traceback
 from lxml import etree, objectify
+from functions import log_error
 print("\n")
-
-# variables
-directory = "../data/metadata/"
-page_size = 50
-url_organization = "https://www.data.gouv.fr/api/1/organizations/?sort=-datasets&page_size=" + str(page_size) + "&page=1"
-id_organizations = []
-organizations_collected_total = 0
-url_api_template = "https://www.data.gouv.fr/api/1/datasets/?page_size=" + str(page_size) + "&page=1&organization="
-datasets_collected_total = 0
-errors = []
-
-# Functions
 
 
 def create_badges(badges):
@@ -145,6 +133,24 @@ def create_xml(data):
         xml_writer.write(obj_xml)
     return
 
+# variables
+directory = "../data/metadata/"
+page_size = 50
+url_organization = "https://www.data.gouv.fr/api/1/organizations/?sort=-datasets&page_size=" + str(page_size) + "&page=1"
+id_organizations = []
+organizations_collected_total = 0
+url_api_template = "https://www.data.gouv.fr/api/1/datasets/?page_size=" + str(page_size) + "&page=1&organization="
+datasets_collected_total = 0
+path_error = "../data/api_errors"
+n_errors = 0
+
+# reset the log
+if os.path.isdir(path_error):
+    for file in os.listdir(path_error):
+        os.remove(file)
+else:
+    os.mkdir(path_error)
+
 # get the id for each organization
 r = requests.get("https://www.data.gouv.fr/api/1/organizations/?sort=-datasets&page_size=1&page=1")
 d = r.json()
@@ -205,18 +211,16 @@ for id_organization in id_organizations:
             try:
                 create_xml(data)
                 datasets_collected += 1
-            except ValueError:
-                exc_info = sys.exc_info()
-                print("ValueError :", data["page"])
-                traceback.print_exception(*exc_info)
+            except (ValueError, UnicodeDecodeError):
+                path = os.path.join(path_error, data["id"])
+                log_error(path, [data["page"]])
+                n_errors += 1
+                print("error", n_errors)
                 n_datasets_loaded -= 1
-                errors.append(data["page"])
                 pass
     datasets_collected_total += datasets_collected
     print("\n")
 
 print("-------------------------------------------------------------")
-print("errors :", len(errors))
-with open('../data/APIerrors.txt', mode='wt', encoding='utf-8') as f:
-    f.write('\n'.join(errors))
+print("errors :", n_errors)
 print(datasets_collected_total, "(meta)collected datasets (", round(datasets_collected_total / n_datasets * 100, 2), "% )")

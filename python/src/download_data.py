@@ -7,21 +7,12 @@
 import os
 import sys
 import shutil
-import time
 from contextlib import closing
 from urllib.request import urlopen
-from urllib import error
 from lxml import etree
+import functions
+from joblib import Parallel, delayed
 print("\n")
-
-# variables
-directory = "../data/data_collected"
-filename = "../url_csv.xml"
-fileformat = "csv"
-list_errors = []
-s = 0
-
-# functions
 
 
 def download(url, title):
@@ -31,27 +22,23 @@ def download(url, title):
     :param title: str
     :return:
     """
-    print(url)
-    global list_errors
-    global s
-    # time.sleep(20)
+    local_file_name = os.path.join(directory, title)
     try:
-        local_file_name = os.path.join(directory, title)
-        with open(local_file_name, 'wb') as local_istream:
-            with closing(urlopen(url)) as remote_file:
-                shutil.copyfileobj(remote_file, local_istream)
-    except error.HTTPError as err:
-        s -= 1
-        print(err.code)
-        list_errors.append(url)
-    except UnicodeEncodeError:
-        s -= 1
-        print("UnicodeEncodeError")
-        list_errors.append(url)
-    except error.URLError:
-        s -= 1
-        print("URLError")
-        list_errors.append(url)
+        if not os.path.isfile(local_file_name):
+            with open(local_file_name, 'wb') as local_istream:
+                with closing(urlopen(url)) as remote_file:
+                    shutil.copyfileobj(remote_file, local_istream)
+        elif os.path.getsize(local_file_name) == 0:
+            with open(local_file_name, 'wb') as local_istream:
+                with closing(urlopen(url)) as remote_file:
+                    shutil.copyfileobj(remote_file, local_istream)
+        else:
+            pass
+    except:
+        path = os.path.join(path_error, title)
+        functions.log_error(path, [url, title])
+        if os.path.isfile(local_file_name):
+            os.remove(local_file_name)
     return
 
 
@@ -66,10 +53,28 @@ def directory_size(path):
         for file in files:
             filename = os.path.join(path, file)
             size += os.path.getsize(filename)
-    print("\n")
-    print("taille fichiers collectés :", size)
-    print("\n")
     return size
+
+
+def worker_activity(url_title):
+    """
+    Function to encapsulate the process and use multiprocessing.
+    :param url_title: [url, title]
+    :return:
+    """
+    download(url_title[0], url_title[1])
+
+# variables
+directory = "../data/data_collected"
+filename = "../url.xml"
+path_error = "../data/download_errors"
+
+# reset the log
+if os.path.isdir(path_error):
+    for file in os.listdir(path_error):
+        os.remove(os.path.join(path_error, file))
+else:
+    os.mkdir(path_error)
 
 # check if the output directory exists
 if not os.path.isdir(directory):
@@ -78,22 +83,19 @@ if not os.path.isdir(directory):
     print("\n")
 
 # get the url list
-tree = etree.parse("../url_csv.xml")
+l_tables = []
+tree = etree.parse(filename)
 url_list = [url.text for url in tree.xpath("/results/table/url")]
-print("nombre de liens :", len(url_list), "\n")
+print("number of urls :", len(url_list), "\n")
 for table in tree.xpath("/results/table"):
     url, id = table[0].text, table[1].text
-    title = str(id) + "." + fileformat
-    download(url, title)
-    s += 1
-    if s % 100 == 0:
-        x = directory_size(directory)
-        if x > 400000000000:
-            sys.exit("Fichiers trop gros!")
+    title = str(id)
+    if url is not None and title is not None:
+        l_tables.append([url, title])
+
+# multiprocessing
+Parallel(n_jobs=15, verbose=20)(delayed(worker_activity)(url_title=l) for l in l_tables)
 
 print("\n")
-print("errors :", len(list_errors))
-with open('../data/HTTPError&UnicodeEncodeError.txt', mode='wt', encoding='utf-8') as f:
-    f.write('\n'.join(list_errors))
-print("nombre de table téléchargées :", str(s))
+print("total number of files :", len(os.listdir(directory)))
 directory_size(directory)
