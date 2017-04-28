@@ -13,3 +13,8 @@ python/src/WEB-INF
 python/src/old
 python/src/clean_test.py
 python/src/clean_test_json.py
+python/src/clean_test_xls.py
+python/src/clean_test_xml.py
+python/src/clean_test_zip.py
+python/src/scratch.py
+dev/
