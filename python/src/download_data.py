@@ -65,8 +65,8 @@ def worker_activity(url_title):
     download(url_title[0], url_title[1])
 
 # variables
-directory = "../data/data_collected"
-filename = "../url.xml"
+directory = "../data/data_collected_xls"
+filename = "../url_xls.xml"
 path_error = "../data/download_errors"
 
 # reset the log
@@ -94,7 +94,7 @@ for table in tree.xpath("/results/table"):
         l_tables.append([url, title])
 
 # multiprocessing
-Parallel(n_jobs=15, verbose=20)(delayed(worker_activity)(url_title=l) for l in l_tables)
+Parallel(n_jobs=4, verbose=20)(delayed(worker_activity)(url_title=l) for l in l_tables)
 
 print("\n")
 print("total number of files :", len(os.listdir(directory)))

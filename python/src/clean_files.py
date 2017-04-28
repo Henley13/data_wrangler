@@ -5,83 +5,80 @@
 
 # libraries
 import os
-from clean_files_functions import cleaner
-import matplotlib.pyplot as plt
+import sys
+import magic
+from clean_files_functions import cleaner, get_ready
 from functions import log_error
-from numpy import percentile
+from joblib import Parallel, delayed
 print("\n")
 
-input_directory = "../data/data_collected_csv"
-output_directory = "../data/data_fitted"
-path_error = "../data/fit_errors"
+##############
+# parameters #
+##############
+
+#######################################################################################################################
+#######################################################################################################################
+
+# number of workers to use
+workers = 2
+
+# boolean to reset the output directory or not
+reset = True
+
+# paths
+input_directory = "../data/test"
+output_directory = "../data/test_fitted2"
+path_log = "../data/log_cleaning2"
 n_files = len(os.listdir(input_directory))
 print("number of files :", n_files, "\n")
 
-# reset the log
-if os.path.isdir(path_error):
-    for file in os.listdir(path_error):
-        os.remove(os.path.join(path_error, file))
-else:
-    os.mkdir(path_error)
+# minimum number of rows needed to analyze a sample of the file (otherwise, we use the entire file)
+threshold_n_row = 100
 
-# check output directory exists
-if not os.path.isdir(output_directory):
-    os.mkdir(output_directory)
+# percentage of rows to extract from the file to build a sample
+ratio_sample = 20
 
-# clean files
-n_rows = []
-n_cols = []
-dico_types = {}
-n = 0
-for filename in os.listdir(input_directory):
-    print("file number", n, ":", filename)
+# maximum size of a sample
+max_sample = 1000
+
+# minimum frequency to reach in order to accept a number of columns
+# (n_col = N if at least threshold_n_col * 100 % rows have N columns)
+threshold_n_col = 0.8
+
+# number of rows to analyze when we are searching for a consistent header
+check_header = 10
+
+# minimum frequency to reach for specific characters in order to classify a file as a json
+threshold_json = 0.004
+
+#######################################################################################################################
+#######################################################################################################################
+
+# make the output directory ready
+path_error = get_ready(output_directory, path_log, reset)
+
+
+def worker_cleaning_activity(filename, input_directory=input_directory, output_directory=output_directory,
+                             path_log=path_log, threshold_n_row=threshold_n_row, ratio_sample=ratio_sample,
+                             max_sample=max_sample, threshold_n_col=threshold_n_col, check_header=check_header,
+                             threshold_json=threshold_json, path_error=path_error):
+    """
+    Function to encapsulate the process and use multiprocessing.
+    :return:
+    """
     try:
-        res = cleaner(filename, input_directory, output_directory)
+        cleaner(filename, input_directory, output_directory, path_log, threshold_n_row, ratio_sample, max_sample,
+                threshold_n_col, check_header, threshold_json)
     except:
-        res = None
-        log_error(os.path.join(path_error, filename), [filename])
-    if res is not None:
-        x, y, d = res
-        n_rows.append(x)
-        n_cols.append(y)
-        for i in d:
-            if i not in dico_types:
-                dico_types[i] = d[i]
-            else:
-                dico_types[i] += d[i]
+        path = os.path.join(input_directory, filename)
+        size_file = os.path.getsize(path)
+        extension = ""
+        if size_file > 0 and not os.path.isfile(os.path.join(output_directory, filename)):
+            extension = magic.Magic(mime=True).from_file(path)
+        log_error(os.path.join(path_error, filename), [filename, extension])
 
-# print results
-print("\n")
-for i in dico_types:
-    print(i, dico_types[i])
+# multiprocessing
+Parallel(n_jobs=workers, verbose=20)(delayed(worker_cleaning_activity)(filename=file) for file in os.listdir(input_directory))
 
 print("\n")
-print("row distribution")
-for i in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
-    print(i, percentile(n_rows, i))
-
-print("\n")
-print("col distribution")
-for i in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
-    print(i, percentile(n_cols, i))
-
-# graphs
-plt.scatter(x=n_cols, y=n_rows, alpha=0.5, c="b")
-plt.title("Files shape (n = " + str(len(n_rows)) + ")")
-plt.xlabel("Columns")
-plt.ylabel("Rows")
-plt.savefig('fig_1')
-
-plt.hist(x=n_rows, bins=20000, alpha=0.5)
-plt.xlim(0, 3000)
-plt.xlabel("Number of rows")
-plt.ylabel("Frequency")
-plt.title("Rows histogram (n = " + str(len(n_rows)) + ")")
-plt.savefig('fig_2')
-
-plt.hist(x=n_cols, bins=200, alpha=0.5)
-plt.xlim(0, 100)
-plt.xlabel("Number of columns")
-plt.ylabel("Frequency")
-plt.title("Columns histogram (n = " + str(len(n_rows)) + ")")
-plt.savefig('fig_3')
+print("total number of files :", len(os.listdir(output_directory)))
