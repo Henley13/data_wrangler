@@ -26,7 +26,7 @@ workers = 2
 reset = True
 
 # paths
-input_directory = "../data/test"
+input_directory = "../data/data_collected_xml"
 output_directory = "../data/test_fitted2"
 path_log = "../data/log_cleaning2"
 n_files = len(os.listdir(input_directory))

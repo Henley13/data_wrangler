@@ -4,7 +4,6 @@
 """ Different functions used to detect the file extension and reshape it. """
 
 # libraries
-import pandas as pd
 import os
 import shutil
 import magic
@@ -13,7 +12,10 @@ import random
 import time
 import json
 import zipfile
+import xmljson
+import re
 import numpy as np
+import pandas as pd
 from xlrd import open_workbook
 from xlutils.copy import copy
 from tempfile import TemporaryDirectory
@@ -21,6 +23,7 @@ from functions import log_error
 from pandas.io.json import json_normalize
 from _csv import Error
 from csv import Sniffer
+from lxml import etree
 from collections import Counter
 random.seed(123)
 print("\n")
@@ -138,7 +141,7 @@ def cleaner_file(filename, input_directory, output_directory, path_log, zip_file
         elif extension == "text/html":
             pass
         elif extension == "text/xml":
-            pass
+            return xml(filename, input_directory, output_directory, path_log, extension, zip_file)
         elif extension == "application/vnd.ms-excel":
             return excel(filename, input_directory, output_directory, path_log, check_header, extension, zip_file)
         elif extension == "application/CDFV2-unknown":
@@ -305,6 +308,35 @@ def office_document(filename, input_directory, output_directory, path_log, check
     :return:
     """
     return excel(filename, input_directory, output_directory, path_log, check_header, extension, zip_file)
+
+
+def xml(filename, input_directory, output_directory, path_log, extension, zip_file):
+    """
+    Function to clean a file with a text/plain extension.
+    :param filename: string
+    :param input_directory: string
+    :param output_directory: string
+    :param path_log: string
+    :param extension: string
+    :param zip_file: boolean
+    :return:
+    """
+    start = time.clock()
+    path = os.path.join(input_directory, filename)
+    # get a matrix
+    df, metadata, no_header = explore_xml(path, deepness=20)
+    if df is None:
+        return
+    # statistics and distribution
+    x, y, d = distribution_df(df)
+    if x is None:
+        return
+    # save results
+    end = time.clock()
+    duration = round(end - start, 2)
+    save_results(df, metadata, filename, filename, output_directory, path_log, x, y, d, duration, no_header, extension,
+                 zip_file)
+    return
 
 
 def detect_encoding(path):
@@ -709,6 +741,73 @@ def clean_json(path, encoding):
     else:
         return None, None, None
     return df, metadata, False
+
+
+def explore_json_deep(json, deepness=20):
+    """
+    Recursive function to determine the pattern of a json file
+    :param json: json data
+    :param deepness: integer
+    :return: dataframe, string
+    """
+    data, metadata = explore_json(json)
+    if data is not None:
+        return data, metadata
+    if deepness == 0:
+        return None, None
+    l_metadata = []
+    if isinstance(json, dict):
+        for key in json:
+            data, metadata = explore_json_deep(json[key], deepness=deepness-1)
+            if data is not None:
+                return data, metadata + " " + " ".join(l_metadata)
+            else:
+                l_metadata.append(str(json[key]))
+    return None, None
+
+
+def explore_xml(path, deepness=20):
+    """
+    Function to determine the pattern of a xml file and clean it
+    :param path: string
+    :param deepness: integer
+    :return: dataframe, string, boolean
+    """
+    # read data
+    tree = etree.iterparse(path, huge_tree=True, events=("start", "end"))
+    # extract matrix
+    results = None
+    results_metadata = None
+    max_row = 0
+    max_col = 0
+    for event, element in tree:
+        x = xmljson.badgerfish.data(element)
+        json_data = json.loads(json.dumps(x))
+        data, metadata = explore_json_deep(json_data, deepness=deepness)
+        if data is None:
+            continue
+        df = json_normalize(data, record_path=None, meta=None)
+        df = clean_empty_col(df)
+        if df.shape[1] > max_col:
+            max_row = df.shape[0]
+            max_col = df.shape[1]
+        elif df.shape[1] == max_col and df.shape[0] > max_row:
+            max_row == df.shape[0]
+        else:
+            continue
+        results = df
+        results_metadata = metadata
+    names = []
+    for i in results.columns:
+        m = re.findall('{(.+?)}', i)
+        for j in m:
+            i = i.replace("{" + j + "}", "")
+        i = i.replace("@", "").replace("$", "").replace(".", "_")
+        if re.search("_$", i):
+            i = i[:len(i) - 1]
+        names.append(i)
+    results.columns = names
+    return results, results_metadata, False
 
 
 def read_excel(path, info=False):

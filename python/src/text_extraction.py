@@ -97,45 +97,9 @@ def extraction(path_log, data_directory, content_bool, header_bool, french_stopw
     return tokens
 
 
-def tfidf_extraction(path_log, data_directory, content_bool, header_bool, french_stopwords):
-    df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
-    print("number of files: ", df_log.shape[0], "\n")
-    for i in range(df_log.shape[0]):
-        filename = df_log.at[i, "filename"]
-        multi_header = df_log.at[i, "multiheader"]
-        header = df_log.at[i, "header_name"]
-        path = os.path.join(data_directory, filename)
-        index = [0]
-        if multi_header:
-            index = pd.MultiIndex.from_tuples(header)
-        l = []
-        l_header = []
-        with open(path, mode="rt", encoding="utf-8") as f:
-            j = 0
-            for row in f:
-                row = remove_accent(row).lower().strip()
-                if j not in index:
-                    l.append(row)
-                else:
-                    l_header.append(row)
-                j += 1
-        tokens_file = []
-        if content_bool:
-            text_content = " ".join(l)
-            tokens_file += nltk.word_tokenize(text_content)
-        if header_bool:
-            text_header = " ".join(l_header)
-            tokens_file += nltk.word_tokenize(text_header)
-        tokens_file = [token for token in tokens_file if
-                       token not in french_stopwords and not re.search('[0-9;,:/\\().+-><%_\'?!§*$&^"=`#~@]', token)]
-        # print(filename, ":", len(tokens_file), "mot(s)")
-        content_file = " ".join(tokens_file)
-    tfidf_vectorizer = TfidfVectorizer(input=u'content', encoding=u'utf-8', decode_error=u'strict', strip_accents=None, lowercase=True, preprocessor=None, tokenizer=None, analyzer=u'word', stop_words=None, token_pattern=u'(?u)\b\w\w+\b', ngram_range=(1, 1), max_df=1.0, min_df=1, max_features=None, vocabulary=None, binary=False, dtype= < type 'numpy.int64' >, norm=u'l2', use_idf=True, smooth_idf=True, sublinear_tf=False)
-    tfidf = tfidf_vectorizer.fit_transform(os.)
-
 def fit_sparse_matrix(token_document, indptr, indices, data, vocabulary):
     """
-    Function to prepar a sparse matrix with word count
+    Function to prepare a sparse matrix with word count
     :param token_document: list of lists of tokens (one per document)
     :param
     :return: dictionary, list of integers, list of integers, list of integers
