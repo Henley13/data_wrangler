@@ -724,25 +724,6 @@ def explore_json(json):
     return None, None
 
 
-def clean_json(path, encoding):
-    """
-    Function to clean json
-    :param path: string
-    :param encoding: string
-    :return: dataframe, string, boolean
-    """
-    # read file
-    with open(path, mode="r", encoding=encoding) as f:
-        json_data = json.load(f)
-    # flatten the json
-    data, metadata = explore_json(json_data)
-    if data is not None:
-        df = json_normalize(data, record_path=None, meta=None)
-    else:
-        return None, None, None
-    return df, metadata, False
-
-
 def explore_json_deep(json, deepness=20):
     """
     Recursive function to determine the pattern of a json file
@@ -764,6 +745,25 @@ def explore_json_deep(json, deepness=20):
             else:
                 l_metadata.append(str(json[key]))
     return None, None
+
+
+def clean_json(path, encoding):
+    """
+    Function to clean json
+    :param path: string
+    :param encoding: string
+    :return: dataframe, string, boolean
+    """
+    # read file
+    with open(path, mode="r", encoding=encoding) as f:
+        json_data = json.load(f)
+    # flatten the json
+    data, metadata = explore_json_deep(json_data, deepness=20)
+    if data is not None:
+        df = json_normalize(data, record_path=None, meta=None)
+    else:
+        return None, None, None
+    return df, metadata, False
 
 
 def explore_xml(path, deepness=20):
