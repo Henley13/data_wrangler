@@ -17,9 +17,11 @@ def log_error(path_error, source):
     :return:
     """
     exc_type, exc_value, exc_traceback = sys.exc_info()
-    text = format_exc(exc_type, exc_value, exc_traceback, context=5, tb_offset=0)
+    text = format_exc(exc_type, exc_value, exc_traceback, context=5,
+                      tb_offset=0)
     with open(path_error, mode='a', encoding='utf-8') as f:
-        f.write("##################################################################### \n")
+        f.write("##########################################################"
+                "########### \n")
         for i in source:
             f.write(i)
             f.write("\n")
@@ -29,23 +31,27 @@ def log_error(path_error, source):
     return exc_type
 
 
-def do_nothing(*args, **kwargs):
+def _do_nothing():
     pass
 
 
-def raise_again(exception):
-    raise(exception)
+def _raise_again(exception):
+    raise exception
 
 
-def if_null(value, default):
+def _if_null(value, default):
     if value is None:
         return default
     return value
 
 
+def _pause(duration=5):
+    time.sleep(duration)
+
+
 class TryMultipleTimes(object):
 
-    def __init__(self, action=do_nothing, on_fail=raise_again, n_tries=5):
+    def __init__(self, action=_pause, on_fail=_raise_again, n_tries=5):
         self.action_ = action
         self.n_tries_ = n_tries
         self.on_fail_ = on_fail
@@ -68,18 +74,3 @@ class TryMultipleTimes(object):
                 action(*args, **dict(kwargs, error=error))
             on_fail(error)
         return decorate
-
-
-def timeit(function, loop=100):
-    """
-    Function to get the elapsed time of a process
-    :param function: python function
-    :param loop: integer
-    :return: integer
-    """
-    start = time.clock()
-    for i in range(loop):
-        x = function
-    end = time.clock()
-    return end - start
-

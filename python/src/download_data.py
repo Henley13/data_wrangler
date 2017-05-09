@@ -5,12 +5,11 @@
 
 # libraries
 import os
-import sys
 import shutil
 from contextlib import closing
 from urllib.request import urlopen
 from lxml import etree
-import functions
+from .functions import log_error
 from joblib import Parallel, delayed
 print("\n")
 
@@ -36,7 +35,7 @@ def download(url, title):
             pass
     except:
         path = os.path.join(path_error, title)
-        functions.log_error(path, [url, title])
+        log_error(path, [url, title])
         if os.path.isfile(local_file_name):
             os.remove(local_file_name)
     return
@@ -94,7 +93,8 @@ for table in tree.xpath("/results/table"):
         l_tables.append([url, title])
 
 # multiprocessing
-Parallel(n_jobs=4, verbose=20)(delayed(worker_activity)(url_title=l) for l in l_tables)
+Parallel(n_jobs=4, verbose=20)(delayed(worker_activity)(url_title=l)
+                               for l in l_tables)
 
 print("\n")
 print("total number of files :", len(os.listdir(directory)))

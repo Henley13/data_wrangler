@@ -19,7 +19,7 @@ import pandas as pd
 from xlrd import open_workbook
 from xlutils.copy import copy
 from tempfile import TemporaryDirectory
-from functions import log_error
+from .functions import log_error
 from pandas.io.json import json_normalize
 from _csv import Error
 from csv import Sniffer
@@ -58,7 +58,8 @@ def get_ready(output_directory, path_log, reset=False):
     if os.path.isfile(path_log):
         os.remove(path_log)
     with open(path_log, mode="at", encoding="utf-8") as f:
-        f.write("filename;source_file;n_row;n_col;integer;float;object;metadata;time;header;multiheader;header_name;extension")
+        f.write("filename;source_file;n_row;n_col;integer;float;object;"
+                "metadata;time;header;multiheader;header_name;extension")
         f.write("\n")
     # check output directory for metadata exists
     path_metadata = os.path.join(output_directory, "metadata")
@@ -67,7 +68,8 @@ def get_ready(output_directory, path_log, reset=False):
     return path_error
 
 
-def cleaner(filename, input_directory, output_directory, path_log, threshold_n_row, ratio_sample, max_sample,
+def cleaner(filename, input_directory, output_directory, path_log,
+            threshold_n_row, ratio_sample, max_sample,
             threshold_n_col, check_header, threshold_json):
     """
     Function to clean a file (unzipped or not)
@@ -85,7 +87,8 @@ def cleaner(filename, input_directory, output_directory, path_log, threshold_n_r
     """
     path = os.path.join(input_directory, filename)
     size_file = os.path.getsize(path)
-    if size_file > 0 and not os.path.isfile(os.path.join(output_directory, filename)):
+    if size_file > 0 and not os.path.isfile(os.path.join(output_directory,
+                                                         filename)):
         extension = magic.Magic(mime=True).from_file(path)
         if extension == "application/zip":
             z = zipfile.ZipFile(path)
@@ -94,15 +97,21 @@ def cleaner(filename, input_directory, output_directory, path_log, threshold_n_r
                 for file in z.namelist():
                     temp_path = os.path.join(temp_directory, file)
                     if os.path.isfile(temp_path):
-                        cleaner_file(filename, input_directory, output_directory, path_log, True, threshold_n_row,
-                                     ratio_sample, max_sample, threshold_n_col, check_header, threshold_json)
+                        cleaner_file(filename, input_directory,
+                                     output_directory, path_log, True,
+                                     threshold_n_row,
+                                     ratio_sample, max_sample, threshold_n_col,
+                                     check_header, threshold_json)
         else:
-            cleaner_file(filename, input_directory, output_directory, path_log, False, threshold_n_row, ratio_sample,
-                         max_sample, threshold_n_col, check_header, threshold_json)
+            cleaner_file(filename, input_directory, output_directory, path_log,
+                         False, threshold_n_row, ratio_sample,
+                         max_sample, threshold_n_col, check_header,
+                         threshold_json)
     return
 
 
-def cleaner_file(filename, input_directory, output_directory, path_log, zip_file, threshold_n_row, ratio_sample,
+def cleaner_file(filename, input_directory, output_directory, path_log,
+                 zip_file, threshold_n_row, ratio_sample,
                  max_sample, threshold_n_col, check_header, threshold_json):
     """
     Function to clean unzipped files.
@@ -121,15 +130,21 @@ def cleaner_file(filename, input_directory, output_directory, path_log, zip_file
     """
     path = os.path.join(input_directory, filename)
     size_file = os.path.getsize(path)
-    if size_file > 0 and not os.path.isfile(os.path.join(output_directory, filename.replace("/", "--"))):
+    if size_file > 0 \
+            and not os.path.isfile(os.path.join(output_directory,
+                                                filename.replace("/", "--"))):
         extension = magic.Magic(mime=True).from_file(path)
         # print(size_file, "/", extension, "/", filename)
         if extension == "text/plain":
-            return plain(filename, input_directory, output_directory, path_log, threshold_n_row, ratio_sample,
-                         max_sample, threshold_n_col, check_header, threshold_json, extension, zip_file)
+            return plain(filename, input_directory, output_directory, path_log,
+                         threshold_n_row, ratio_sample,
+                         max_sample, threshold_n_col, check_header,
+                         threshold_json, extension, zip_file)
         elif extension == "application/octet-stream":
-            return octet_stream(filename, input_directory, output_directory, path_log, threshold_n_row, ratio_sample,
-                                max_sample, threshold_n_col, check_header, threshold_json, extension, zip_file)
+            return octet_stream(filename, input_directory, output_directory,
+                                path_log, threshold_n_row, ratio_sample,
+                                max_sample, threshold_n_col, check_header,
+                                threshold_json, extension, zip_file)
         elif extension == "application/x-dbf":
             pass
         elif extension == "application/pdf":
@@ -141,17 +156,22 @@ def cleaner_file(filename, input_directory, output_directory, path_log, zip_file
         elif extension == "text/html":
             pass
         elif extension == "text/xml":
-            return xml(filename, input_directory, output_directory, path_log, extension, zip_file)
+            return xml(filename, input_directory, output_directory, path_log,
+                       extension, zip_file)
         elif extension == "application/vnd.ms-excel":
-            return excel(filename, input_directory, output_directory, path_log, check_header, extension, zip_file)
+            return excel(filename, input_directory, output_directory, path_log,
+                         check_header, extension, zip_file)
         elif extension == "application/CDFV2-unknown":
-            return cdfv2(filename, input_directory, output_directory, path_log, check_header, extension, zip_file)
+            return cdfv2(filename, input_directory, output_directory, path_log,
+                         check_header, extension, zip_file)
         elif extension == "application/vnd.oasis.opendocument.text":
             pass
         elif extension == "application/vnd.oasis.opendocument.spreadsheet":
             pass
-        elif extension == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-            return office_document(filename, input_directory, output_directory, path_log, check_header, extension,
+        elif extension == "application/vnd.openxmlformats-officedocument." \
+                          "spreadsheetml.sheet":
+            return office_document(filename, input_directory, output_directory,
+                                   path_log, check_header, extension,
                                    zip_file)
         elif extension == "application/x-dosexec":
             pass
@@ -166,7 +186,8 @@ def cleaner_file(filename, input_directory, output_directory, path_log, zip_file
     return
 
 
-def plain(filename, input_directory, output_directory, path_log, threshold_n_row, ratio_sample, max_sample,
+def plain(filename, input_directory, output_directory, path_log,
+          threshold_n_row, ratio_sample, max_sample,
           threshold_n_col, check_header, threshold_json, extension, zip_file):
     """
     Function to clean a file with a text/plain extension.
@@ -191,13 +212,16 @@ def plain(filename, input_directory, output_directory, path_log, threshold_n_row
     # encoding
     encoding = detect_encoding(path)
     # sample
-    sample, full_sample, threshold_n_col = get_sample(path, encoding, nrow, threshold_n_row, ratio_sample, max_sample,
+    sample, full_sample, threshold_n_col = get_sample(path, encoding, nrow,
+                                                      threshold_n_row,
+                                                      ratio_sample, max_sample,
                                                       threshold_n_col)
     # get a matrix
     if is_json(full_sample, threshold_json):
         df, metadata, no_header = clean_json(path, encoding)
     else:
-        df, metadata, no_header = clean_csv(path, encoding, sample, full_sample, threshold_n_col, check_header)
+        df, metadata, no_header = clean_csv(path, encoding, sample, full_sample,
+                                            threshold_n_col, check_header)
     if df is None:
         return
     # empty columns
@@ -209,13 +233,16 @@ def plain(filename, input_directory, output_directory, path_log, threshold_n_row
     # save results
     end = time.clock()
     duration = round(end - start, 2)
-    save_results(df, metadata, filename, filename, output_directory, path_log, x, y, d, duration, no_header, extension,
+    save_results(df, metadata, filename, filename, output_directory, path_log,
+                 x, y, d, duration, no_header, extension,
                  zip_file)
     return
 
 
-def octet_stream(filename, input_directory, output_directory, path_log, threshold_n_row, ratio_sample, max_sample,
-                 threshold_n_col, check_header, threshold_json, extension, zip_file):
+def octet_stream(filename, input_directory, output_directory, path_log,
+                 threshold_n_row, ratio_sample, max_sample,
+                 threshold_n_col, check_header, threshold_json, extension,
+                 zip_file):
     """
     Function to clean a file with a octet-stream extension.
     :param filename: string
@@ -232,13 +259,16 @@ def octet_stream(filename, input_directory, output_directory, path_log, threshol
     :param zip_file: boolean
     :return:
     """
-    return plain(filename, input_directory, output_directory, path_log, threshold_n_row, ratio_sample, max_sample,
-                 threshold_n_col, check_header, threshold_json, extension, zip_file)
+    return plain(filename, input_directory, output_directory, path_log,
+                 threshold_n_row, ratio_sample, max_sample,
+                 threshold_n_col, check_header, threshold_json, extension,
+                 zip_file)
 
 
-def excel(filename, input_directory, output_directory, path_log, check_header, extension, zip_file):
+def excel(filename, input_directory, output_directory, path_log, check_header,
+          extension, zip_file):
     """
-    Function to clean an excel file (or equivalent) in order to extract a matrix and metadata
+    Function to clean an excel file (or equivalent) in order to extract a matrix
     :param filename: string
     :param input_directory: string
     :param output_directory: string
@@ -262,7 +292,8 @@ def excel(filename, input_directory, output_directory, path_log, check_header, e
         for sheet in sheets:
             start = time.clock()
             # extract matrix
-            df, metadata, no_header = clean_sheet_excel(rb_edited, sheet, temp_path, check_header)
+            df, metadata, no_header = clean_sheet_excel(rb_edited, sheet,
+                                                        temp_path, check_header)
             if df is None:
                 continue
             # empty columns
@@ -275,14 +306,16 @@ def excel(filename, input_directory, output_directory, path_log, check_header, e
             end = time.clock()
             duration = round(end - start, 2)
             new_filename = "__".join([filename, sheet])
-            save_results(df, metadata, new_filename, filename, output_directory, path_log, x, y, d, duration, no_header,
+            save_results(df, metadata, new_filename, filename, output_directory,
+                         path_log, x, y, d, duration, no_header,
                          extension, zip_file)
     return
 
 
-def cdfv2(filename, input_directory, output_directory, path_log, check_header, extension, zip_file):
+def cdfv2(filename, input_directory, output_directory, path_log, check_header,
+          extension, zip_file):
     """
-    Function to clean an excel file (or equivalent) in order to extract a matrix and metadata
+    Function to clean an excel file (or equivalent) in order to extract a matrix
     :param filename: string
     :param input_directory: string
     :param output_directory: string
@@ -292,12 +325,14 @@ def cdfv2(filename, input_directory, output_directory, path_log, check_header, e
     :param zip_file:boolean
     :return:
     """
-    return excel(filename, input_directory, output_directory, path_log, check_header, extension, zip_file)
+    return excel(filename, input_directory, output_directory, path_log,
+                 check_header, extension, zip_file)
 
 
-def office_document(filename, input_directory, output_directory, path_log, check_header, extension, zip_file):
+def office_document(filename, input_directory, output_directory, path_log,
+                    check_header, extension, zip_file):
     """
-    Function to clean an excel file (or equivalent) in order to extract a matrix and metadata
+    Function to clean an excel file (or equivalent) in order to extract a matrix
     :param filename: string
     :param input_directory: string
     :param output_directory: string
@@ -307,10 +342,12 @@ def office_document(filename, input_directory, output_directory, path_log, check
     :param zip_file: boolean
     :return:
     """
-    return excel(filename, input_directory, output_directory, path_log, check_header, extension, zip_file)
+    return excel(filename, input_directory, output_directory, path_log,
+                 check_header, extension, zip_file)
 
 
-def xml(filename, input_directory, output_directory, path_log, extension, zip_file):
+def xml(filename, input_directory, output_directory, path_log, extension,
+        zip_file):
     """
     Function to clean a file with a text/plain extension.
     :param filename: string
@@ -334,7 +371,8 @@ def xml(filename, input_directory, output_directory, path_log, extension, zip_fi
     # save results
     end = time.clock()
     duration = round(end - start, 2)
-    save_results(df, metadata, filename, filename, output_directory, path_log, x, y, d, duration, no_header, extension,
+    save_results(df, metadata, filename, filename, output_directory, path_log,
+                 x, y, d, duration, no_header, extension,
                  zip_file)
     return
 
@@ -363,7 +401,8 @@ def file_len(filename):
     return i + 1
 
 
-def get_sample(path, encoding, nrow, threshold_n_row, ratio_sample, max_sample, threshold_n_col):
+def get_sample(path, encoding, nrow, threshold_n_row, ratio_sample, max_sample,
+               threshold_n_col):
     """
     Functions to get a random sample of rows from a text file.
     :param path: string
@@ -394,7 +433,7 @@ def get_sample(path, encoding, nrow, threshold_n_row, ratio_sample, max_sample, 
 
 def has_header(content, separator, n_col):
     """
-    Function to determine if the first row of the given sample is a potential header.
+    Function to determine if the first row is a potential header.
     :param content: list of strings
     :param separator: string
     :param n_col: integer
@@ -429,7 +468,8 @@ def has_header(content, separator, n_col):
                     break
                 except (ValueError, OverflowError):
                     pass
-            # if it's neither a integer or a float, it's assumed to be a string (and we keep it length)
+            # if it's neither a integer or a float, it's assumed to be a string
+            # (and we keep it length)
             else:
                 this_type = len(row[col])
             if this_type != col_types[col]:
@@ -443,7 +483,8 @@ def has_header(content, separator, n_col):
     if len(col_types) == 0:
         return -1
 
-    # finally, compare results against first row and "vote" on whether it's a header
+    # finally, compare results against first row and "vote" on whether
+    # it's a header
     results = 0
     for col, x in col_types.items():
         # penalize invalid column names
@@ -474,7 +515,8 @@ def search_header(list_content, separator, n_col, row_to_check_header):
     :param row_to_check_header: integer
     :return: integer, boolean
     """
-    h = [has_header(list_content[row:], separator, n_col) for row in range(row_to_check_header)]
+    h = [has_header(list_content[row:], separator, n_col)
+         for row in range(row_to_check_header)]
     for row in range(row_to_check_header):
         if h[row] > 0:
             return row, False
@@ -569,9 +611,11 @@ def distribution_df(df):
         return None, None, None
     d = {"integer": 0, "float": 0, "object": 0}
     for i in df.dtypes:
-        if i in [int, np.int, np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64]:
+        if i in [int, np.int, np.int_, np.intc, np.intp, np.int8, np.int16,
+                 np.int32, np.int64]:
             i = "integer"
-        elif i in [float, np.float, np.float_, np.float16, np.float32, np.float64]:
+        elif i in [float, np.float, np.float_, np.float16, np.float32,
+                   np.float64]:
             i = "float"
         else:
             i = "object"
@@ -582,7 +626,8 @@ def distribution_df(df):
     return x, y, d
 
 
-def save_results(df, metadata, filename, source_file, output_directory, path_log, x, y, d, duration, no_header,
+def save_results(df, metadata, filename, source_file, output_directory,
+                 path_log, x, y, d, duration, no_header,
                  extension, zip_file):
     """
     Function to save results (dataframe and metadata).
@@ -615,7 +660,8 @@ def save_results(df, metadata, filename, source_file, output_directory, path_log
         multiheader = True
     else:
         multiheader = False
-    l = [filename, source_file, x, y, d["integer"], d["float"], d["object"], metadata, duration, not no_header,
+    l = [filename, source_file, x, y, d["integer"], d["float"], d["object"],
+         metadata, duration, not no_header,
          multiheader, list(df.columns), extension, zip_file]
     l = [str(i).replace(";", ",") for i in l]
     with open(path_log, mode="at", encoding="utf-8") as f:
@@ -638,25 +684,30 @@ def get_df(path, list_content, bad_rows, encoding, sep, check_header, n_col):
     """
     # TODO exploit bold and color cells
     row_to_check_header = min(check_header, int(len(list_content) / 2))
-    row_header, no_header = search_header(list_content, sep, n_col, row_to_check_header=row_to_check_header)
+    row_header, no_header = search_header(list_content, sep, n_col,
+                                          row_to_check_header)
     if row_header is None:
         return None, None
     if no_header:
         # TODO gérer le cas où row_header est supérieur à 0
-        df = pd.read_csv(path, encoding=encoding, sep=sep, header=None, skiprows=bad_rows, skip_blank_lines=False,
+        df = pd.read_csv(path, encoding=encoding, sep=sep, header=None,
+                         skiprows=bad_rows, skip_blank_lines=False,
                          low_memory=False, index_col=False)
     else:
         if row_header > 0:
             row_header = [i for i in range(row_header + 1)]
-        df = pd.read_csv(path, encoding=encoding, sep=sep, header=row_header, skiprows=bad_rows,
-                         skip_blank_lines=False, low_memory=False, index_col=False)
+        df = pd.read_csv(path, encoding=encoding, sep=sep, header=row_header,
+                         skiprows=bad_rows,
+                         skip_blank_lines=False, low_memory=False,
+                         index_col=False)
     if df is None:
         return None, None
     pd.to_numeric(df.columns, errors="ignore")
     return df, no_header
 
 
-def clean_csv(path, encoding, sample, full_sample, threshold_n_col, check_header):
+def clean_csv(path, encoding, sample, full_sample, threshold_n_col,
+              check_header):
     """
     Function to clean csv files
     :param path: string
@@ -678,9 +729,11 @@ def clean_csv(path, encoding, sample, full_sample, threshold_n_col, check_header
     if n_col is None:
         return None, None, None
     # content and metadata
-    list_content, bad_rows, metadata = get_content(path, encoding, dialect, n_col)
+    list_content, bad_rows, metadata = get_content(path, encoding, dialect,
+                                                   n_col)
     # header
-    df, no_header = get_df(path, list_content, bad_rows, encoding, sep, check_header, n_col)
+    df, no_header = get_df(path, list_content, bad_rows, encoding, sep,
+                           check_header, n_col)
     return df, metadata, no_header
 
 
@@ -817,10 +870,12 @@ def read_excel(path, info=False):
     :param info: boolean
     :return: xlrd.book.Book object, xlrd.book.Book object
     """
-    rb = open_workbook(path, ragged_rows=True, on_demand=True, formatting_info=False)
+    rb = open_workbook(path, ragged_rows=True, on_demand=True,
+                       formatting_info=False)
     if info:
         try:
-            rb_info = open_workbook(path, ragged_rows=True, on_demand=True, formatting_info=True)
+            rb_info = open_workbook(path, ragged_rows=True, on_demand=True,
+                                    formatting_info=True)
         except:
             rb_info = rb
         return rb, rb_info
@@ -848,7 +903,8 @@ def edit_excel(read_book, info_book):
                 for colx in range(len(s.row(rowx))):
                     old_value = str(s.cell_value(rowx, colx))
                     if isinstance(old_value, str):
-                        new_value = old_value.replace("\n", " ").replace("\r", " ").replace(";", " ")
+                        new_value = old_value.replace("\n", " ")\
+                            .replace("\r", " ").replace(";", " ")
                         ws.write(rowx, colx, new_value)
             # fill merged cells
             merged_cells = info_book.sheet_by_name(sheet).merged_cells
@@ -856,7 +912,8 @@ def edit_excel(read_book, info_book):
                 for crange in merged_cells:
                     rlo, rhi, clo, chi = crange
                     if len(s.row(rlo)) >= clo + 1:
-                        information = str(s.cell_value(rlo, clo)).replace("\n", " ").replace("\r", " ")\
+                        information = str(s.cell_value(rlo, clo))\
+                            .replace("\n", " ").replace("\r", " ")\
                             .replace(";", " ")
                         for rowx in range(rlo, rhi):
                             for colx in range(clo, chi):
@@ -942,7 +999,8 @@ def clean_sheet_excel(read_book, sheet_name, temporary_path, check_header):
     # get content and metadata
     list_content, metadata = get_content_excel(temp_sheet_path, good_rows)
     # header
-    df, no_header = get_df(temp_sheet_path, list_content, bad_rows, "utf-8", ";", check_header, s.ncols)
+    df, no_header = get_df(temp_sheet_path, list_content, bad_rows, "utf-8",
+                           ";", check_header, s.ncols)
     return df, metadata, no_header
 
 

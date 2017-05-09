@@ -1,7 +1,8 @@
 #!/bin/python3
 # coding: utf-8
 
-""" We collect metadata on data.gouv.fr about numerous datasets and store it in a xml format. """
+""" We collect metadata on data.gouv.fr about numerous datasets and store it
+in a xml format. """
 
 # libraries
 import os
@@ -9,7 +10,7 @@ import requests
 import math
 import sys
 from lxml import etree, objectify
-from functions import log_error
+from .functions import log_error
 print("\n")
 
 
@@ -126,7 +127,8 @@ def create_xml(data):
     objectify.deannotate(root)
     etree.cleanup_namespaces(root)
     # create the xml string
-    obj_xml = etree.tostring(root, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+    obj_xml = etree.tostring(root, pretty_print=True, xml_declaration=True,
+                             encoding="UTF-8")
     # save the xml
     filename = directory + data["id"] + ".xml"
     with open(filename, "wb") as xml_writer:
@@ -136,10 +138,12 @@ def create_xml(data):
 # variables
 directory = "../data/metadata/"
 page_size = 50
-url_organization = "https://www.data.gouv.fr/api/1/organizations/?sort=-datasets&page_size=" + str(page_size) + "&page=1"
+url_organization = "https://www.data.gouv.fr/api/1/organizations/?" \
+                   "sort=-datasets&page_size=" + str(page_size) + "&page=1"
 id_organizations = []
 organizations_collected_total = 0
-url_api_template = "https://www.data.gouv.fr/api/1/datasets/?page_size=" + str(page_size) + "&page=1&organization="
+url_api_template = "https://www.data.gouv.fr/api/1/datasets/?page_size=" + \
+                   str(page_size) + "&page=1&organization="
 datasets_collected_total = 0
 path_error = "../data/api_errors"
 n_errors = 0
@@ -152,7 +156,8 @@ else:
     os.mkdir(path_error)
 
 # get the id for each organization
-r = requests.get("https://www.data.gouv.fr/api/1/organizations/?sort=-datasets&page_size=1&page=1")
+r = requests.get("https://www.data.gouv.fr/api/1/organizations/?"
+                 "sort=-datasets&page_size=1&page=1")
 d = r.json()
 n_organizations = d["total"]
 print("number of organizations :", n_organizations)
@@ -223,4 +228,5 @@ for id_organization in id_organizations:
 
 print("-------------------------------------------------------------")
 print("errors :", n_errors)
-print(datasets_collected_total, "(meta)collected datasets (", round(datasets_collected_total / n_datasets * 100, 2), "% )")
+print(datasets_collected_total, "(meta)collected datasets (",
+      round(datasets_collected_total / n_datasets * 100, 2), "% )")

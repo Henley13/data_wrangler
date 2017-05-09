@@ -15,17 +15,17 @@ from tempfile import TemporaryDirectory
 print("\n")
 
 # path
-path_files = "../data/data_collected_csv"
+path_files = "../data/data_collected"
 sum_extension_path = "../data/sum_extension"
 path_log = "../data/log_cleaning"
 error_path = "../data/test_fitted/fit_errors"
 sum_error_path = "../data/sum_error"
 
 # parameters
-extension_bool = False
+extension_bool = True
 count_bool = True
 log_bool = True
-plot_bool = False
+plot_bool = True
 error_bool = True
 efficiency_bool = True
 
@@ -55,8 +55,10 @@ if extension_bool:
                         for file in z.namelist():
                             temp_path = os.path.join(temp_directory, file)
                             if os.path.isfile(temp_path):
-                                ext = magic.Magic(mime=True).from_file(temp_path)
-                                with open(sum_extension_path, mode="at", encoding="utf-8") as f:
+                                ext = magic.Magic(mime=True)\
+                                    .from_file(temp_path)
+                                with open(sum_extension_path, mode="at",
+                                          encoding="utf-8") as f:
                                     f.write(";".join([ext, "True"]))
                                     f.write("\n")
                 except:
@@ -71,15 +73,18 @@ if extension_bool:
 if count_bool:
     print("### count ###", "\n")
     # analyze data
-    df_extension = pd.read_csv(sum_extension_path, sep=";", encoding="utf-8", index_col=False)
+    df_extension = pd.read_csv(sum_extension_path, sep=";", encoding="utf-8",
+                               index_col=False)
     print(list(df_extension.columns))
     print(df_extension.shape, "\n")
     print("total files :")
     print(df_extension["extension"].value_counts(), "\n")
     print("unzipped files :")
-    print(df_extension.query("zipfile == True")["extension"].value_counts(), "\n")
+    print(df_extension.query("zipfile == True")["extension"].value_counts(),
+          "\n")
     print("direct files :")
-    print(df_extension.query("zipfile == False")["extension"].value_counts(), "\n")
+    print(df_extension.query("zipfile == False")["extension"].value_counts(),
+          "\n")
 
     print("##########################################################", "\n")
 
@@ -122,7 +127,7 @@ if log_bool:
         plt.xlabel("Number of columns")
         plt.ylabel("Number of rows")
         plt.title("Files size (%i files)" % df_log.shape[0])
-        plt.show()
+        plt.savefig("fig_1.png")
 
     print("##########################################################", "\n")
 
@@ -148,11 +153,13 @@ if error_bool:
             error = c[3].split(" ")[0]
             content = c[-2]
         with open(sum_error_path, mode="at", encoding="utf-8") as f:
-            f.write(";".join([str(filename), str(extension), str(error), str(content)]))
+            f.write(";".join([str(filename), str(extension), str(error),
+                              str(content)]))
             f.write("\n")
 
     # analyze data
-    df_error = pd.read_csv(sum_error_path, sep=";", encoding="utf-8", index_col=False)
+    df_error = pd.read_csv(sum_error_path, sep=";", encoding="utf-8",
+                           index_col=False)
     print(list(df_error.columns))
     print(df_error.shape, "\n")
     print(df_error['extension'].value_counts(), "\n")
@@ -165,8 +172,9 @@ if error_bool:
         print("extension :", ext, "\n")
         query = "extension == '%s'" % ext
         print(df_error.query(query)["error"].value_counts(), "\n")
-        max_error = df_error.query(query)["error"].value_counts().index.tolist()[0]
-        print(df_error.query("error == '%s'" % max_error)["content"].value_counts(), "\n")
+        max_e = df_error.query(query)["error"].value_counts().index.tolist()[0]
+        print(df_error.query("error == '%s'" % max_e)["content"].
+              value_counts(), "\n")
         print("---", "\n")
 
     print("##########################################################", "\n")
@@ -179,14 +187,15 @@ if efficiency_bool:
     print("### efficiency ###", "\n")
     efficiency = {}
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
-    df_extension = pd.read_csv(sum_extension_path, sep=";", encoding="utf-8", index_col=False)
+    df_extension = pd.read_csv(sum_extension_path, sep=";", encoding="utf-8",
+                               index_col=False)
     extensions = list(set(list(df_log["extension"])))
     for ext in extensions:
         query = "extension == '%s'" % ext
         # todo correct excel sheet
-        efficiency[ext] = round(df_log.query(query).shape[0] / df_extension.query(query).shape[0] * 100, 2)
+        efficiency[ext] = round(df_log.query(query).shape[0] / df_extension.
+                                query(query).shape[0] * 100, 2)
         print(efficiency[ext], "% ==>", ext)
     print("\n")
 
     print("##########################################################", "\n")
-
