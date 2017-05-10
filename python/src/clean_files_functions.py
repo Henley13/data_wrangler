@@ -59,7 +59,8 @@ def get_ready(output_directory, path_log, reset=False):
         os.remove(path_log)
     with open(path_log, mode="at", encoding="utf-8") as f:
         f.write("filename;source_file;n_row;n_col;integer;float;object;"
-                "metadata;time;header;multiheader;header_name;extension")
+                "metadata;time;header;multiheader;header_name;extension;"
+                "zipfile")
         f.write("\n")
     # check output directory for metadata exists
     path_metadata = os.path.join(output_directory, "metadata")

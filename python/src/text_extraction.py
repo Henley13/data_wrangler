@@ -6,14 +6,11 @@
 # libraries
 import nltk
 from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import numpy as np
 import time
 import os
-import re
-import unidecode
-import scipy.sparse as sp
 nltk.data.path.append("../data/nltk_data")
 print("\n")
 
@@ -21,105 +18,97 @@ print("\n")
 content_bool = True
 header_bool = True
 french_stopwords = list(set(stopwords.words('french')))
-french_stopwords += ["unnamed", "http", "nc", "le", "la", "les", "un", "des"]
+french_stopwords += ["unnamed", "http", "les", "des"]
 
 # path
 data_directory = "../data/test_fitted"
 path_log = "../data/log_cleaning"
-path_token = "../data/token_count.npz"
 path_vocabulary = "../data/token_vocabulary"
 path_tfidf = "../data/tfidf.npz"
 
 # other
-tokenizer = nltk.data.load('tokenizers/punkt/PY3/french.pickle')
-for letter in "abcdefghijklmnopqrstuvwxyz":
-    french_stopwords.append(letter)
-delay = 0
+# tokenizer = nltk.data.load('tokenizers/punkt/PY3/french.pickle')
 
 
-def remove_accent(s):
+def text_content_extraction(path_log=path_log, data_directory=data_directory,
+                            content_bool=content_bool, header_bool=header_bool):
     """
-    Function to remove accent from a string
-    :param s: string
-    :return: string (ASCII)
+    Function to extract the textual content from the files
+    :param path_log: string
+    :param data_directory: string
+    :param content_bool: boolean
+    :param header_bool: boolean
+    :return: list of strings
     """
-    # s = s.replace("é", "e").replace("è", "e").replace("à", "a").replace("ù", "u").replace("ê", "e").replace("â", "a")
-    s = unidecode.unidecode(s)
-    return s
-
-
-def extraction(path_log, data_directory, content_bool, header_bool, french_stopwords):
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
     print("number of files: ", df_log.shape[0], "\n")
-    # create an empty temporary text file
-    path_temp = os.path.join(data_directory, "temp_tokens")
-    if os.path.isfile(path_temp):
-        os.remove(path_temp)
+    full_text = []
     for i in range(df_log.shape[0]):
         if i % 100 == 0:
             print(i)
         filename = df_log.at[i, "filename"]
         multi_header = df_log.at[i, "multiheader"]
         header = df_log.at[i, "header_name"]
+        if header_bool:
+            text = header
+        else:
+            text = ""
         path = os.path.join(data_directory, filename)
         index = [0]
+        # TODO correct multiheader
         if multi_header:
             index = pd.MultiIndex.from_tuples(header)
-        l = []
-        l_header = []
-        with open(path, mode="rt", encoding="utf-8") as f:
-            j = 0
-            for row in f:
-                row = remove_accent(row).lower().strip()
-                if j not in index:
-                    l.append(row)
-                else:
-                    l_header.append(row)
-                j += 1
-        tokens_file = []
         if content_bool:
-            text_content = " ".join(l)
-            tokens_file += nltk.word_tokenize(text_content)
-        if header_bool:
-            text_header = " ".join(l_header)
-            tokens_file += nltk.word_tokenize(text_header)
-        tokens_file = [token for token in tokens_file if
-                       token not in french_stopwords and not re.search('[0-9;,:/\\().+-><%_\'?!§*$&^"=`#~@]', token)]
-        # print(filename, ":", len(tokens_file), "mot(s)")
-        with open(path_temp, mode="at", encoding="utf-8") as f:
-            f.write(";".join(tokens_file))
-            f.write("\n")
-    size = os.path.getsize(path_temp)
-    print("size tokens :", size)
-    with open(path_temp, mode="rt", encoding="utf-8") as f:
-        tokens = [row.strip().split(";") for row in f]
-    os.remove(path_temp)
-    return tokens
+            with open(path, mode="rt", encoding="utf-8") as f:
+                for j, row in enumerate(f):
+                    if j not in index:
+                        text = text + " " + row.strip()
+        full_text.append(text)
+    return full_text
 
 
-def fit_sparse_matrix(token_document, indptr, indices, data, vocabulary):
+def tfidf_computation(path_log=path_log, data_directory=data_directory,
+                      content_bool=content_bool, header_bool=header_bool,
+                      stop_words=french_stopwords):
     """
-    Function to prepare a sparse matrix with word count
-    :param token_document: list of lists of tokens (one per document)
-    :param
-    :return: dictionary, list of integers, list of integers, list of integers
+    Function to compute tfidf matrix
+    :param path_log: string
+    :param data_directory: string
+    :param content_bool: boolean
+    :param header_bool: boolean
+    :param stop_words: list of strings
+    :return: sparse matrix [n_samples, n_features], dictionary
     """
-
-    indptr = [0]
-    indices = []
-    data = []
-    vocabulary = {}
-    for d in token_document:
-        for token in d:
-            index = vocabulary.setdefault(token, len(vocabulary))
-            indices.append(index)
-            data.append(1)
-        indptr.append(len(indices))
-    return vocabulary, indptr, indices, data
+    tfidf_vectorizer = TfidfVectorizer(input=u'content',
+                                       encoding=u'utf-8',
+                                       decode_error=u'strict',
+                                       strip_accents='unicode',
+                                       lowercase=True,
+                                       preprocessor=None,
+                                       tokenizer=None,
+                                       analyzer=u'word',
+                                       stop_words=stop_words,
+                                       token_pattern=r'\b[a-zA-Z][a-zA-Z][a-zA-Z]+\b',
+                                       ngram_range=(1, 1),
+                                       max_df=1.0,
+                                       min_df=1,
+                                       max_features=None,
+                                       vocabulary=None,
+                                       binary=False,
+                                       norm=u'l2',
+                                       use_idf=True,
+                                       smooth_idf=True,
+                                       sublinear_tf=False)
+    full_text = text_content_extraction(path_log, data_directory, content_bool,
+                                        header_bool)
+    print("\n", "tfidf computation...", "\n")
+    tfidf = tfidf_vectorizer.fit_transform(full_text)
+    return tfidf, tfidf_vectorizer.vocabulary_
 
 
 def save_sparse_csr(path, array):
-    np.savez(path, data=array.data, indices=array.indices, indptr=array.indptr, shape=array.shape)
+    np.savez(path, data=array.data, indices=array.indices, indptr=array.indptr,
+             shape=array.shape)
     return
 
 
@@ -140,47 +129,18 @@ def save_dictionary(dictionary, path, header):
             f.write("\n")
     return
 
+
 ###############################################################################
 ###############################################################################
+# feature_names = sorted(vocabulary, key=vocabulary.get)
 
 start = time.clock()
 
-# extract text
-tokens = extraction(path_log, data_directory, content_bool, header_bool, french_stopwords)
-
-end = time.clock()
-delay += end - start
-print("text extraction :", round(end - start, 2), "seconds")
-
-print("\n", "#######################", "\n")
-
-start = time.clock()
-
-# statistics
-print("number of documents :", len(tokens), "\n")
-vocabulary, indptr, indices, data = fit_sparse_matrix(tokens)
-feature_names = sorted(vocabulary, key=vocabulary.get)
-
-# count matrix
-X_sparse = sp.csr_matrix((data, indices, indptr), dtype=int)
-X = X_sparse.toarray()
-print("count matrix shape :", X.shape, "\n")
-
-end = time.clock()
-delay += end - start
-print("count matrix :", round(end - start, 2), "seconds")
-
-print("\n", "#######################", "\n")
-
-start = time.clock()
-
-# tfidf
-tfidf_vectorizer = TfidfTransformer()
-tfidf = tfidf_vectorizer.fit_transform(X)
+# compute tfidf matrix
+tfidf, vocabulary = tfidf_computation()
 print("tfidf shape :", tfidf.shape, "\n")
 
 end = time.clock()
-delay += end - start
 print("tf-idf :", round(end - start, 2), "seconds")
 
 print("\n", "#######################", "\n")
@@ -188,15 +148,14 @@ print("\n", "#######################", "\n")
 start = time.clock()
 
 # save results
-save_sparse_csr(path_token, X_sparse)
 save_sparse_csr(path_tfidf, tfidf)
 save_dictionary(vocabulary, path_vocabulary, ["word", "index"])
 
 end = time.clock()
-delay += end - start
 print("saving :", round(end - start, 2), "seconds")
 
 print("\n", "#######################", "\n")
 
-print("total time :", round(delay, 2), "seconds")
+import cProfile
 
+cProfile.run('tfidf_computation()', sort="tottime")
