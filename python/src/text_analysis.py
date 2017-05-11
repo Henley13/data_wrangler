@@ -30,7 +30,7 @@ def load_sparse_csr(path):
                          shape=loader['shape'])
 
 # parameters
-n_topics = 5
+n_topics = 4
 n_top_words = 20
 
 # path

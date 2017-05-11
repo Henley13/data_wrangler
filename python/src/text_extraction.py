@@ -30,14 +30,11 @@ path_tfidf = "../data/tfidf.npz"
 # tokenizer = nltk.data.load('tokenizers/punkt/PY3/french.pickle')
 
 
-def text_content_extraction(path_log=path_log, data_directory=data_directory,
-                            content_bool=content_bool, header_bool=header_bool):
+def text_content_extraction(path_log=path_log, data_directory=data_directory):
     """
     Function to extract the textual content from the files
     :param path_log: string
     :param data_directory: string
-    :param content_bool: boolean
-    :param header_bool: boolean
     :return: list of strings
     """
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
@@ -49,22 +46,68 @@ def text_content_extraction(path_log=path_log, data_directory=data_directory,
         filename = df_log.at[i, "filename"]
         multi_header = df_log.at[i, "multiheader"]
         header = df_log.at[i, "header_name"]
-        if header_bool:
-            text = header
-        else:
-            text = ""
         path = os.path.join(data_directory, filename)
         index = [0]
-        # TODO correct multiheader
         if multi_header:
             index = pd.MultiIndex.from_tuples(header)
-        if content_bool:
-            with open(path, mode="rt", encoding="utf-8") as f:
-                for j, row in enumerate(f):
-                    if j not in index:
-                        text = text + " " + row.strip()
+        with open(path, mode="rt", encoding="utf-8") as f:
+            for j in range(len(index)):
+                f.readline()
+            text = f.read()
         full_text.append(text)
     return full_text
+
+
+def text_header_extraction(path_log=path_log):
+    """
+    Function to extract the header from the files
+    :param path_log: string
+    :return: list of strings
+    """
+    df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
+    print("number of files: ", df_log.shape[0], "\n")
+    return list(df_log["header_name"])
+
+
+def text_full_extraction(path_log=path_log, data_directory=data_directory):
+    """
+    Function to extract the full textual content from the files
+    :param path_log: string
+    :param data_directory: string
+    :return: list of strings
+    """
+    df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
+    print("number of files: ", df_log.shape[0], "\n")
+    full_text = []
+    for i in range(df_log.shape[0]):
+        if i % 100 == 0:
+            print(i)
+        filename = df_log.at[i, "filename"]
+        path = os.path.join(data_directory, filename)
+        with open(path, mode="rt", encoding="utf-8") as f:
+            text = f.read()
+        full_text.append(text)
+    return full_text
+
+
+def text_extraction(path_log=path_log, data_directory=data_directory,
+                    content_bool=content_bool, header_bool=header_bool):
+    """
+    Function to select which textual part to extract from the files
+    :param path_log: string
+    :param data_directory: string
+    :param content_bool: boolean
+    :param header_bool: boolean
+    :return: list of strings
+    """
+    if content_bool and header_bool:
+        return text_full_extraction(path_log, data_directory)
+    elif content_bool and not header_bool:
+        return text_content_extraction(path_log, data_directory)
+    elif not content_bool and header_bool:
+        return text_header_extraction(path_log)
+    else:
+        raise ValueError("No text extracted")
 
 
 def tfidf_computation(path_log=path_log, data_directory=data_directory,
@@ -99,9 +142,12 @@ def tfidf_computation(path_log=path_log, data_directory=data_directory,
                                        use_idf=True,
                                        smooth_idf=True,
                                        sublinear_tf=False)
-    full_text = text_content_extraction(path_log, data_directory, content_bool,
-                                        header_bool)
-    print("\n", "tfidf computation...", "\n")
+    full_text = text_extraction(path_log,
+                                data_directory,
+                                content_bool,
+                                header_bool)
+    print()
+    print("tfidf computation...", "\n")
     tfidf = tfidf_vectorizer.fit_transform(full_text)
     return tfidf, tfidf_vectorizer.vocabulary_
 
@@ -132,7 +178,6 @@ def save_dictionary(dictionary, path, header):
 
 ###############################################################################
 ###############################################################################
-# feature_names = sorted(vocabulary, key=vocabulary.get)
 
 start = time.clock()
 
@@ -148,6 +193,7 @@ print("\n", "#######################", "\n")
 start = time.clock()
 
 # save results
+# feature_names = sorted(vocabulary, key=vocabulary.get)
 save_sparse_csr(path_tfidf, tfidf)
 save_dictionary(vocabulary, path_vocabulary, ["word", "index"])
 
@@ -156,6 +202,3 @@ print("saving :", round(end - start, 2), "seconds")
 
 print("\n", "#######################", "\n")
 
-import cProfile
-
-cProfile.run('tfidf_computation()', sort="tottime")

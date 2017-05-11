@@ -19,7 +19,7 @@ import pandas as pd
 from xlrd import open_workbook
 from xlutils.copy import copy
 from tempfile import TemporaryDirectory
-from .functions import log_error
+from functions import log_error
 from pandas.io.json import json_normalize
 from _csv import Error
 from csv import Sniffer
@@ -657,7 +657,7 @@ def save_results(df, metadata, filename, source_file, output_directory,
         metadata = True
     else:
         metadata = False
-    if isinstance(type(list(df.columns)[0]), tuple):
+    if not isinstance(list(df.columns)[0], str):
         multiheader = True
     else:
         multiheader = False
@@ -687,20 +687,22 @@ def get_df(path, list_content, bad_rows, encoding, sep, check_header, n_col):
     row_to_check_header = min(check_header, int(len(list_content) / 2))
     row_header, no_header = search_header(list_content, sep, n_col,
                                           row_to_check_header)
+    print(no_header, row_header)
     if row_header is None:
         return None, None
     if no_header:
         # TODO gérer le cas où row_header est supérieur à 0
         df = pd.read_csv(path, encoding=encoding, sep=sep, header=None,
                          skiprows=bad_rows, skip_blank_lines=False,
-                         low_memory=False, index_col=False)
+                         low_memory=False, index_col=False,)
     else:
         if row_header > 0:
             row_header = [i for i in range(row_header + 1)]
+        print(row_header)
         df = pd.read_csv(path, encoding=encoding, sep=sep, header=row_header,
                          skiprows=bad_rows,
                          skip_blank_lines=False, low_memory=False,
-                         index_col=False)
+                         index_col=None)
     if df is None:
         return None, None
     pd.to_numeric(df.columns, errors="ignore")
@@ -1007,20 +1009,31 @@ def clean_sheet_excel(read_book, sheet_name, temporary_path, check_header):
 
 if __name__ == "__main__":
     print("\n")
-    input = "../data/data_collected_json"
-    output = "../data/test_fitted"
-    log = "../data/log_cleaning"
-    error = os.path.join(output, "fit_errors")
-    for file in os.listdir(input):
+    input = "../data/data_collected_csv"
+    output = "../data/test"
+    log = "../data/log_cleaning_test"
+    # error = os.path.join(output, "fit_errors")
+    path_error = get_ready(output, log, True)
+    # for file in os.listdir(input):
+    for file in ["80483a4f-b98a-442d-92c0-cd2d22de2df2"]:
         size = os.path.getsize(os.path.join(input, file))
         if size <= 0:
             continue
         print("filename :", file)
         start_test = time.clock()
         try:
-            pass
+            cleaner(file, input, output, log,
+                    threshold_n_row=100, ratio_sample=20, max_sample=1000,
+                    threshold_n_col=0.8, check_header=10, threshold_json=0.004)
         except:
-            log_error(os.path.join(error, file), [file])
+            path = os.path.join(input, file)
+            size_file = os.path.getsize(path)
+            extension = ""
+            if size_file > 0 and not os.path.isfile(
+                    os.path.join(output,
+                                 file)):
+                extension = magic.Magic(mime=True).from_file(path)
+            log_error(os.path.join(path_error, file), [file, extension])
         end_test = time.clock()
         print("duration :", round(end_test - start_test, 2), "second(s)", "\n")
 
