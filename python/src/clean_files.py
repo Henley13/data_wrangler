@@ -6,8 +6,8 @@
 # libraries
 import os
 import magic
-from .clean_files_functions import cleaner, get_ready
-from .functions import log_error
+from clean_files_functions import cleaner, get_ready
+from functions import log_error
 from joblib import Parallel, delayed
 print("\n")
 
@@ -25,9 +25,9 @@ workers = 2
 reset = True
 
 # paths
-input_directory = "../data/data_collected_xml"
-output_directory = "../data/test_fitted2"
-path_log = "../data/log_cleaning2"
+input_directory = "../data/data_collected_xls"
+output_directory = "../data/test_fitted"
+path_log = "../data/log_cleaning"
 n_files = len(os.listdir(input_directory))
 print("number of files :", n_files, "\n")
 

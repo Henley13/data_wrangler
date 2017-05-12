@@ -53,7 +53,7 @@ df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
                  index_col=False)
 print("number of unique word :", df.shape[0])
 feature_names = list(df["word"])
-print(feature_names)
+# print(feature_names)
 
 print("\n", "#######################", "\n")
 

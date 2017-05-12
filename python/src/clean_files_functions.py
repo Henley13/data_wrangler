@@ -687,7 +687,6 @@ def get_df(path, list_content, bad_rows, encoding, sep, check_header, n_col):
     row_to_check_header = min(check_header, int(len(list_content) / 2))
     row_header, no_header = search_header(list_content, sep, n_col,
                                           row_to_check_header)
-    print(no_header, row_header)
     if row_header is None:
         return None, None
     if no_header:
@@ -698,7 +697,6 @@ def get_df(path, list_content, bad_rows, encoding, sep, check_header, n_col):
     else:
         if row_header > 0:
             row_header = [i for i in range(row_header + 1)]
-        print(row_header)
         df = pd.read_csv(path, encoding=encoding, sep=sep, header=row_header,
                          skiprows=bad_rows,
                          skip_blank_lines=False, low_memory=False,

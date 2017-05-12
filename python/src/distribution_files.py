@@ -15,7 +15,7 @@ from tempfile import TemporaryDirectory
 print("\n")
 
 # path
-path_files = "../data/data_collected"
+path_files = "../data/data_collected_xls"
 sum_extension_path = "../data/sum_extension"
 path_log = "../data/log_cleaning"
 error_path = "../data/test_fitted/fit_errors"
@@ -155,7 +155,6 @@ if error_bool:
         with open(sum_error_path, mode="at", encoding="utf-8") as f:
             f.write(";".join([str(filename), str(extension), str(error),
                               str(content)]))
-            f.write("\n")
 
     # analyze data
     df_error = pd.read_csv(sum_error_path, sep=";", encoding="utf-8",
@@ -171,9 +170,10 @@ if error_bool:
     for ext in extensions:
         print("extension :", ext, "\n")
         query = "extension == '%s'" % ext
-        print(df_error.query(query)["error"].value_counts(), "\n")
-        max_e = df_error.query(query)["error"].value_counts().index.tolist()[0]
-        print(df_error.query("error == '%s'" % max_e)["content"].
+        df_error_ext = df_error.query(query)
+        print(df_error_ext["error"].value_counts(), "\n")
+        max_e = df_error_ext["error"].value_counts().index.tolist()[0]
+        print(df_error_ext.query("error == '%s'" % max_e)["content"].
               value_counts(), "\n")
         print("---", "\n")
 
@@ -189,12 +189,16 @@ if efficiency_bool:
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
     df_extension = pd.read_csv(sum_extension_path, sep=";", encoding="utf-8",
                                index_col=False)
-    extensions = list(set(list(df_log["extension"])))
-    for ext in extensions:
+    df_error = pd.read_csv(sum_error_path, sep=";", encoding="utf-8",
+                           index_col=False)
+    for ext in list(set(list(df_extension["extension"]))):
         query = "extension == '%s'" % ext
-        # todo correct excel sheet
-        efficiency[ext] = round(df_log.query(query).shape[0] / df_extension.
-                                query(query).shape[0] * 100, 2)
+        n_success = df_log.query(query).shape[0]
+        n_fail = df_error.query(query).shape[0]
+        if n_success + n_fail == 0:
+            efficiency[ext] = 0.0
+        else:
+            efficiency[ext] = round(n_success / (n_success + n_fail) * 100, 2)
         print(efficiency[ext], "% ==>", ext)
     print("\n")
 
