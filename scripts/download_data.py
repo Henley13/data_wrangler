@@ -7,10 +7,12 @@
 import os
 import shutil
 from contextlib import closing
-from urllib.request import urlopen
-from lxml import etree
-from .functions import log_error
 from joblib import Parallel, delayed
+from lxml import etree
+from urllib.request import urlopen
+
+from src.toolbox.utils import log_error
+
 print("\n")
 
 

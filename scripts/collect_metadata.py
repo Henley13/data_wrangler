@@ -5,12 +5,14 @@
 in a xml format. """
 
 # libraries
+import math
 import os
 import requests
-import math
 import sys
 from lxml import etree, objectify
-from .functions import log_error
+
+from src.toolbox.utils import log_error
+
 print("\n")
 
 

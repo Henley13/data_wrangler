@@ -4,12 +4,14 @@
 # libraries
 import os
 import re
-import time
-from urllib.parse import urljoin
 import requests
 import subprocess
-from .functions import TryMultipleTimes
+import time
 from lxml import etree
+from urllib.parse import urljoin
+
+from src.toolbox.utils import TryMultipleTimes
+
 print("\n")
 
 # http://docs.basex.org/wiki/REST

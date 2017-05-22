@@ -4,11 +4,13 @@
 """ Detect the file extension and reshape it. """
 
 # libraries
-import os
 import magic
-from clean_files_functions import cleaner, get_ready
+import os
 from functions import log_error
 from joblib import Parallel, delayed
+
+from src.toolbox.clean import cleaner, get_ready
+
 print("\n")
 
 ##############
