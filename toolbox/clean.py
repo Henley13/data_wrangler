@@ -1,5 +1,4 @@
-#!/bin/python3
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """ Different functions used to detect the file extension and reshape it. """
 
@@ -19,24 +18,31 @@ import pandas as pd
 from xlrd import open_workbook
 from xlutils.copy import copy
 from tempfile import TemporaryDirectory
-from functions import log_error
+from .utils import reset_log_error
 from pandas.io.json import json_normalize
 from _csv import Error
 from csv import Sniffer
 from lxml import etree
 from collections import Counter
-random.seed(123)
+# random.seed(123)
 print("\n")
 
 
-def get_ready(output_directory, path_log, reset=False):
+def get_ready(result_directory, reset=False):
     """
     Function to make the output directory ready to host extracted data
-    :param output_directory: string
-    :param path_log: string
+    :param result_directory: string
     :param reset: boolean
-    :return: string
+    :return: string, string, string, string
     """
+    # paths
+    output_directory = os.path.join(result_directory, "data_fitted")
+    path_log = os.path.join(result_directory, "log_cleaning")
+    path_error = os.path.join(result_directory, "fit_errors")
+    path_metadata = os.path.join(result_directory, "metadata_cleaning")
+    # check result directory
+    if not os.path.isdir(result_directory):
+        os.mkdir(result_directory)
     # check output directory exists
     if reset:
         if os.path.isdir(output_directory):
@@ -48,12 +54,7 @@ def get_ready(output_directory, path_log, reset=False):
         if not os.path.isdir(output_directory):
             os.mkdir(output_directory)
     # reset the error
-    path_error = os.path.join(output_directory, "fit_errors")
-    if os.path.isdir(path_error):
-        for file in os.listdir(path_error):
-            os.remove(os.path.join(path_error, file))
-    else:
-        os.mkdir(path_error)
+    reset_log_error(path_error)
     # reset the log
     if os.path.isfile(path_log):
         os.remove(path_log)
@@ -63,10 +64,9 @@ def get_ready(output_directory, path_log, reset=False):
                 "zipfile")
         f.write("\n")
     # check output directory for metadata exists
-    path_metadata = os.path.join(output_directory, "metadata")
     if not os.path.isdir(path_metadata):
         os.mkdir(path_metadata)
-    return path_error
+    return output_directory, path_log, path_error, path_metadata
 
 
 def cleaner(filename, input_directory, output_directory, path_log,
@@ -1003,36 +1003,3 @@ def clean_sheet_excel(read_book, sheet_name, temporary_path, check_header):
     df, no_header = get_df(temp_sheet_path, list_content, bad_rows, "utf-8",
                            ";", check_header, s.ncols)
     return df, metadata, no_header
-
-
-if __name__ == "__main__":
-    print("\n")
-    input = "../data/data_collected_csv"
-    output = "../data/test"
-    log = "../data/log_cleaning_test"
-    # error = os.path.join(output, "fit_errors")
-    path_error = get_ready(output, log, True)
-    # for file in os.listdir(input):
-    for file in ["80483a4f-b98a-442d-92c0-cd2d22de2df2"]:
-        size = os.path.getsize(os.path.join(input, file))
-        if size <= 0:
-            continue
-        print("filename :", file)
-        start_test = time.clock()
-        try:
-            cleaner(file, input, output, log,
-                    threshold_n_row=100, ratio_sample=20, max_sample=1000,
-                    threshold_n_col=0.8, check_header=10, threshold_json=0.004)
-        except:
-            path = os.path.join(input, file)
-            size_file = os.path.getsize(path)
-            extension = ""
-            if size_file > 0 and not os.path.isfile(
-                    os.path.join(output,
-                                 file)):
-                extension = magic.Magic(mime=True).from_file(path)
-            log_error(os.path.join(path_error, file), [file, extension])
-        end_test = time.clock()
-        print("duration :", round(end_test - start_test, 2), "second(s)", "\n")
-
-    print("number of fitted files :", len(os.listdir(output)), "\n")

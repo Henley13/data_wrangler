@@ -1,9 +1,11 @@
-# scratch scripts
-_*
-scratch.py
+# scratch folder
+old
 
 # basex folder
 WEB-INF
 
 # cache folder
 __pycache__
+
+# gitkeep
+!__init__.py

@@ -1,7 +1,6 @@
-#!/bin/python3
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
-""" We collect metadata on data.gouv.fr about numerous datasets and store it
+""" We collect metadata from data.gouv.fr about numerous datasets and store it
 in a xml format. """
 
 # libraries
@@ -10,9 +9,7 @@ import os
 import requests
 import sys
 from lxml import etree, objectify
-
-from src.toolbox.utils import log_error
-
+from src.toolbox.utils import log_error, get_config_tag, reset_log_error
 print("\n")
 
 
@@ -130,15 +127,18 @@ def create_xml(data):
     etree.cleanup_namespaces(root)
     # create the xml string
     obj_xml = etree.tostring(root, pretty_print=True, xml_declaration=True,
-                             encoding="UTF-8")
+                             encoding="utf-8")
     # save the xml
-    filename = directory + data["id"] + ".xml"
-    with open(filename, "wb") as xml_writer:
+    filepath = os.path.join(output_directory, data["id"] + ".xml")
+    with open(filepath, "wb") as xml_writer:
         xml_writer.write(obj_xml)
     return
 
-# variables
-directory = "../data/metadata/"
+# path
+output_directory = get_config_tag("output", "metadata")
+path_error = get_config_tag("error", "metadata")
+
+# parameters
 page_size = 50
 url_organization = "https://www.data.gouv.fr/api/1/organizations/?" \
                    "sort=-datasets&page_size=" + str(page_size) + "&page=1"
@@ -147,15 +147,14 @@ organizations_collected_total = 0
 url_api_template = "https://www.data.gouv.fr/api/1/datasets/?page_size=" + \
                    str(page_size) + "&page=1&organization="
 datasets_collected_total = 0
-path_error = "../data/api_errors"
 n_errors = 0
 
 # reset the log
-if os.path.isdir(path_error):
-    for file in os.listdir(path_error):
-        os.remove(file)
-else:
-    os.mkdir(path_error)
+reset_log_error(path_error)
+
+# check if the output directory exists
+if not os.path.isdir(output_directory):
+    os.mkdir(output_directory)
 
 # get the id for each organization
 r = requests.get("https://www.data.gouv.fr/api/1/organizations/?"
@@ -178,12 +177,6 @@ while organizations_collected_total < n_organizations:
 # check if all the organizations have been correctly collected
 if len(id_organizations) != n_organizations:
     sys.exit("Organizations are missing!")
-
-# check if the output directory exists
-if not os.path.isdir(directory):
-    os.mkdir(directory)
-    print(directory, "created")
-    print("\n")
 
 # get general data from data.gouv API
 r = requests.get("https://www.data.gouv.fr/api/1/datasets/?page_size=1&page=1")

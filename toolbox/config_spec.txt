@@ -1,0 +1,32 @@
+[metadata]
+
+    output = string
+    error = string
+
+[basex]
+
+    input = string
+    output = string
+
+[download]
+
+    input = string
+    output = string
+    error = string
+    n_jobs = integer
+
+[cleaning]
+
+    input = string
+    result = string
+    reset = boolean
+    n_jobs = integer
+    threshold_n_row = integer
+    ratio_sample = integer
+    max_sample = integer
+    threshold_n_col = float
+    check_header = integer
+    threshold_json = float
+
+
+

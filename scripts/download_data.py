@@ -1,5 +1,4 @@
-#!/bin/python3
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """ We download data from their url."""
 
@@ -10,9 +9,7 @@ from contextlib import closing
 from joblib import Parallel, delayed
 from lxml import etree
 from urllib.request import urlopen
-
-from src.toolbox.utils import log_error
-
+from src.toolbox.utils import log_error, get_config_tag, reset_log_error
 print("\n")
 
 
@@ -65,23 +62,18 @@ def worker_activity(url_title):
     """
     download(url_title[0], url_title[1])
 
-# variables
-directory = "../data/data_collected_xls"
-filename = "../url_xls.xml"
-path_error = "../data/download_errors"
+# path
+filename = get_config_tag("input", "download")
+directory = get_config_tag("output", "download")
+path_error = get_config_tag("error", "download")
+n_jobs = get_config_tag("n_jobs", "download")
 
 # reset the log
-if os.path.isdir(path_error):
-    for file in os.listdir(path_error):
-        os.remove(os.path.join(path_error, file))
-else:
-    os.mkdir(path_error)
+reset_log_error(path_error)
 
 # check if the output directory exists
 if not os.path.isdir(directory):
     os.mkdir(directory)
-    print(directory, "created")
-    print("\n")
 
 # get the url list
 l_tables = []
@@ -95,9 +87,9 @@ for table in tree.xpath("/results/table"):
         l_tables.append([url, title])
 
 # multiprocessing
-Parallel(n_jobs=4, verbose=20)(delayed(worker_activity)(url_title=l)
-                               for l in l_tables)
+Parallel(n_jobs=n_jobs, verbose=20)(delayed(worker_activity)(url_title=l)
+                                    for l in l_tables)
 
-print("\n")
+print()
 print("total number of files :", len(os.listdir(directory)))
 directory_size(directory)

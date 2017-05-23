@@ -1,64 +1,33 @@
-#!/bin/python3
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """ Detect the file extension and reshape it. """
 
 # libraries
 import magic
 import os
-from functions import log_error
 from joblib import Parallel, delayed
-
+from src.toolbox.utils import log_error, get_config_tag
 from src.toolbox.clean import cleaner, get_ready
-
 print("\n")
 
-##############
-# parameters #
-##############
+# parameters
+input_directory = get_config_tag("input", "cleaning")
+result_directory = get_config_tag("result", "cleaning")
+workers = get_config_tag("n_jobs", "cleaning")
+reset = get_config_tag("reset", "cleaning")
+threshold_n_row = get_config_tag("threshold_n_row", "cleaning")
+ratio_sample = get_config_tag("ratio_sample", "cleaning")
+max_sample = get_config_tag("max_sample", "cleaning")
+threshold_n_col = get_config_tag("threshold_n_col", "cleaning")
+check_header = get_config_tag("check_header", "cleaning")
+threshold_json = get_config_tag("threshold_json", "cleaning")
 
-##############################################################################
-##############################################################################
-
-# number of workers to use
-workers = 2
-
-# boolean to reset the output directory or not
-reset = True
-
-# paths
-input_directory = "../data/data_collected_xls"
-output_directory = "../data/test_fitted"
-path_log = "../data/log_cleaning"
 n_files = len(os.listdir(input_directory))
 print("number of files :", n_files, "\n")
 
-# minimum number of rows needed to analyze a sample of the file
-# (otherwise, we use the entire file)
-threshold_n_row = 100
-
-# percentage of rows to extract from the file to build a sample
-ratio_sample = 20
-
-# maximum size of a sample
-max_sample = 1000
-
-# minimum frequency to reach in order to accept a number of columns
-# (n_col = N if at least threshold_n_col * 100 % rows have N columns)
-threshold_n_col = 0.8
-
-# number of rows to analyze when we are searching for a consistent header
-check_header = 10
-
-# minimum frequency to reach for specific characters in order to classify
-# a file as a json
-threshold_json = 0.004
-
-##############################################################################
-##############################################################################
-
-# make the output directory ready
-path_error = get_ready(output_directory, path_log, reset)
+# make the result directory ready
+output_directory, path_log, path_error, path_metadata = \
+    get_ready(result_directory, reset)
 
 
 def worker_cleaning_activity(filename,
@@ -84,6 +53,8 @@ def worker_cleaning_activity(filename,
         path = os.path.join(input_directory, filename)
         size_file = os.path.getsize(path)
         extension = ""
+        print(size_file)
+        print(os.path.isfile(os.path.join(output_directory, filename)))
         if size_file > 0 and not os.path.isfile(os.path.join(output_directory,
                                                              filename)):
             extension = magic.Magic(mime=True).from_file(path)

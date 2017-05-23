@@ -1,1 +1,55 @@
-blabla
+[metadata]
+
+    # paths
+    output = "../../data/metadata"
+    error = "../../data/errors/metadata_api_errors"
+
+[basex]
+
+    # paths
+    input = "../../data/metadata"
+    output = "../../data/url/url.xml"
+
+[download]
+
+    # paths
+    input = "../../data/url/url.xml"
+    output = "../../data/data_collected"
+    error = "../../data/errors/download_errors"
+
+    # number of workers to use
+    n_jobs = 4
+
+[cleaning]
+
+    # paths
+    input = "../../data/data_collected"
+    result = "../../data/res1"
+
+    # boolean to reset the output directory or not
+    reset = True
+
+    # number of workers to use
+    n_jobs = 2
+
+    # minimum number of rows needed to analyze a sample of the file
+    # (otherwise, we use the entire file)
+    threshold_n_row = 100
+
+    # percentage of rows to extract from the file to build a sample
+    ratio_sample = 20
+
+    # maximum size of a sample
+    max_sample = 1000
+
+    # minimum frequency to reach in order to accept a number of columns
+    # (n_col = N if at least threshold_n_col * 100 % rows have N columns)
+    threshold_n_col = 0.8
+
+    # number of rows to analyze when we are searching for a consistent header
+    check_header = 10
+
+    # minimum frequency to reach for specific characters in order to classify
+    # a file as a json
+    threshold_json = 0.004
+

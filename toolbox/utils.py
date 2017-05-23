@@ -1,17 +1,61 @@
-#!/bin/python3
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """ Different functions used in several python scripts. """
 
 # libraries
 import sys
+import os
 import time
 from joblib.format_stack import format_exc
+from configobj import ConfigObj, ConfigObjError
+from validate import Validator
+
+
+def reset_log_error(path_error):
+    """
+    Function to reset the error directory
+    :param path_error: string
+    :return:
+    """
+    # initialize files and directories
+    if not os.path.isdir(os.path.dirname(path_error)):
+        os.mkdir(os.path.dirname(path_error))
+    if not os.path.isdir(path_error):
+        os.mkdir(path_error)
+    else:
+        for file in os.listdir(path_error):
+            os.remove(os.path.join(path_error, file))
+    return
+
+
+def _get_config_spec():
+    return os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'config_spec.txt')
+
+
+def get_config_tag(tag, section, version=0):
+    """
+    Function to get parameters values and path from a configuration file
+    :param tag: string
+    :param section: string
+    :param version: integer
+    :return:
+    """
+    config = ConfigObj("../config.txt",
+                       encoding="utf-8",
+                       configspec=_get_config_spec())
+    test = config.validate(Validator())
+    if test is not True:
+        raise ConfigObjError("Config file validation failed.")
+    if version > 0:
+        return config[section][section+version][tag]
+    else:
+        return config[section][tag]
 
 
 def log_error(path_error, source):
     """
-    Function to write errors in a text file.
+    Function to write errors in a text file
     :param source: list of strings
     :param path_error: string
     :return:
@@ -19,7 +63,7 @@ def log_error(path_error, source):
     exc_type, exc_value, exc_traceback = sys.exc_info()
     text = format_exc(exc_type, exc_value, exc_traceback, context=5,
                       tb_offset=0)
-    with open(path_error, mode='a', encoding='utf-8') as f:
+    with open(path_error, mode='wt', encoding='utf-8') as f:
         f.write("##########################################################"
                 "########### \n")
         for i in source:
@@ -39,17 +83,14 @@ def _raise_again(exception):
     raise exception
 
 
-def _if_null(value, default):
-    if value is None:
-        return default
-    return value
-
-
 def _pause(duration=5):
     time.sleep(duration)
 
 
 class TryMultipleTimes(object):
+    """
+    Class used as decorator
+    """
 
     def __init__(self, action=_pause, on_fail=_raise_again, n_tries=5):
         self.action_ = action
@@ -61,7 +102,6 @@ class TryMultipleTimes(object):
             n_tries = kwargs.get('n_tries', self.n_tries_)
             action = kwargs.get('action', self.action_)
             on_fail = kwargs.get('on_fail', self.on_fail_)
-            error = None
             tries = 0
             while True:
                 try:
@@ -71,6 +111,6 @@ class TryMultipleTimes(object):
                     if tries == n_tries:
                         break
                 tries += 1
-                action(*args, **dict(kwargs, error=error))
+                action()
             on_fail(error)
         return decorate
