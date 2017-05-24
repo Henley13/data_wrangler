@@ -1,5 +1,4 @@
-#!/bin/python3
-# coding: utf-8
+# -*- coding: utf-8 -*-
 
 """ Function to compute some basic statistics on the fitted files. """
 
@@ -12,22 +11,25 @@ import zipfile
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from tempfile import TemporaryDirectory
+from toolbox.utils import get_config_tag
 print("\n")
 
-# path
-path_files = "../data/data_collected_xls"
-sum_extension_path = "../data/sum_extension"
-path_log = "../data/log_cleaning"
-error_path = "../data/test_fitted/fit_errors"
-sum_error_path = "../data/sum_error"
+# paths
+files_directory = get_config_tag("input", "cleaning")
+result_directory = get_config_tag("result", "cleaning")
+sum_extension_path = os.path.join(result_directory, "sum_extension")
+path_log = os.path.join(result_directory, "log_cleaning")
+errors_directory = os.path.join(result_directory, "fit_errors")
+sum_error_path = os.path.join(result_directory, "sum_error")
+graph_directory = os.path.join(result_directory, "graphs")
 
 # parameters
-extension_bool = True
-count_bool = True
-log_bool = True
-plot_bool = True
-error_bool = True
-efficiency_bool = True
+extension_bool = get_config_tag("extension", "distribution")
+count_bool = get_config_tag("count", "distribution")
+log_bool = get_config_tag("log", "distribution")
+plot_bool = get_config_tag("plot", "distribution")
+error_bool = get_config_tag("error", "distribution")
+efficiency_bool = get_config_tag("efficiency", "distribution")
 
 #############
 # extension #
@@ -42,8 +44,8 @@ if extension_bool:
         f.write("extension;zipfile")
         f.write("\n")
     d_extensions = defaultdict(lambda x: 0)
-    for filename in os.listdir(path_files):
-        path_file = os.path.join(path_files, filename)
+    for filename in os.listdir(files_directory):
+        path_file = os.path.join(files_directory, filename)
         size_file = os.path.getsize(path_file)
         if size_file > 0:
             ext = magic.Magic(mime=True).from_file(path_file)
@@ -123,11 +125,40 @@ if log_bool:
 
     # plot
     if plot_bool:
+
+        # check if the graph directory exists
+        if not os.path.isdir(graph_directory):
+            os.mkdir(graph_directory)
+
+        # draw scatter plots
+        plt.scatter(df_log["n_col"], df_log["n_row"], c="green", alpha=0.8)
+        plt.xlabel("Number of columns (log scale)")
+        plt.ylabel("Number of rows (log scale)")
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.title("Files size (%i files)" % df_log.shape[0])
+        path = os.path.join(graph_directory,
+                            "size distribution (log log).png")
+        plt.savefig(path)
+
         plt.scatter(df_log["n_col"], df_log["n_row"], c="green", alpha=0.8)
         plt.xlabel("Number of columns")
         plt.ylabel("Number of rows")
+        plt.xscale("linear")
+        plt.yscale("linear")
         plt.title("Files size (%i files)" % df_log.shape[0])
-        plt.savefig("fig_1.png")
+        path = os.path.join(graph_directory, "size distribution.png")
+        plt.savefig(path)
+
+        plt.scatter(df_log["n_col"], df_log["n_row"], c="green", alpha=0.8)
+        plt.xlabel("Number of columns")
+        plt.ylabel("Number of rows (log scale)")
+        plt.xscale("linear")
+        plt.yscale("log")
+        plt.title("Files size (%i files)" % df_log.shape[0])
+        path = os.path.join(graph_directory,
+                            "size distribution (log linear).png")
+        plt.savefig(path)
 
     print("##########################################################", "\n")
 
@@ -145,8 +176,8 @@ if error_bool:
         f.write("\n")
 
     # get data
-    for filename in os.listdir(error_path):
-        path = os.path.join(error_path, filename)
+    for filename in os.listdir(errors_directory):
+        path = os.path.join(errors_directory, filename)
         with open(path, mode="rt", encoding="utf-8") as f:
             c = f.readlines()
             extension = c[2].strip()

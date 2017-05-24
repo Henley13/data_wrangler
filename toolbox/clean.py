@@ -15,10 +15,10 @@ import xmljson
 import re
 import numpy as np
 import pandas as pd
+from .utils import reset_log_error
 from xlrd import open_workbook
 from xlutils.copy import copy
 from tempfile import TemporaryDirectory
-from .utils import reset_log_error
 from pandas.io.json import json_normalize
 from _csv import Error
 from csv import Sniffer
@@ -59,151 +59,149 @@ def get_ready(result_directory, reset=False):
     if os.path.isfile(path_log):
         os.remove(path_log)
     with open(path_log, mode="at", encoding="utf-8") as f:
-        f.write("filename;source_file;n_row;n_col;integer;float;object;"
-                "metadata;time;header;multiheader;header_name;extension;"
+        f.write("matrix_name;file_name;source_file;n_row;n_col;integer;float;"
+                "object;metadata;time;header;multiheader;header_name;extension;"
                 "zipfile")
         f.write("\n")
     # check output directory for metadata exists
-    if not os.path.isdir(path_metadata):
-        os.mkdir(path_metadata)
+    if reset:
+        if os.path.isdir(path_metadata):
+            shutil.rmtree(path_metadata)
+            os.mkdir(path_metadata)
+        else:
+            os.mkdir(path_metadata)
+    else:
+        if not os.path.isdir(path_metadata):
+            os.mkdir(path_metadata)
     return output_directory, path_log, path_error, path_metadata
 
 
 def cleaner(filename, input_directory, output_directory, path_log,
-            threshold_n_row, ratio_sample, max_sample,
-            threshold_n_col, check_header, threshold_json):
+            metadata_directory, dict_param):
     """
     Function to clean a file (unzipped or not)
     :param filename: string
     :param input_directory: string
     :param output_directory: string
     :param path_log: string
-    :param threshold_n_row: integer
-    :param ratio_sample: integer
-    :param max_sample: integer
-    :param threshold_n_col: integer
-    :param check_header: integer
-    :param threshold_json: float
+    :param metadata_directory:string
+    :param dict_param: dictionary
     :return:
     """
     path = os.path.join(input_directory, filename)
     size_file = os.path.getsize(path)
+    dict_result = dict()
+    dict_result["source_file"] = filename
     if size_file > 0 and not os.path.isfile(os.path.join(output_directory,
                                                          filename)):
         extension = magic.Magic(mime=True).from_file(path)
         if extension == "application/zip":
             z = zipfile.ZipFile(path)
-            with TemporaryDirectory() as temp_directory:
-                z.extractall(temp_directory)
+            with TemporaryDirectory() as big_temp_directory:
+                z.extractall(big_temp_directory)
                 for file in z.namelist():
-                    temp_path = os.path.join(temp_directory, file)
+                    temp_path = os.path.join(big_temp_directory, file)
                     if os.path.isfile(temp_path):
-                        cleaner_file(filename, input_directory,
-                                     output_directory, path_log, True,
-                                     threshold_n_row,
-                                     ratio_sample, max_sample, threshold_n_col,
-                                     check_header, threshold_json)
+                        cleaner_file(file, big_temp_directory,
+                                     output_directory, path_log,
+                                     metadata_directory, True, dict_param,
+                                     dict_result)
         else:
             cleaner_file(filename, input_directory, output_directory, path_log,
-                         False, threshold_n_row, ratio_sample,
-                         max_sample, threshold_n_col, check_header,
-                         threshold_json)
+                         metadata_directory, False, dict_param, dict_result)
     return
 
 
 def cleaner_file(filename, input_directory, output_directory, path_log,
-                 zip_file, threshold_n_row, ratio_sample,
-                 max_sample, threshold_n_col, check_header, threshold_json):
+                 metadata_directory, zip_file, dict_param, dict_result):
     """
     Function to clean unzipped files.
     :param filename: string
     :param input_directory: string
     :param output_directory: string
     :param path_log: string
+    :param metadata_directory: string
     :param zip_file: boolean
-    :param threshold_n_row: integer
-    :param ratio_sample: integer
-    :param max_sample: integer
-    :param threshold_n_col: integer
-    :param check_header: integer
-    :param threshold_json: float
+    :param dict_param: dictionary
+    :param dict_result: dictionary
     :return:
     """
     path = os.path.join(input_directory, filename)
     size_file = os.path.getsize(path)
-    if size_file > 0 \
-            and not os.path.isfile(os.path.join(output_directory,
-                                                filename.replace("/", "--"))):
-        extension = magic.Magic(mime=True).from_file(path)
-        # print(size_file, "/", extension, "/", filename)
-        if extension == "text/plain":
-            return plain(filename, input_directory, output_directory, path_log,
-                         threshold_n_row, ratio_sample,
-                         max_sample, threshold_n_col, check_header,
-                         threshold_json, extension, zip_file)
-        elif extension == "application/octet-stream":
-            return octet_stream(filename, input_directory, output_directory,
-                                path_log, threshold_n_row, ratio_sample,
-                                max_sample, threshold_n_col, check_header,
-                                threshold_json, extension, zip_file)
-        elif extension == "application/x-dbf":
-            pass
-        elif extension == "application/pdf":
-            pass
-        elif extension == "application/msword":
-            pass
-        elif extension == "image/jpeg":
-            pass
-        elif extension == "text/html":
-            pass
-        elif extension == "text/xml":
-            return xml(filename, input_directory, output_directory, path_log,
-                       extension, zip_file)
-        elif extension == "application/vnd.ms-excel":
-            return excel(filename, input_directory, output_directory, path_log,
-                         check_header, extension, zip_file)
-        elif extension == "application/CDFV2-unknown":
-            return cdfv2(filename, input_directory, output_directory, path_log,
-                         check_header, extension, zip_file)
-        elif extension == "application/vnd.oasis.opendocument.text":
-            pass
-        elif extension == "application/vnd.oasis.opendocument.spreadsheet":
-            pass
-        elif extension == "application/vnd.openxmlformats-officedocument." \
-                          "spreadsheetml.sheet":
-            return office_document(filename, input_directory, output_directory,
-                                   path_log, check_header, extension,
-                                   zip_file)
-        elif extension == "application/x-dosexec":
-            pass
-        elif extension == "image/png":
-            pass
-        elif extension == "image/tiff":
-            pass
-        elif extension == "application/x-iso9660-image":
-            pass
-        else:
-            pass
+    # store first results
+    dict_result["matrix_name"] = filename
+    dict_result["file_name"] = filename
+    dict_result["zip_file"] = zip_file
+    dict_result["size_file"] = size_file
+    # test file integrity
+    if size_file <= 0:
+        return
+    # test if the file has already been cleaned
+    if os.path.isfile(os.path.join(output_directory,
+                                   filename.replace("/", "--"))):
+        return
+    # get fle extension and clean it
+    extension = magic.Magic(mime=True).from_file(path)
+    dict_result["extension"] = extension
+    if extension == "text/plain":
+        return plain(filename, input_directory, output_directory, path_log,
+                     metadata_directory, dict_param, dict_result)
+    elif extension == "application/octet-stream":
+        return octet_stream(filename, input_directory, output_directory,
+                            path_log, metadata_directory, dict_param,
+                            dict_result)
+    elif extension == "application/x-dbf":
+        pass
+    elif extension == "application/pdf":
+        pass
+    elif extension == "application/msword":
+        pass
+    elif extension == "image/jpeg":
+        pass
+    elif extension == "text/html":
+        pass
+    elif extension == "text/xml":
+        return xml(filename, input_directory, output_directory, path_log,
+                   metadata_directory, dict_result)
+    elif extension == "application/vnd.ms-excel":
+        return excel(filename, input_directory, output_directory, path_log,
+                     metadata_directory, dict_param, dict_result)
+    elif extension == "application/CDFV2-unknown":
+        return cdfv2(filename, input_directory, output_directory, path_log,
+                     metadata_directory, dict_param, dict_result)
+    elif extension == "application/vnd.oasis.opendocument.text":
+        pass
+    elif extension == "application/vnd.oasis.opendocument.spreadsheet":
+        pass
+    elif extension == "application/vnd.openxmlformats-officedocument." \
+                      "spreadsheetml.sheet":
+        return office_document(filename, input_directory, output_directory,
+                               metadata_directory, path_log, dict_param,
+                               dict_result)
+    elif extension == "application/x-dosexec":
+        pass
+    elif extension == "image/png":
+        pass
+    elif extension == "image/tiff":
+        pass
+    elif extension == "application/x-iso9660-image":
+        pass
+    else:
+        pass
     return
 
 
 def plain(filename, input_directory, output_directory, path_log,
-          threshold_n_row, ratio_sample, max_sample,
-          threshold_n_col, check_header, threshold_json, extension, zip_file):
+          metadata_directory, dict_param, dict_result):
     """
     Function to clean a file with a text/plain extension.
     :param filename: string
     :param input_directory: string
     :param output_directory: string
     :param path_log: string
-    :param threshold_n_row: integer
-    :param ratio_sample: integer
-    :param max_sample: integer
-    :param threshold_n_col: integer
-    :param check_header: integer
-    :param threshold_json: float
-    :param extension: string
-    :param zip_file: boolean
+    :param metadata_directory: string
+    :param dict_param: dictionary
+    :param dict_result: dictionary
     :return:
     """
     start = time.clock()
@@ -213,16 +211,20 @@ def plain(filename, input_directory, output_directory, path_log,
     # encoding
     encoding = detect_encoding(path)
     # sample
-    sample, full_sample, threshold_n_col = get_sample(path, encoding, nrow,
-                                                      threshold_n_row,
-                                                      ratio_sample, max_sample,
-                                                      threshold_n_col)
+    sample, full_sample, threshold_n_col = \
+        get_sample(path, encoding, nrow, dict_param["threshold_n_row"],
+                   dict_param["ratio_sample"], dict_param["max_sample"],
+                   dict_param["threshold_n_col"])
+    # threshold_n_row, ratio_sample, max_sample,
+    # threshold_n_col, check_header, threshold_json
     # get a matrix
-    if is_json(full_sample, threshold_json):
+    if is_json(full_sample, dict_param["threshold_json"]):
+        dict_result["extension"] = "json"
         df, metadata, no_header = clean_json(path, encoding)
     else:
         df, metadata, no_header = clean_csv(path, encoding, sample, full_sample,
-                                            threshold_n_col, check_header)
+                                            threshold_n_col,
+                                            dict_param["check_header"])
     if df is None:
         return
     # empty columns
@@ -234,49 +236,47 @@ def plain(filename, input_directory, output_directory, path_log,
     # save results
     end = time.clock()
     duration = round(end - start, 2)
-    save_results(df, metadata, filename, filename, output_directory, path_log,
-                 x, y, d, duration, no_header, extension,
-                 zip_file)
+    dict_result["duration"] = duration
+    dict_result["integer"] = d["integer"]
+    dict_result["float"] = d["float"]
+    dict_result["object"] = d["object"]
+    dict_result["x"] = x
+    dict_result["y"] = y
+    dict_result["metadata"] = metadata
+    dict_result["no_header"] = no_header
+    save_results(df, output_directory, metadata_directory, path_log,
+                 dict_result)
     return
 
 
 def octet_stream(filename, input_directory, output_directory, path_log,
-                 threshold_n_row, ratio_sample, max_sample,
-                 threshold_n_col, check_header, threshold_json, extension,
-                 zip_file):
+                 metadata_directory, dict_param, dict_result):
     """
     Function to clean a file with a octet-stream extension.
     :param filename: string
     :param input_directory: string
     :param output_directory: string
     :param path_log: string
-    :param threshold_n_row: integer
-    :param ratio_sample: integer
-    :param max_sample: integer
-    :param threshold_n_col: integer
-    :param check_header: integer
-    :param threshold_json: float
-    :param extension: string
-    :param zip_file: boolean
+    :param metadata_directory: string
+    :param dict_param: dictionary
+    :param dict_result: dictionary
     :return:
     """
     return plain(filename, input_directory, output_directory, path_log,
-                 threshold_n_row, ratio_sample, max_sample,
-                 threshold_n_col, check_header, threshold_json, extension,
-                 zip_file)
+                 metadata_directory, dict_param, dict_result)
 
 
-def excel(filename, input_directory, output_directory, path_log, check_header,
-          extension, zip_file):
+def excel(filename, input_directory, output_directory, path_log,
+          metadata_directory, dict_param, dict_result):
     """
     Function to clean an excel file (or equivalent) in order to extract a matrix
     :param filename: string
     :param input_directory: string
     :param output_directory: string
     :param path_log: string
-    :param check_header: integer
-    :param extension: string
-    :param zip_file: boolean
+    :param metadata_directory: string
+    :param dict_param: dictionary
+    :param dict_result: dictionary
     :return:
     """
     path = os.path.join(input_directory, filename)
@@ -293,8 +293,9 @@ def excel(filename, input_directory, output_directory, path_log, check_header,
         for sheet in sheets:
             start = time.clock()
             # extract matrix
-            df, metadata, no_header = clean_sheet_excel(rb_edited, sheet,
-                                                        temp_path, check_header)
+            df, metadata, no_header = \
+                clean_sheet_excel(rb_edited, sheet, temp_path,
+                                  dict_param["check_header"])
             if df is None:
                 continue
             # empty columns
@@ -307,56 +308,64 @@ def excel(filename, input_directory, output_directory, path_log, check_header,
             end = time.clock()
             duration = round(end - start, 2)
             new_filename = "__".join([filename, sheet])
-            save_results(df, metadata, new_filename, filename, output_directory,
-                         path_log, x, y, d, duration, no_header,
-                         extension, zip_file)
+            dict_result["matrix_name"] = new_filename
+            dict_result["duration"] = duration
+            dict_result["integer"] = d["integer"]
+            dict_result["float"] = d["float"]
+            dict_result["object"] = d["object"]
+            dict_result["x"] = x
+            dict_result["y"] = y
+            dict_result["metadata"] = metadata
+            dict_result["no_header"] = no_header
+            save_results(df, output_directory, metadata_directory, path_log,
+                         dict_result)
     return
 
 
-def cdfv2(filename, input_directory, output_directory, path_log, check_header,
-          extension, zip_file):
+def cdfv2(filename, input_directory, output_directory, path_log,
+          metadata_directory, dict_param, dict_result):
     """
     Function to clean an excel file (or equivalent) in order to extract a matrix
     :param filename: string
     :param input_directory: string
     :param output_directory: string
     :param path_log: string
-    :param check_header: integer
-    :param extension: string
-    :param zip_file:boolean
+    :param metadata_directory: string
+    :param dict_param: dictionary
+    :param dict_result:dictionary
     :return:
     """
     return excel(filename, input_directory, output_directory, path_log,
-                 check_header, extension, zip_file)
+                 metadata_directory, dict_param, dict_result)
 
 
 def office_document(filename, input_directory, output_directory, path_log,
-                    check_header, extension, zip_file):
+                    metadata_directory, dict_param, dict_result):
     """
     Function to clean an excel file (or equivalent) in order to extract a matrix
     :param filename: string
     :param input_directory: string
     :param output_directory: string
     :param path_log: string
-    :param check_header: integer
-    :param extension: string
-    :param zip_file: boolean
+    :param metadata_directory: string
+    :param dict_param: dictionary
+    :param dict_result: dictionary
     :return:
     """
     return excel(filename, input_directory, output_directory, path_log,
-                 check_header, extension, zip_file)
+                 metadata_directory, dict_param, dict_result)
 
 
-def xml(filename, input_directory, output_directory, path_log, extension,
-        zip_file):
+def xml(filename, input_directory, output_directory, path_log,
+        metadata_directory, dict_result):
     """
     Function to clean a file with a text/plain extension.
     :param filename: string
     :param input_directory: string
     :param output_directory: string
     :param path_log: string
-    :param extension: string
-    :param zip_file: boolean
+    :param metadata_directory: string
+    :param dict_result: dictionary
     :return:
     """
     start = time.clock()
@@ -372,9 +381,16 @@ def xml(filename, input_directory, output_directory, path_log, extension,
     # save results
     end = time.clock()
     duration = round(end - start, 2)
-    save_results(df, metadata, filename, filename, output_directory, path_log,
-                 x, y, d, duration, no_header, extension,
-                 zip_file)
+    dict_result["duration"] = duration
+    dict_result["integer"] = d["integer"]
+    dict_result["float"] = d["float"]
+    dict_result["object"] = d["object"]
+    dict_result["x"] = x
+    dict_result["y"] = y
+    dict_result["metadata"] = metadata
+    dict_result["no_header"] = no_header
+    save_results(df, output_directory, metadata_directory, path_log,
+                 dict_result)
     return
 
 
@@ -627,43 +643,39 @@ def distribution_df(df):
     return x, y, d
 
 
-def save_results(df, metadata, filename, source_file, output_directory,
-                 path_log, x, y, d, duration, no_header,
-                 extension, zip_file):
+def save_results(df, output_directory, metadata_directory, path_log,
+                 dict_result):
     """
-    Function to save results (dataframe and metadata).
+    Function to save results (dataframe and metadata)
     :param df: dataframe
-    :param metadata: string
-    :param filename: string
-    :param source_file: string
     :param output_directory: string
+    :param metadata_directory: string
     :param path_log: string
-    :param x: integer
-    :param y: integer
-    :param d: dictionary
-    :param duration: integer
-    :param no_header: boolean
-    :param extension: string
-    :param zip_file: boolean
+    :param dict_result: dictionary
     :return:
     """
-    filename = filename.replace("/", "--")
-    path = os.path.join(output_directory, filename)
+    dict_result["matrix_name"] = dict_result["matrix_name"].replace("/", "--")
+    path = os.path.join(output_directory, dict_result["matrix_name"])
     df.to_csv(path, sep=";", index=False, encoding="utf-8", header=True)
-    path_metadata = os.path.join(output_directory, "metadata", filename)
-    if metadata != "":
+    if dict_result["metadata"] != "":
+        path_metadata = os.path.join(metadata_directory,
+                                     dict_result["matrix_name"])
         with open(path_metadata, "wt", encoding="utf-8") as f:
-            f.write(metadata)
-        metadata = True
+            f.write(dict_result["metadata"])
+        dict_result["metadata"] = True
     else:
-        metadata = False
+        dict_result["metadata"] = False
     if not isinstance(list(df.columns)[0], str):
-        multiheader = True
+        dict_result["multiheader"] = True
     else:
-        multiheader = False
-    l = [filename, source_file, x, y, d["integer"], d["float"], d["object"],
-         metadata, duration, not no_header,
-         multiheader, list(df.columns), extension, zip_file]
+        dict_result["multiheader"] = False
+    l = [dict_result["matrix_name"], dict_result["file_name"],
+         dict_result["source_file"], dict_result["x"], dict_result["y"],
+         dict_result["integer"], dict_result["float"],
+         dict_result["object"], dict_result["metadata"],
+         dict_result["duration"], not dict_result["no_header"],
+         dict_result["multiheader"], list(df.columns),
+         dict_result["extension"], dict_result["zip_file"]]
     l = [str(i).replace(";", ",") for i in l]
     with open(path_log, mode="at", encoding="utf-8") as f:
         f.write(";".join(l))

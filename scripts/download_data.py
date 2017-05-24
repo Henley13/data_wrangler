@@ -9,7 +9,7 @@ from contextlib import closing
 from joblib import Parallel, delayed
 from lxml import etree
 from urllib.request import urlopen
-from src.toolbox.utils import log_error, get_config_tag, reset_log_error
+from toolbox.utils import log_error, get_config_tag, reset_log_error
 print("\n")
 
 

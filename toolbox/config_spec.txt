@@ -1,3 +1,7 @@
+[general]
+
+    path = string
+
 [metadata]
 
     output = string
@@ -28,5 +32,22 @@
     check_header = integer
     threshold_json = float
 
+[distribution]
+
+    extension = boolean
+    count = boolean
+    log = boolean
+    plot = boolean
+    error = boolean
+    efficiency = boolean
+
+[text_extraction]
+
+    content = boolean
+    header = boolean
+    metadata = boolean
+    n_topics = integer
+    n_top_words = integer
+    nltk = string
 
 

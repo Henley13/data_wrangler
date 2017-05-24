@@ -1,3 +1,8 @@
+[general]
+
+    # path
+    path = "../../data/last_config_ran.txt"
+
 [metadata]
 
     # paths
@@ -23,7 +28,7 @@
 [cleaning]
 
     # paths
-    input = "../../data/data_collected"
+    input = "../../data/data_collected_csv"
     result = "../../data/res1"
 
     # boolean to reset the output directory or not
@@ -53,3 +58,24 @@
     # a file as a json
     threshold_json = 0.004
 
+[distribution]
+
+    # boolean parameters
+    extension = False
+    count = True
+    log = True
+    plot = True
+    error = True
+    efficiency = True
+
+[text_extraction]
+
+    # parameters
+    content = True
+    header = True
+    metadata = True
+    n_topics = 5
+    n_top_words = 20
+
+    # path
+    nltk = "../../data/nltk_data"

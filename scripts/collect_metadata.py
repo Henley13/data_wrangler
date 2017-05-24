@@ -9,7 +9,7 @@ import os
 import requests
 import sys
 from lxml import etree, objectify
-from src.toolbox.utils import log_error, get_config_tag, reset_log_error
+from toolbox.utils import log_error, get_config_tag, reset_log_error
 print("\n")
 
 

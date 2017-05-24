@@ -7,37 +7,49 @@
 import os
 import pandas as pd
 from lxml import etree
+from toolbox.utils import get_config_tag
 print("\n")
 
 # path
-metadata_directory = "../data/metadata"
-data_directory = "../data/test_fitted"
-path_log = "../data/log_cleaning"
-path_metadata_edited = "../data/metadata_edited"
-metadata_clean_directory = os.path.join(data_directory, "metadata")
+result_directory = get_config_tag("result", "cleaning")
+metadata_directory = get_config_tag("output", "metadata")
+data_directory = os.path.join(result_directory, "data_fitted")
+path_log = os.path.join(result_directory, "log_cleaning")
+path_metadata_edited = os.path.join(result_directory, "log_final")
+metadata_clean_directory = os.path.join(result_directory, "metadata_cleaning")
 
-# get original metadata
-d = {}
-for file in os.listdir(metadata_directory):
-    tree = etree.parse(os.path.join(metadata_directory, file))
-    for table in tree.xpath("/metadata/tables/table"):
-        d[table.findtext("id")] = (table, tree)
+
+def get_original_metadata(metadata_directory):
+    """
+    Function to get the original metadata, collected from data.gouv.fr
+    :param metadata_directory: string
+    :return: dictionary
+    """
+    d = {}
+    for file in os.listdir(metadata_directory):
+        tree = etree.parse(os.path.join(metadata_directory, file))
+        for table in tree.xpath("/metadata/tables/table"):
+            d[table.findtext("id")] = (table, tree)
+    return d
+
+# get metadata
+d = get_original_metadata(metadata_directory)
 print("length d :", len(d))
 
 # initialize a text file
 if os.path.isfile(path_metadata_edited):
     os.remove(path_metadata_edited)
 with open(path_metadata_edited, mode='wt', encoding='utf-8') as f:
-    f.write("matrix_name;source_file;n_row;n_col;integer;float;object;"
-            "metadata;time;header;multiheader;header_name;extension;zipfile;"
-            "size;commentary;title_file;id_file;url_file;url_destination_file;"
-            "description_file;creation_file;publication_file;"
-            "last_modification_file;availability_file;title_page;id_page;"
-            "url_page;url_api_page;license_page;description_page;creation_page;"
-            "last_modification_page;last_resources_update_page;frequency_page;"
-            "start_coverage_page;end_coverage_page;granularity_page;"
-            "zones_pages;geojson_page;title_producer;url_producer;"
-            "url_api_producer;tags_page")
+    f.write("matrix_name;file_name;source_file;n_row;n_col;integer;float;"
+            "object;metadata;time;header;multiheader;header_name;extension;"
+            "zipfile;size;commentary;title_file;id_file;url_file;"
+            "url_destination_file;description_file;creation_file;"
+            "publication_file;last_modification_file;availability_file;"
+            "title_page;id_page;url_page;url_api_page;license_page;"
+            "description_page;creation_page;last_modification_page;"
+            "last_resources_update_page;frequency_page;start_coverage_page;"
+            "end_coverage_page;granularity_page;zones_pages;geojson_page;"
+            "title_producer;url_producer;url_api_producer;tags_page")
     f.write("\n")
 
 # gather metadata
@@ -47,7 +59,7 @@ for i in range(df_log.shape[0]):
     if i % 100 == 0:
         print(i)
 
-    matrix = df_log.at[i, "filename"]
+    matrix = df_log.at[i, "matrix_name"]
     # get metadata extracted from the matrix
     path_matrix = os.path.join(data_directory, matrix)
     size_matrix = os.path.getsize(path_matrix)
@@ -61,14 +73,11 @@ for i in range(df_log.shape[0]):
         commentary_matrix = ""
 
     # get metadata extracted from data.gouv.fr
-    if df_log.at[i, "zipfile"]:
-        file = df_log.at[i, "source_file"]
-    else:
-        if "__" in matrix:
-            file = matrix.split("__")[0]
-        else:
-            file = matrix
-    table, tree = d[file]
+    try:
+        table, tree = d[df_log.at[i, "source_file"]]
+    except KeyError:
+        print("KeyError :", df_log.at[i, "source_file"])
+        continue
 
     # ... specific to the file
     title_file = table.findtext("table/title")
@@ -109,8 +118,8 @@ for i in range(df_log.shape[0]):
             tags.append(tag.text)
     tags_page = " ".join(tags).replace("-", "_")
 
-    l = [matrix, df_log.at[i, "source_file"], df_log.at[i, "n_row"],
-         df_log.at[i, "n_col"], df_log.at[i, "integer"],
+    l = [matrix, df_log.at[i, "file_name"], df_log.at[i, "source_file"],
+         df_log.at[i, "n_row"], df_log.at[i, "n_col"], df_log.at[i, "integer"],
          df_log.at[i, "float"], df_log.at[i, "object"],
          df_log.at[i, "metadata"], df_log.at[i, "time"],
          df_log.at[i, "header"], df_log.at[i, "multiheader"],
@@ -124,19 +133,12 @@ for i in range(df_log.shape[0]):
          end_coverage_page, granularity_page, zones_page, geojson_page,
          title_producer, url_producer, url_api_producer, tags_page]
     l = [str(j).replace(";", ",").replace('\n', '').replace('\r', '')
-         for j in l]
+               .replace('"', "'") for j in l]
     with open(path_metadata_edited, mode='at', encoding='utf-8') as f:
         f.write(";".join(l))
         f.write("\n")
 
 # load data
-df = pd.read_csv(path_metadata_edited, sep=";", encoding="utf-8", index_col=False)
-print()
-print(df.shape, "\n")
-print(df.head(), "\n")
-
-print(df["zipfile"].value_counts(), '\n')
-
-df_zip = df.query('zipfile == True')
-print(df_zip.shape, "\n")
-print(df_zip.head(30), '\n')
+df = pd.read_csv(path_metadata_edited, sep=";", encoding="utf-8",
+                 index_col=False)
+print("df shape :", df.shape)

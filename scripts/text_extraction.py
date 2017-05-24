@@ -15,38 +15,42 @@ import os
 from sklearn.decomposition import NMF
 from sklearn.neighbors import NearestNeighbors
 from sklearn.externals import joblib
-nltk.data.path.append("../data/nltk_data")
+from toolbox.utils import get_config_tag
 print("\n")
 
 # parameters
-content_bool = True
-header_bool = True
-metadata_bool = True
-n_topics = 5
-n_top_words = 20
+content_bool = get_config_tag("content", "text_extraction")
+header_bool = get_config_tag("header", "text_extraction")
+metadata_bool = get_config_tag("metadata", "text_extraction")
+n_topics = get_config_tag("n_topics", "text_extraction")
+n_top_words = get_config_tag("n_top_words", "text_extraction")
+
+# paths
+nltk_path = get_config_tag("nltk", "text_extraction")
+result_directory = get_config_tag("result", "cleaning")
+data_directory = os.path.join(result_directory, "data_fitted")
+path_log = os.path.join(result_directory, "log_final")
+
+# stopwords
+nltk.data.path.append(nltk_path)
 french_stopwords = list(set(stopwords.words('french')))
 french_stopwords += ["unnamed", "http", "les", "des"]
 
-# path
-data_directory = "../data/test_fitted"
-path_log = "../data/log_cleaning"
-model_directory = "../data/model_1"
-
 # other
-path_vocabulary = os.path.join(model_directory, "token_vocabulary")
-path_tfidf = os.path.join(model_directory, "tfidf.npz")
-path_count = os.path.join(model_directory, "count.npz")
-path_nmf = os.path.join(model_directory, "nmf.pkl")
-path_knn_tfidf = os.path.join(model_directory, "knn_tfidf.pkl")
-path_knn_w = os.path.join(model_directory, "knn_w.pkl")
-# tokenizer = nltk.data.load('tokenizers/punkt/PY3/french.pickle')
+path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+path_tfidf = os.path.join(result_directory, "tfidf.npz")
+path_count = os.path.join(result_directory, "count.npz")
+path_nmf = os.path.join(result_directory, "nmf.pkl")
+path_knn_tfidf = os.path.join(result_directory, "knn_tfidf.pkl")
+path_knn_w = os.path.join(result_directory, "knn_w.pkl")
 
 
-def text_content_extraction(path_log=path_log, data_directory=data_directory):
+def text_content_extraction(path_log=path_log,
+                            result_directory=result_directory):
     """
     Function to extract the textual content from the files
     :param path_log: string
-    :param data_directory: string
+    :param result_directory: string
     :return: list of strings
     """
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
@@ -55,10 +59,10 @@ def text_content_extraction(path_log=path_log, data_directory=data_directory):
     for i in range(df_log.shape[0]):
         if i % 100 == 0:
             print(i)
-        filename = df_log.at[i, "filename"]
+        filename = df_log.at[i, "matrix_name"]
         multi_header = df_log.at[i, "multiheader"]
         header = df_log.at[i, "header_name"]
-        path = os.path.join(data_directory, filename)
+        path = os.path.join(result_directory, "data_fitted", filename)
         index = [0]
         if multi_header:
             index = pd.MultiIndex.from_tuples(header)
@@ -69,11 +73,12 @@ def text_content_extraction(path_log=path_log, data_directory=data_directory):
     return full_text
 
 
-def text_metadata_extraction(path_log=path_log, data_directory=data_directory):
+def text_metadata_extraction(path_log=path_log,
+                             result_directory=result_directory):
     """
     Function to extract the textual content from the metadata files
     :param path_log: string
-    :param data_directory: string
+    :param result_directory: string
     :return: list of strings
     """
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
@@ -84,8 +89,8 @@ def text_metadata_extraction(path_log=path_log, data_directory=data_directory):
             print(i)
         metadata = df_log.at[i, "metadata"]
         if metadata:
-            filename = df_log.at[i, "filename"]
-            path = os.path.join(data_directory, "metadata", filename)
+            filename = df_log.at[i, "matrix_name"]
+            path = os.path.join(result_directory, "metadata_cleaning", filename)
             with open(path, mode='rt', encoding='utf-8') as f:
                 full_text.append(f.read())
         else:
@@ -105,11 +110,11 @@ def text_header_extraction(path_log=path_log):
 
 
 def text_content_header_extraction(path_log=path_log,
-                                   data_directory=data_directory):
+                                   result_directory=result_directory):
     """
     Function to extract the textual content from the metadata files
     :param path_log: string
-    :param data_directory: string
+    :param result_directory: string
     :return: list of strings
     """
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
@@ -118,18 +123,18 @@ def text_content_header_extraction(path_log=path_log,
     for i in range(df_log.shape[0]):
         if i % 100 == 0:
             print(i)
-        filename = df_log.at[i, "filename"]
-        path = os.path.join(data_directory, filename)
+        filename = df_log.at[i, "matrix_name"]
+        path = os.path.join(result_directory, "data_fitted", filename)
         with open(path, mode="rt", encoding="utf-8") as f:
             full_text.append(f.read())
     return full_text
 
 
-def text_full_extraction(path_log=path_log, data_directory=data_directory):
+def text_full_extraction(path_log=path_log, result_directory=result_directory):
     """
     Function to extract the full textual content from the files
     :param path_log: string
-    :param data_directory: string
+    :param result_directory: string
     :return: list of strings
     """
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
@@ -139,13 +144,14 @@ def text_full_extraction(path_log=path_log, data_directory=data_directory):
         if i % 100 == 0:
             print(i)
         text = []
-        filename = df_log.at[i, "filename"]
-        path = os.path.join(data_directory, filename)
+        filename = df_log.at[i, "matrix_name"]
+        path = os.path.join(result_directory, "data_fitted", filename)
         with open(path, mode="rt", encoding="utf-8") as f:
             text.append(f.read())
         metadata = df_log.at[i, "metadata"]
         if metadata:
-            path_metadata = os.path.join(data_directory, "metadata", filename)
+            path_metadata = os.path.join(result_directory, "metadata_cleaning",
+                                         filename)
             with open(path_metadata, mode='rt', encoding='utf-8') as f:
                 text.append(f.read())
         else:
@@ -154,28 +160,28 @@ def text_full_extraction(path_log=path_log, data_directory=data_directory):
     return full_text
 
 
-def text_extraction(path_log=path_log, data_directory=data_directory,
+def text_extraction(path_log=path_log, result_directory=result_directory,
                     content_bool=content_bool, header_bool=header_bool,
                     metadata_bool=metadata_bool):
     """
     Function to select which textual part to extract from the files
     :param path_log: string
-    :param data_directory: string
+    :param result_directory: string
     :param content_bool: boolean
     :param header_bool: boolean
     :param metadata_bool: boolean
     :return: list of strings
     """
     if content_bool and header_bool and metadata_bool:
-        return text_full_extraction(path_log, data_directory)
+        return text_full_extraction(path_log, result_directory)
     elif content_bool and not header_bool and not metadata_bool:
-        return text_content_extraction(path_log, data_directory)
+        return text_content_extraction(path_log, result_directory)
     elif not content_bool and header_bool and not metadata_bool:
         return text_header_extraction(path_log)
     elif not content_bool and not header_bool and metadata_bool:
-        return text_metadata_extraction(path_log, data_directory)
+        return text_metadata_extraction(path_log, result_directory)
     elif content_bool and header_bool and not metadata_bool:
-        return text_content_header_extraction(path_log, data_directory)
+        return text_content_header_extraction(path_log, result_directory)
     elif not content_bool and header_bool and metadata_bool:
         raise ValueError("Extraction of header and metadata only has to be "
                          "implemented")
@@ -186,13 +192,13 @@ def text_extraction(path_log=path_log, data_directory=data_directory,
         raise ValueError("No text extracted")
 
 
-def tfidf_computation(path_log=path_log, data_directory=data_directory,
+def tfidf_computation(path_log=path_log, result_directory=result_directory,
                       content_bool=content_bool, header_bool=header_bool,
                       stop_words=french_stopwords):
     """
     Function to compute tfidf matrix
     :param path_log: string
-    :param data_directory: string
+    :param result_directory: string
     :param content_bool: boolean
     :param header_bool: boolean
     :param stop_words: list of strings
@@ -221,7 +227,7 @@ def tfidf_computation(path_log=path_log, data_directory=data_directory,
                                     sublinear_tf=False)
     print("text extraction...", "\n")
     full_text = text_extraction(path_log,
-                                data_directory,
+                                result_directory,
                                 content_bool,
                                 header_bool)
     print()
@@ -270,12 +276,6 @@ def print_top_words(model, feature_names, n_top_words):
 
 ###############################################################################
 ###############################################################################
-
-# check if model directory exists
-if os.path.isdir(model_directory):
-    pass
-else:
-    os.mkdir(model_directory)
 
 start = time.clock()
 

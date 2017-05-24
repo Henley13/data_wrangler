@@ -9,7 +9,7 @@ import subprocess
 import time
 from lxml import etree
 from urllib.parse import urljoin
-from src.toolbox.utils import TryMultipleTimes, get_config_tag
+from toolbox.utils import TryMultipleTimes, get_config_tag
 print("\n")
 
 # http://docs.basex.org/wiki/REST

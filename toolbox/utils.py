@@ -33,12 +33,25 @@ def _get_config_spec():
         os.path.dirname(os.path.abspath(__file__)), 'config_spec.txt')
 
 
-def get_config_tag(tag, section, version=0):
+def get_config_trace():
+    """
+    Function to keep a trace of the latest configuration ran
+    :return:
+    """
+    path_input = "../config.txt"
+    path_output = get_config_tag("path", "general")
+    with open(path_input, mode='rt', encoding='utf-8') as f:
+        text = f.read()
+    with open(path_output, mode='wt', encoding='utf-8') as f:
+        f.write(text)
+    return
+
+
+def get_config_tag(tag, section):
     """
     Function to get parameters values and path from a configuration file
     :param tag: string
     :param section: string
-    :param version: integer
     :return:
     """
     config = ConfigObj("../config.txt",
@@ -47,10 +60,7 @@ def get_config_tag(tag, section, version=0):
     test = config.validate(Validator())
     if test is not True:
         raise ConfigObjError("Config file validation failed.")
-    if version > 0:
-        return config[section][section+version][tag]
-    else:
-        return config[section][tag]
+    return config[section][tag]
 
 
 def log_error(path_error, source):
