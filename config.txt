@@ -1,26 +1,26 @@
 [general]
 
     # path
-    path = "../../data/last_config_ran.txt"
+    path = "../data/last_config_ran.txt"
 
 [metadata]
 
     # paths
-    output = "../../data/metadata"
-    error = "../../data/errors/metadata_api_errors"
+    output = "../data/metadata"
+    error = "../data/errors/metadata_api_errors"
 
 [basex]
 
     # paths
-    input = "../../data/metadata"
-    output = "../../data/url/url.xml"
+    input = "../data/metadata"
+    output = "../data/url/url.xml"
 
 [download]
 
     # paths
-    input = "../../data/url/url.xml"
-    output = "../../data/data_collected"
-    error = "../../data/errors/download_errors"
+    input = "../data/url/url.xml"
+    output = "../data/data_collected"
+    error = "../data/errors/download_errors"
 
     # number of workers to use
     n_jobs = 4
@@ -28,8 +28,8 @@
 [cleaning]
 
     # paths
-    input = "../../data/data_collected_csv"
-    result = "../../data/res1"
+    input = "../data/data_collected_csv"
+    result = "../data/res1"
 
     # boolean to reset the output directory or not
     reset = True
@@ -78,4 +78,4 @@
     n_top_words = 20
 
     # path
-    nltk = "../../data/nltk_data"
+    nltk = "../data/nltk_data"

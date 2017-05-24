@@ -38,7 +38,7 @@ def get_config_trace():
     Function to keep a trace of the latest configuration ran
     :return:
     """
-    path_input = "../config.txt"
+    path_input = "config.txt"
     path_output = get_config_tag("path", "general")
     with open(path_input, mode='rt', encoding='utf-8') as f:
         text = f.read()
@@ -54,7 +54,7 @@ def get_config_tag(tag, section):
     :param section: string
     :return:
     """
-    config = ConfigObj("../config.txt",
+    config = ConfigObj("config.txt",
                        encoding="utf-8",
                        configspec=_get_config_spec())
     test = config.validate(Validator())
