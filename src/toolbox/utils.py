@@ -1,14 +1,92 @@
 # -*- coding: utf-8 -*-
 
-""" Different functions used in several python scripts. """
+""" Some useful functions and decorators. """
 
 # libraries
 import sys
 import os
 import time
+import numpy as np
+import scipy.sparse as sp
 from joblib.format_stack import format_exc
 from configobj import ConfigObj, ConfigObjError
 from validate import Validator
+
+
+def print_top_words(model, feature_names, n_top_words):
+    """
+        Function to print the most important words per topic
+        :param model: NMF fitted model (sklearn)
+        :param feature_names: list of words with the right index
+        :param n_top_words: integer
+        :return:
+        """
+    for topic_idx, topic in enumerate(model.components_):
+        print("Topic #%d:" % topic_idx)
+        print(" ".join([feature_names[i]
+                        for i in topic.argsort()[:-n_top_words - 1:-1]]))
+    print()
+    return
+
+
+def save_dictionary(dictionary, path, header):
+    """
+    Function to save a dictionary in a csv format with two columns
+    (key and value)
+    :param dictionary: dictionary
+    :param path: string
+    :param header: list of strings
+    :return:
+    """
+    with open(path, mode="wt", encoding="utf-8") as f:
+        f.write(";".join(header))
+        f.write("\n")
+        for key in dictionary:
+            s = ";".join([key, str(dictionary[key])])
+            f.write(s)
+            f.write("\n")
+    return
+
+
+def dict_to_list(dictionary):
+    """
+    Function to convert a dictionary to a list of keys, ordering by value
+    :param dictionary: dictionary
+    :return: list of keys
+    """
+    return sorted(dictionary, key=dictionary.get)
+
+
+def load_sparse_csr(path):
+    """
+    Function to load a saved sparse matrix (scipy object)
+    :param path: string
+    :return: sparse row matrix
+    """
+    loader = np.load(path)
+    return sp.csr_matrix((loader['data'], loader['indices'], loader['indptr']),
+                         shape=loader['shape'])
+
+
+def save_sparse_csr(path, array):
+    """
+    Function to save a sparse row matrix "
+    :param path: string
+    :param array: sparse matrix (scipy object)
+    :return:
+    """
+    np.savez(path, data=array.data, indices=array.indices, indptr=array.indptr,
+             shape=array.shape)
+    return
+
+
+def load_numpy_matrix(path):
+    """
+    Function to load a numpy matrix previously saved in a .npy format
+    :param path: string
+    :return: numpy matrix
+    """
+    return np.load(path)
 
 
 def reset_log_error(path_error):

@@ -6,6 +6,7 @@ src/WEB-INF
 
 # cache folder
 src/__pycache__
+src/toolbox/__pycache__
 
 # gitkeep
 !__init__.py

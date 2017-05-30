@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" Different functions used to detect the file extension and reshape it. """
+""" Different functions used to detect the file extension and clean it. """
 
 # libraries
 import os
@@ -92,23 +92,26 @@ def cleaner(filename, input_directory, output_directory, path_log,
     size_file = os.path.getsize(path)
     dict_result = dict()
     dict_result["source_file"] = filename
-    if size_file > 0 and not os.path.isfile(os.path.join(output_directory,
-                                                         filename)):
-        extension = magic.Magic(mime=True).from_file(path)
-        if extension == "application/zip":
-            z = zipfile.ZipFile(path)
-            with TemporaryDirectory() as big_temp_directory:
-                z.extractall(big_temp_directory)
-                for file in z.namelist():
-                    temp_path = os.path.join(big_temp_directory, file)
-                    if os.path.isfile(temp_path):
-                        cleaner_file(file, big_temp_directory,
-                                     output_directory, path_log,
-                                     metadata_directory, True, dict_param,
-                                     dict_result)
-        else:
-            cleaner_file(filename, input_directory, output_directory, path_log,
-                         metadata_directory, False, dict_param, dict_result)
+    # test file consistency
+    if size_file <= 0:
+        raise Exception("Size file is null")
+    # test if the file has already been cleaned
+    if os.path.isfile(os.path.join(output_directory, filename)):
+        return
+    extension = magic.Magic(mime=True).from_file(path)
+    if extension == "application/zip":
+        z = zipfile.ZipFile(path)
+        with TemporaryDirectory() as big_temp_directory:
+            z.extractall(big_temp_directory)
+            for file in z.namelist():
+                temp_path = os.path.join(big_temp_directory, file)
+                if os.path.isfile(temp_path):
+                    cleaner_file(file, big_temp_directory, output_directory,
+                                 path_log, metadata_directory, True,
+                                 dict_param, dict_result)
+    else:
+        cleaner_file(filename, input_directory, output_directory, path_log,
+                     metadata_directory, False, dict_param, dict_result)
     return
 
 
@@ -140,7 +143,7 @@ def cleaner_file(filename, input_directory, output_directory, path_log,
     if os.path.isfile(os.path.join(output_directory,
                                    filename.replace("/", "--"))):
         return
-    # get fle extension and clean it
+    # get file extension and clean it
     extension = magic.Magic(mime=True).from_file(path)
     dict_result["extension"] = extension
     if extension == "text/plain":

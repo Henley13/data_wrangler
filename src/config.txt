@@ -28,7 +28,7 @@
 [cleaning]
 
     # paths
-    input = "../data/data_collected_csv"
+    input = "../data/data_collected_xml"
     result = "../data/res1"
 
     # boolean to reset the output directory or not
@@ -61,7 +61,7 @@
 [distribution]
 
     # boolean parameters
-    extension = False
+    extension = True
     count = True
     log = True
     plot = True
@@ -79,3 +79,10 @@
 
     # path
     nltk = "../data/nltk_data"
+
+[text_analysis]
+
+    # boolean parameters
+    wordcloud = True
+    kneighbors = True
+    distance_plot = True

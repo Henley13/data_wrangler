@@ -1,50 +1,41 @@
+# -*- coding: utf-8 -*-
+
 """ Analyze text elements, extract topics and make a wordcloud."""
 
 # libraries
 import time
 import os
 import pandas as pd
-import scipy.sparse as sp
 import numpy as np
 import random
 import pickle
 from wordcloud.wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from sklearn.externals import joblib
+from toolbox.utils import print_top_words, load_sparse_csr, get_config_tag
 print("\n")
 
 
-def print_top_words(model, feature_names, n_top_words):
-    for topic_idx, topic in enumerate(model.components_):
-        print("Topic #%d:" % topic_idx)
-        print(" ".join([feature_names[i]
-                        for i in topic.argsort()[:-n_top_words - 1:-1]]))
-    print()
-    return
-
-
-def load_sparse_csr(path):
-    loader = np.load(path)
-    return sp.csr_matrix((loader['data'], loader['indices'], loader['indptr']),
-                         shape=loader['shape'])
-
-
-def origin_word(words, n_top, path_vocabulary, path_count, path_metadata):
+def origin_word(words, n_top, result_directory):
     """
     Function to find the origin of a specific word.
     :param words: string or list of string
     :param n_top: integer
-    :param path_vocabulary: string
-    :param path_count: string
-    :param path_metadata: string
+    :param result_directory: string
     :return:
     """
+
+    # paths
+    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+    path_count = os.path.join(result_directory, "count.npz")
+    path_log = os.path.join(result_directory, "log_final")
+
     # get data
     df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
                      index_col=False)
     df.sort_values(by="index", axis=0, ascending=True, inplace=True)
     feature_names = list(df["word"])
-    df_metadata = pd.read_csv(path_metadata, header=0, encoding="utf-8",
+    df_metadata = pd.read_csv(path_log, header=0, encoding="utf-8",
                               sep=";", index_col=False)
     matrix = load_sparse_csr(path_count)
     if isinstance(words, str):
@@ -79,27 +70,146 @@ def origin_word(words, n_top, path_vocabulary, path_count, path_metadata):
         print('\n', "------------", "\n")
     return
 
+
+def make_wordcloud(result_directory, n_top_words):
+    """
+    Function to build wordclouds
+    :param result_directory: string
+    :param n_top_words: integer
+    :return:
+    """
+
+    print("wordcloud...", "\n")
+
+    # paths
+    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+    path_nmf = os.path.join(result_directory, "nmf.pkl")
+    path_graph = os.path.join(result_directory, "graphs")
+
+    # check graph directory exists
+    if os.path.isdir(path_graph):
+        pass
+    else:
+        os.mkdir(path_graph)
+
+    # load data
+    nmf = joblib.load(path_nmf)
+    df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
+                     index_col=False)
+    df.sort_values(by="index", axis=0, ascending=True, inplace=True)
+    feature_names = list(df["word"])
+    print_top_words(nmf, feature_names, n_top_words)
+
+    # build wordclouds
+    for topic_ind, topic in enumerate(nmf.components_):
+        print("topic #%i" % topic_ind)
+        d = {}
+        for i in range(len(feature_names)):
+            word = feature_names[i]
+            weight = topic[i]
+            if weight > 0:
+                d[word] = weight
+        wc = WordCloud(width=1000, height=500, margin=2, prefer_horizontal=0.9,
+                       background_color='white', colormap="viridis")
+        wc = wc.fit_words(d)
+        plt.figure()
+        plt.imshow(wc, interpolation="bilinear")
+        plt.axis("off")
+        plt.title("Wordcloud topic %i" % topic_ind, fontweight="bold")
+        ax = plt.gca()
+        ttl = ax.title
+        ttl.set_position([.5, 1.06])
+        # plt.show()
+        path = os.path.join(path_graph, "topic %i.png" % topic_ind)
+        os.remove(path)
+        wc.to_file(path)
+
+    return
+
+
+def find_kneighbors(result_directory):
+
+    print("kneighbors", "\n")
+
+    # paths
+    path_log = os.path.join(result_directory, "log_final")
+    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+    path_tfidf = os.path.join(result_directory, "tfidf.npz")
+    path_nmf = os.path.join(result_directory, "nmf.pkl")
+    path_knn = os.path.join(result_directory, "knn.pkl")
+    path_distance = os.path.join(result_directory, "distances.pkl")
+    path_w = os.path.join(result_directory, "w.npy")
+
+    # load data
+    nmf = joblib.load(path_nmf)
+    tfidf = load_sparse_csr(path_tfidf)
+    w = nmf.transform(tfidf)
+    print("W shape :", W.shape, "\n")
+    knn = joblib.load(path_knn_w)
+    time.sleep(5)
+    df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
+    df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
+                     index_col=False)
+    df.sort_values(by="index", axis=0, ascending=True, inplace=True)
+    feature_names = list(df["word"])
+
+    # search for kneighbors
+    queries = random.choices([i for i in range(df_log.shape[0])], k=5)
+    for n in queries:
+        print("topic scores :", W[n].reshape(1, -1)[0])
+        kneighbors_test = knn.kneighbors(W[n].reshape(1, -1))
+        print("query :", df_log.at[n, "filename"])
+        print("source file :", df_log.at[n, "source_file"])
+        print(" ".join([feature_names[tfidf[n].indices[j]] for j in
+                        tfidf[n].data.argsort()[:-20 - 1:-1]]), "\n")
+        print("header :", df_log.at[n, "header_name"])
+
+        id_kneighbors = kneighbors_test[1][0]
+        for i in range(len(id_kneighbors)):
+            id = id_kneighbors[i]
+            print("--- kneighbors %i :" % i, df_log.at[id, "filename"])
+            print("----- source file :", df_log.at[id, "source_file"])
+            print("----- distance :", kneighbors_test[0][0][i])
+            print("----- header :", df_log.at[id, "header_name"])
+            print("-----", " ".join([feature_names[tfidf[id].indices[j]]
+                                     for j in tfidf[id].data.argsort()
+                                     [:-20 - 1:-1]]), "\n")
+        print("\n")
+
+    d = {}
+    # for k in [3, 5, 10, 15, 20, 30]:
+    for k in [i for i in range(5, 300, 5)]:
+        mean_distance = []
+        for n in range(df_log.shape[0]):
+            kneighbors_test = knn.kneighbors(W[n].reshape(1, -1), n_neighbors=k)
+            id_kneighbors = kneighbors_test[1][0]
+            distance = []
+            for i in range(len(id_kneighbors)):
+                distance.append(kneighbors_test[0][0][i])
+            mean_distance.append(np.mean(distance))
+        d[k] = mean_distance
+
+    joblib.dump(d, path_distance, compress=0, protocol=pickle.HIGHEST_PROTOCOL)
+
 # parameters
-n_topics = 5
-n_top_words = 20
-wordcloud_bool = False
-kneighbors_bool = False
-distance_plot_bool = False
+n_top_words = get_config_tag("n_top_words", "text_extraction")
+wordcloud_bool = get_config_tag("wordcloud", "text_extraction")
+kneighbors_bool = get_config_tag("kneighbors", "text_extraction")
+distance_plot_bool = get_config_tag("distance_plot", "text_extraction")
 
 # path
-model_directory = "../data/model_1"
-path_log = "../data/log_cleaning"
+result_directory = get_config_tag("result", "cleaning")
+path_log = os.path.join(result_directory, "log_final")
 
 # others
-path_vocabulary = os.path.join(model_directory, "token_vocabulary")
-path_tfidf = os.path.join(model_directory, "tfidf.npz")
-path_count = os.path.join(model_directory, "count.npz")
-path_nmf = os.path.join(model_directory, "nmf.pkl")
-path_knn_tfidf = os.path.join(model_directory, "knn_tfidf.pkl")
-path_knn_w = os.path.join(model_directory, "knn_w.pkl")
-path_graph = os.path.join(model_directory, "graphs")
-path_distance = os.path.join(model_directory, "distances.pkl")
-path_metadata = os.path.join(model_directory, "metadata_edited")
+path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+path_tfidf = os.path.join(result_directory, "tfidf.npz")
+path_count = os.path.join(result_directory, "count.npz")
+path_nmf = os.path.join(result_directory, "nmf.pkl")
+path_knn_tfidf = os.path.join(result_directory, "knn_tfidf.pkl")
+path_knn_w = os.path.join(result_directory, "knn_w.pkl")
+path_graph = os.path.join(result_directory, "graphs")
+path_distance = os.path.join(result_directory, "distances.pkl")
 
 start = time.clock()
 
@@ -231,4 +341,36 @@ if distance_plot_bool:
     print("\n", "#######################", "\n")
 
 words = ["sefip", "epm", "pse", "dap", "faa", "qcne", "loos"]
-origin_word(words, 5, path_vocabulary, path_count, path_metadata)
+origin_word(words, 5, path_vocabulary, path_count, path_log)
+
+
+
+if __name__ == "__main__":
+
+
+
+    # parameters
+    n_top_words = get_config_tag("n_top_words", "text_extraction")
+    wordcloud_bool = get_config_tag("wordcloud", "text_extraction")
+    kneighbors_bool = get_config_tag("kneighbors", "text_extraction")
+    distance_plot_bool = get_config_tag("distance_plot", "text_extraction")
+
+    # path
+    result_directory = get_config_tag("result", "cleaning")
+    path_log = os.path.join(result_directory, "log_final")
+
+    # others
+    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+    path_tfidf = os.path.join(result_directory, "tfidf.npz")
+    path_count = os.path.join(result_directory, "count.npz")
+    path_nmf = os.path.join(result_directory, "nmf.pkl")
+    path_knn_tfidf = os.path.join(result_directory, "knn_tfidf.pkl")
+    path_knn_w = os.path.join(result_directory, "knn_w.pkl")
+    path_graph = os.path.join(result_directory, "graphs")
+    path_distance = os.path.join(result_directory, "distances.pkl")
+
+    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+    path_count = os.path.join(result_directory, "count.npz")
+    path_log = os.path.join(result_directory, "log_final")
+
+
