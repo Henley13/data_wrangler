@@ -4,6 +4,7 @@
 
 import magic
 import os
+import pandas as pd
 from joblib import Parallel, delayed
 from toolbox.utils import log_error, get_config_tag, get_config_trace
 from toolbox.clean import cleaner, get_ready
@@ -73,7 +74,14 @@ def main(input_directory, result_directory, workers, reset, dict_param):
                                          os.listdir(input_directory))
 
     print("\n")
-    print("total number of files :", len(os.listdir(output_directory)), "\n")
+    print("total number of files :", n_files)
+    print("total number of files cleaned :", len(os.listdir(output_directory)))
+    df = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
+    print("total number of files saved in the log :", df.shape[0])
+    print("total number of extra data :", len(os.listdir(path_metadata)))
+    print("total number of failures :", len(os.listdir(path_error)), "\n")
+
+    return
 
 if __name__ == "__main__":
 

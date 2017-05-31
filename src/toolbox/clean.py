@@ -56,13 +56,14 @@ def get_ready(result_directory, reset=False):
     # reset the error
     reset_log_error(path_error)
     # reset the log
-    if os.path.isfile(path_log):
-        os.remove(path_log)
-    with open(path_log, mode="at", encoding="utf-8") as f:
-        f.write("matrix_name;file_name;source_file;n_row;n_col;integer;float;"
-                "object;metadata;time;header;multiheader;header_name;extension;"
-                "zipfile")
-        f.write("\n")
+    if reset:
+        if os.path.isfile(path_log):
+            os.remove(path_log)
+        with open(path_log, mode="at", encoding="utf-8") as f:
+            f.write("matrix_name;file_name;source_file;n_row;n_col;integer;"
+                    "float;object;metadata;time;header;multiheader;header_name;"
+                    "extension;zipfile")
+            f.write("\n")
     # check output directory for metadata exists
     if reset:
         if os.path.isdir(path_metadata):
@@ -294,6 +295,9 @@ def excel(filename, input_directory, output_directory, path_log,
         wb = copy(rb_edited)
         wb.save(temp_path)
         for sheet in sheets:
+            new_filename = "__".join([filename, sheet])
+            if os.path.isfile(os.path.join(output_directory, filename)):
+                continue
             start = time.clock()
             # extract matrix
             df, metadata, no_header = \
@@ -310,7 +314,6 @@ def excel(filename, input_directory, output_directory, path_log,
             # save results
             end = time.clock()
             duration = round(end - start, 2)
-            new_filename = "__".join([filename, sheet])
             dict_result["matrix_name"] = new_filename
             dict_result["duration"] = duration
             dict_result["integer"] = d["integer"]
@@ -659,6 +662,8 @@ def save_results(df, output_directory, metadata_directory, path_log,
     """
     dict_result["matrix_name"] = dict_result["matrix_name"].replace("/", "--")
     path = os.path.join(output_directory, dict_result["matrix_name"])
+    if os.path.isfile(path):
+        return
     df.to_csv(path, sep=";", index=False, encoding="utf-8", header=True)
     if dict_result["metadata"] != "":
         path_metadata = os.path.join(metadata_directory,

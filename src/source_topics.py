@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-""" Source the different topics extracted through NMF. """
+""" Source the different topics extracted through NMF using mutual
+    information algorithms """
 
 # libraries
 import os
@@ -36,3 +37,8 @@ path_count = os.path.join(result_directory, "count.npz")
 path_nmf = os.path.join(result_directory, "nmf.pkl")
 path_knn_tfidf = os.path.join(result_directory, "knn_tfidf.pkl")
 path_knn_w = os.path.join(result_directory, "knn_w.pkl")
+
+
+
+
+

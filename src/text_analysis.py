@@ -12,8 +12,23 @@ import pickle
 from wordcloud.wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from sklearn.externals import joblib
+from text_extraction import get_ordered_features
 from toolbox.utils import print_top_words, load_sparse_csr, get_config_tag
 print("\n")
+
+
+def check_graph_folder(result_directory):
+    """
+    Function to check if the graph folder exists
+    :param result_directory: string
+    :return:
+    """
+    path_graph = os.path.join(result_directory, "graphs")
+    if os.path.isdir(path_graph):
+        return
+    else:
+        os.mkdir(path_graph)
+    return
 
 
 def origin_word(words, n_top, result_directory):
@@ -86,12 +101,6 @@ def make_wordcloud(result_directory, n_top_words):
     path_nmf = os.path.join(result_directory, "nmf.pkl")
     path_graph = os.path.join(result_directory, "graphs")
 
-    # check graph directory exists
-    if os.path.isdir(path_graph):
-        pass
-    else:
-        os.mkdir(path_graph)
-
     # load data
     nmf = joblib.load(path_nmf)
     df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
@@ -121,256 +130,173 @@ def make_wordcloud(result_directory, n_top_words):
         ttl.set_position([.5, 1.06])
         # plt.show()
         path = os.path.join(path_graph, "topic %i.png" % topic_ind)
-        os.remove(path)
+        if os.path.isfile(path):
+            os.remove(path)
         wc.to_file(path)
 
     return
 
 
-def find_kneighbors(result_directory):
-
+def find_kneighbors(result_directory, n_queries, n_neighbors):
+    """
+    Function to find closest kneighbors
+    :param result_directory: string
+    :param n_queries: integer
+    :param n_neighbors: integer
+    :return:
+    """
     print("kneighbors", "\n")
 
     # paths
     path_log = os.path.join(result_directory, "log_final")
     path_vocabulary = os.path.join(result_directory, "token_vocabulary")
     path_tfidf = os.path.join(result_directory, "tfidf.npz")
-    path_nmf = os.path.join(result_directory, "nmf.pkl")
     path_knn = os.path.join(result_directory, "knn.pkl")
-    path_distance = os.path.join(result_directory, "distances.pkl")
     path_w = os.path.join(result_directory, "w.npy")
 
     # load data
-    nmf = joblib.load(path_nmf)
     tfidf = load_sparse_csr(path_tfidf)
-    w = nmf.transform(tfidf)
-    print("W shape :", W.shape, "\n")
-    knn = joblib.load(path_knn_w)
-    time.sleep(5)
+    w = np.load(path_w)
+    print("tfidf shape", tfidf.shape)
+    print("W shape :", w.shape, "\n")
+    knn = joblib.load(path_knn)
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
-    df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
-                     index_col=False)
-    df.sort_values(by="index", axis=0, ascending=True, inplace=True)
-    feature_names = list(df["word"])
+    feature_names = get_ordered_features(path_vocabulary)
 
     # search for kneighbors
-    queries = random.choices([i for i in range(df_log.shape[0])], k=5)
+    queries = random.choices([i for i in range(df_log.shape[0])],
+                             k=n_queries)
     for n in queries:
-        print("topic scores :", W[n].reshape(1, -1)[0])
-        kneighbors_test = knn.kneighbors(W[n].reshape(1, -1))
-        print("query :", df_log.at[n, "filename"])
+        print("query :", df_log.at[n, "matrix_name"])
         print("source file :", df_log.at[n, "source_file"])
+        print("topic scores :", w[n].reshape(1, -1)[0])
         print(" ".join([feature_names[tfidf[n].indices[j]] for j in
-                        tfidf[n].data.argsort()[:-20 - 1:-1]]), "\n")
-        print("header :", df_log.at[n, "header_name"])
-
+                        tfidf[n].data.argsort()[:-20 - 1:-1]]))
+        print("header :", df_log.at[n, "header_name"], "\n")
+        kneighbors_test = knn.kneighbors(w[n].reshape(1, -1),
+                                         n_neighbors=n_neighbors)
         id_kneighbors = kneighbors_test[1][0]
         for i in range(len(id_kneighbors)):
             id = id_kneighbors[i]
-            print("--- kneighbors %i :" % i, df_log.at[id, "filename"])
-            print("----- source file :", df_log.at[id, "source_file"])
-            print("----- distance :", kneighbors_test[0][0][i])
-            print("----- header :", df_log.at[id, "header_name"])
-            print("-----", " ".join([feature_names[tfidf[id].indices[j]]
-                                     for j in tfidf[id].data.argsort()
-                                     [:-20 - 1:-1]]), "\n")
+            if df_log.at[id, "matrix_name"] == df_log.at[n, "matrix_name"]:
+                continue
+            else:
+                print("--- kneighbors %i :" % i, df_log.at[id, "matrix_name"])
+                print("----- source file :", df_log.at[id, "source_file"])
+                print("----- distance :", kneighbors_test[0][0][i])
+                print("----- header :", df_log.at[id, "header_name"])
+                print("-----", " ".join([feature_names[tfidf[id].indices[j]]
+                                         for j in tfidf[id].data.argsort()
+                                         [:-20 - 1:-1]]), "\n")
         print("\n")
+    return
 
-    d = {}
-    # for k in [3, 5, 10, 15, 20, 30]:
-    for k in [i for i in range(5, 300, 5)]:
-        mean_distance = []
-        for n in range(df_log.shape[0]):
-            kneighbors_test = knn.kneighbors(W[n].reshape(1, -1), n_neighbors=k)
-            id_kneighbors = kneighbors_test[1][0]
-            distance = []
-            for i in range(len(id_kneighbors)):
-                distance.append(kneighbors_test[0][0][i])
-            mean_distance.append(np.mean(distance))
-        d[k] = mean_distance
 
-    joblib.dump(d, path_distance, compress=0, protocol=pickle.HIGHEST_PROTOCOL)
-
-# parameters
-n_top_words = get_config_tag("n_top_words", "text_extraction")
-wordcloud_bool = get_config_tag("wordcloud", "text_extraction")
-kneighbors_bool = get_config_tag("kneighbors", "text_extraction")
-distance_plot_bool = get_config_tag("distance_plot", "text_extraction")
-
-# path
-result_directory = get_config_tag("result", "cleaning")
-path_log = os.path.join(result_directory, "log_final")
-
-# others
-path_vocabulary = os.path.join(result_directory, "token_vocabulary")
-path_tfidf = os.path.join(result_directory, "tfidf.npz")
-path_count = os.path.join(result_directory, "count.npz")
-path_nmf = os.path.join(result_directory, "nmf.pkl")
-path_knn_tfidf = os.path.join(result_directory, "knn_tfidf.pkl")
-path_knn_w = os.path.join(result_directory, "knn_w.pkl")
-path_graph = os.path.join(result_directory, "graphs")
-path_distance = os.path.join(result_directory, "distances.pkl")
-
-start = time.clock()
-
-# check graph directory exists
-if os.path.isdir(path_graph):
-    pass
-else:
-    os.mkdir(path_graph)
-
-if wordcloud_bool:
-
-    print("wordcloud", "\n")
-
-    # load data
-    nmf = joblib.load(path_nmf)
-    df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
-                     index_col=False)
-    df.sort_values(by="index", axis=0, ascending=True, inplace=True)
-    feature_names = list(df["word"])
-    print_top_words(nmf, feature_names, n_top_words)
-
-    for topic_ind, topic in enumerate(nmf.components_):
-        print("topic #%i" % topic_ind)
-        d = {}
-        for i in range(len(feature_names)):
-            word = feature_names[i]
-            weight = topic[i]
-            if weight > 0:
-                d[word] = weight
-        wc = WordCloud(width=1000, height=500, margin=2, prefer_horizontal=0.9,
-                       background_color='white', colormap="viridis")
-        wc = wc.fit_words(d)
-        plt.figure()
-        plt.imshow(wc, interpolation="bilinear")
-        plt.axis("off")
-        plt.title("Wordcloud topic %i" % topic_ind, fontweight="bold")
-        ax = plt.gca()
-        ttl = ax.title
-        ttl.set_position([.5, 1.06])
-        # plt.show()
-        path = os.path.join(path_graph, "topic %i.png" % topic_ind)
-        wc.to_file(path)
-
-    print("\n", "#######################", "\n")
-
-if kneighbors_bool:
-
-    print("kneighbors", "\n")
-
-    # load data
-    nmf = joblib.load(path_nmf)
-    tfidf = load_sparse_csr(path_tfidf)
-    W = nmf.transform(tfidf)
-    print("W shape :", W.shape, "\n")
-    knn = joblib.load(path_knn_w)
-    time.sleep(5)
-    df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
-    df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
-                     index_col=False)
-    df.sort_values(by="index", axis=0, ascending=True, inplace=True)
-    feature_names = list(df["word"])
-
-    # search for kneighbors
-    queries = random.choices([i for i in range(df_log.shape[0])], k=5)
-    for n in queries:
-        print("topic scores :", W[n].reshape(1, -1)[0])
-        kneighbors_test = knn.kneighbors(W[n].reshape(1, -1))
-        print("query :", df_log.at[n, "filename"])
-        print("source file :", df_log.at[n, "source_file"])
-        print(" ".join([feature_names[tfidf[n].indices[j]] for j in
-                        tfidf[n].data.argsort()[:-20 - 1:-1]]), "\n")
-        print("header :", df_log.at[n, "header_name"])
-
-        id_kneighbors = kneighbors_test[1][0]
-        for i in range(len(id_kneighbors)):
-            id = id_kneighbors[i]
-            print("--- kneighbors %i :" % i, df_log.at[id, "filename"])
-            print("----- source file :", df_log.at[id, "source_file"])
-            print("----- distance :", kneighbors_test[0][0][i])
-            print("----- header :", df_log.at[id, "header_name"])
-            print("-----", " ".join([feature_names[tfidf[id].indices[j]]
-                                     for j in tfidf[id].data.argsort()
-                                     [:-20 - 1:-1]]), "\n")
-        print("\n")
-
-    d = {}
-    # for k in [3, 5, 10, 15, 20, 30]:
-    for k in [i for i in range(5, 300, 5)]:
-        mean_distance = []
-        for n in range(df_log.shape[0]):
-            kneighbors_test = knn.kneighbors(W[n].reshape(1, -1), n_neighbors=k)
-            id_kneighbors = kneighbors_test[1][0]
-            distance = []
-            for i in range(len(id_kneighbors)):
-                distance.append(kneighbors_test[0][0][i])
-            mean_distance.append(np.mean(distance))
-        d[k] = mean_distance
-
-    joblib.dump(d, path_distance, compress=0, protocol=pickle.HIGHEST_PROTOCOL)
-
-    print("\n", "#######################", "\n")
-
-if distance_plot_bool:
-
+def plot_mean_kneighbors(result_directory):
+    """
+    Function to plot the mean distances for different number of kneighbors
+    considered
+    :param result_directory: string
+    :return:
+    """
     print("distance plots", "\n")
 
+    # paths
+    path_log = os.path.join(result_directory, "log_final")
+    path_distance = os.path.join(result_directory, "distances.pkl")
+    path_knn = os.path.join(result_directory, "knn.pkl")
+    path_w = os.path.join(result_directory, "w.npy")
+    path_graph = os.path.join(result_directory, "graphs")
+
+    # load data and model
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
-    d = joblib.load(path_distance)
+    w = np.load(path_w)
+    knn = joblib.load(path_knn)
+
+    # collect mean distance
+    d = {}
+    for k in [i for i in range(5, 300, 5)]:
+        mean_distance = []
+        for n in range(df_log.shape[0]):
+            kneighbors_test = knn.kneighbors(w[n].reshape(1, -1), n_neighbors=k)
+            id_kneighbors = kneighbors_test[1][0]
+            distance = []
+            for i in range(len(id_kneighbors)):
+                distance.append(kneighbors_test[0][0][i])
+            mean_distance.append(np.mean(distance))
+        d[k] = mean_distance
+
+    # save results
+    joblib.dump(d, path_distance, compress=0, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # change labels
     data = []
     labels = []
     for key in d:
-        print("number of kneighbors :", key)
         data.append(d[key])
         if key % 10 == 0:
             labels.append(str(key))
         else:
             labels.append("")
 
+    # plot figures
     plt.figure()
     plt.boxplot(data, labels=labels)
     plt.title("KNN distances (%i matrices)" % df_log.shape[0],
               fontweight="bold")
     path = os.path.join(path_graph, "boxplot knn distances.png")
+    if os.path.isfile(path):
+        os.remove(path)
     plt.xlabel("Number of neighbors")
     plt.ylabel("Mean distance")
     plt.savefig(path)
     # plt.show()
 
-    print("\n", "#######################", "\n")
-
-words = ["sefip", "epm", "pse", "dap", "faa", "qcne", "loos"]
-origin_word(words, 5, path_vocabulary, path_count, path_log)
+    return
 
 
+def main(result_directory, n_top_words, wordcloud_bool, kneighbors_bool,
+         distance_plot_bool, n_queries=5, n_neighbors=5):
+    """
+    Function to run all the script
+    :param result_directory: string
+    :param n_top_words: integer
+    :param wordcloud_bool: boolean
+    :param kneighbors_bool: boolean
+    :param distance_plot_bool: boolean
+    :param n_queries: integer
+    :param n_neighbors: integer
+    :return:
+    """
+    check_graph_folder(result_directory)
+    if wordcloud_bool:
+        make_wordcloud(result_directory, n_top_words)
+    if kneighbors_bool:
+        find_kneighbors(result_directory, n_queries, n_neighbors)
+    if distance_plot_bool:
+        plot_mean_kneighbors(result_directory)
+    return
 
 if __name__ == "__main__":
 
-
-
     # parameters
     n_top_words = get_config_tag("n_top_words", "text_extraction")
-    wordcloud_bool = get_config_tag("wordcloud", "text_extraction")
-    kneighbors_bool = get_config_tag("kneighbors", "text_extraction")
-    distance_plot_bool = get_config_tag("distance_plot", "text_extraction")
+    wordcloud_bool = get_config_tag("wordcloud", "text_analysis")
+    kneighbors_bool = get_config_tag("kneighbors", "text_analysis")
+    distance_plot_bool = get_config_tag("distance_plot", "text_analysis")
 
     # path
     result_directory = get_config_tag("result", "cleaning")
-    path_log = os.path.join(result_directory, "log_final")
 
-    # others
-    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
-    path_tfidf = os.path.join(result_directory, "tfidf.npz")
-    path_count = os.path.join(result_directory, "count.npz")
-    path_nmf = os.path.join(result_directory, "nmf.pkl")
-    path_knn_tfidf = os.path.join(result_directory, "knn_tfidf.pkl")
-    path_knn_w = os.path.join(result_directory, "knn_w.pkl")
-    path_graph = os.path.join(result_directory, "graphs")
-    path_distance = os.path.join(result_directory, "distances.pkl")
+    # run code
+    main(result_directory=result_directory,
+         n_top_words=n_top_words,
+         wordcloud_bool=wordcloud_bool,
+         kneighbors_bool=kneighbors_bool,
+         distance_plot_bool=distance_plot_bool,
+         n_queries=5,
+         n_neighbors=5)
 
-    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
-    path_count = os.path.join(result_directory, "count.npz")
-    path_log = os.path.join(result_directory, "log_final")
-
-
+    # specific queries
+    # words = ["sefip", "epm", "pse", "dap", "faa", "qcne", "loos"]
+    # origin_word(words, 5, result_directory)

@@ -32,7 +32,7 @@
     result = "../data/res1"
 
     # boolean to reset the output directory or not
-    reset = True
+    reset = False
 
     # number of workers to use
     n_jobs = 2

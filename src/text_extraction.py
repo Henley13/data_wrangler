@@ -18,9 +18,6 @@ from toolbox.utils import get_config_tag, save_sparse_csr, save_dictionary, \
     print_top_words, dict_to_list
 print("\n")
 
-###############################################################################
-###############################################################################
-
 
 def _text_content_extraction(log, result_directory):
     """
@@ -128,7 +125,7 @@ def _text_extraction(path_log, result_directory, content_bool, header_bool,
     :return: list of strings
     """
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
-    print("number of files: ", df_log.shape[0], "\n")
+    print("number of files: ", df_log.shape[0])
     if content_bool and header_bool and metadata_bool:
         return _text_full_extraction(df_log, result_directory)
     elif content_bool and not header_bool and not metadata_bool:
@@ -150,7 +147,8 @@ def _text_extraction(path_log, result_directory, content_bool, header_bool,
 
 
 def count_computation(path_log, result_directory, content_bool, header_bool,
-                      metadata_bool, stop_words, path_count, path_vocabulary):
+                      metadata_bool, stop_words, path_count, path_vocabulary,
+                      max_df, min_df):
     """
     Function to count words
     :param path_log: string
@@ -160,7 +158,9 @@ def count_computation(path_log, result_directory, content_bool, header_bool,
     :param metadata_bool: boolean
     :param stop_words: list of strings
     :param path_count: string
-    :param path_vocabulary:string
+    :param path_vocabulary: string
+    :param max_df: integer/float
+    :param min_df: integer/float
     :return: sparse matrix [n_samples, n_features], dictionary
     """
     count_vect = CountVectorizer(input=u'content',
@@ -174,8 +174,8 @@ def count_computation(path_log, result_directory, content_bool, header_bool,
                                  token_pattern=r'\b[a-zA-Z][a-zA-Z][a-zA-Z]+\b',
                                  ngram_range=(1, 1),
                                  analyzer=u'word',
-                                 max_df=1.0,
-                                 min_df=5,
+                                 max_df=max_df,
+                                 min_df=min_df,
                                  max_features=None,
                                  vocabulary=None,
                                  binary=False)
@@ -204,7 +204,6 @@ def tfidf_computation(count_matrix):
                                     use_idf=True,
                                     smooth_idf=True,
                                     sublinear_tf=False)
-    print("tfidf computation...", "\n")
     tfidf = tfidf_transf.fit_transform(count_matrix)
     tfidf = sp.csr_matrix(tfidf)
     return tfidf
@@ -224,7 +223,10 @@ def normalize_matrix(matrix):
         sum[i, 0] = row.sum()
     m = np.mean(sum)
     for i in range(matrix.shape[0]):
-        weight[i, 0] = m / sum[i, 0]
+        if sum[i, 0] == 0:
+            weight[i, 0] = 1
+        else:
+            weight[i, 0] = m / sum[i, 0]
     weight = sp.csr_matrix(weight)
     new_matrix = matrix.multiply(weight)
     return new_matrix, weight
@@ -260,7 +262,7 @@ def mix_matrices(matrices, weights, vocabularies):
             col += l[k].getcol(d[word][k])
         res[:, col_index] = col
         col_index += 1
-    return res, features
+    return res.tocsr(), features
 
 
 def extract_features(path_log, result_directory, content_bool, header_bool,
@@ -283,7 +285,7 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
     weighting_list = []
     # count
     if content_bool:
-        print("extracting content")
+        print("--- extracting content ---")
         path_count = os.path.join(result_directory, "count_content.npz")
         path_vocabulary = os.path.join(result_directory,
                                        "token_vocabulary_content")
@@ -295,17 +297,20 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               metadata_bool=False,
                               stop_words=french_stopwords,
                               path_count=path_count,
-                              path_vocabulary=path_vocabulary)
+                              path_vocabulary=path_vocabulary,
+                              max_df=0.95,
+                              min_df=2)
         print("normalization...")
         matrix, weighting = normalize_matrix(count_matrix)
-        print("count shape :", matrix.shape, "\n")
+        print("count shape :", matrix.shape)
         features = get_ordered_features(path_vocabulary)
+        print("number of unique words :", len(features), "\n")
         matrices.append(matrix)
         weights.append(0.5)
         vocabularies.append(features)
         weighting_list.append(weighting)
     if header_bool:
-        print("extracting header")
+        print("--- extracting header ---")
         path_count = os.path.join(result_directory, "count_header.npz")
         path_vocabulary = os.path.join(result_directory,
                                        "token_vocabulary_header")
@@ -317,17 +322,20 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               metadata_bool=False,
                               stop_words=french_stopwords,
                               path_count=path_count,
-                              path_vocabulary=path_vocabulary)
+                              path_vocabulary=path_vocabulary,
+                              max_df=0.95,
+                              min_df=2)
         print("normalization...")
         matrix, weighting = normalize_matrix(count_matrix)
-        print("count shape :", matrix.shape, "\n")
+        print("count shape :", matrix.shape)
         features = get_ordered_features(path_vocabulary)
+        print("number of unique word :", len(features), "\n")
         matrices.append(matrix)
         weights.append(0.25)
         vocabularies.append(features)
         weighting_list.append(weighting)
     if metadata_bool:
-        print("extracting metadata")
+        print("--- extracting metadata ---")
         path_count = os.path.join(result_directory, "count_metadata.npz")
         path_vocabulary = os.path.join(result_directory,
                                        "token_vocabulary_metadata")
@@ -339,32 +347,37 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               metadata_bool=True,
                               stop_words=french_stopwords,
                               path_count=path_count,
-                              path_vocabulary=path_vocabulary)
+                              path_vocabulary=path_vocabulary,
+                              max_df=0.95,
+                              min_df=2)
         print("normalization...")
         matrix, weighting = normalize_matrix(count_matrix)
-        print("count shape :", matrix.shape, "\n")
+        print("count shape :", matrix.shape)
         features = get_ordered_features(path_vocabulary)
+        print("number of unique word :", len(features), "\n")
         matrices.append(matrix)
         weights.append(0.25)
         vocabularies.append(features)
         weighting_list.append(weighting)
-    print("mixing matrices...")
+    print("--- mixing matrices ---")
     count_matrix, features = mix_matrices(matrices, weights, vocabularies)
     d_features = {}
     for i, word in enumerate(features):
         d_features[word] = i
     print("count shape :", count_matrix.shape, "\n")
     # tfidf
+    print("--- tfidf ---")
     tfidf = tfidf_computation(count_matrix)
     print("tfidf shape :", tfidf.shape, "\n")
     # results
-    print("saving...", "\n")
+    print("--- saving ---", "\n")
     path_count = os.path.join(result_directory, "count.npz")
     path_tfidf = os.path.join(result_directory, "tfidf.npz")
     path_vocabulary = os.path.join(result_directory, "token_vocabulary")
     save_sparse_csr(path_count, count_matrix)
     save_sparse_csr(path_tfidf, tfidf)
     save_dictionary(d_features, path_vocabulary, ["word", "index"])
+
     return count_matrix, d_features, tfidf, weighting_list
 
 
@@ -376,7 +389,6 @@ def get_ordered_features(path_vocabulary):
     """
     df = pd.read_csv(path_vocabulary, header=0, encoding="utf-8", sep=";",
                      index_col=False)
-    print("number of unique word :", df.shape[0])
     df.sort_values(by="index", axis=0, ascending=True, inplace=True)
     return list(df["word"])
 
@@ -391,7 +403,7 @@ def compute_nmf(matrix, n_topics, feature_names, n_top_words, result_directory):
     :param result_directory: string
     :return: sklearn fitted model, sparse row matrix [n_samples, n_topics]
     """
-    print("NMF", "\n")
+    print("--- NMF ---", "\n")
     nmf = NMF(n_components=n_topics, random_state=1, alpha=.1, l1_ratio=.5)
     nmf = nmf.fit(matrix)
     print_top_words(nmf, feature_names, n_top_words)
@@ -410,7 +422,7 @@ def compute_knn(matrix, result_directory):
     :param result_directory: string
     :return: sklearn fitted model
     """
-    print("KNN", "\n")
+    print("--- KNN ---", "\n")
     knn = NearestNeighbors(n_neighbors=5,
                            radius=1.0,
                            algorithm='auto',
@@ -445,7 +457,6 @@ def main(content_bool, header_bool, metadata_bool, n_topics, n_top_words,
              sklearn fitted model
     """
 
-    print("text extraction...", "\n")
     # stopwords
     nltk.data.path.append(nltk_path)
     french_stopwords = list(set(stopwords.words('french')))
@@ -469,9 +480,6 @@ def main(content_bool, header_bool, metadata_bool, n_topics, n_top_words,
                          result_directory)
     knn = compute_knn(w, result_directory)
     return count_matrix, d_features, tfidf, weighting_list, nmf, w, knn
-
-###############################################################################
-###############################################################################
 
 if __name__ == "__main__":
 

@@ -59,7 +59,7 @@ def extension(result_directory, files_directory):
             with open(sum_extension_path, mode="at", encoding="utf-8") as f:
                 f.write(";".join([ext, "False"]))
                 f.write("\n")
-    print("number of errors :", errors, "\n")
+    print("number of extensions not find :", errors, "\n")
     return
 
 
@@ -156,7 +156,8 @@ def plot(result_directory):
     plt.yscale("log")
     plt.title("Files size (%i files)" % df_log.shape[0])
     path = os.path.join(graph_directory, "size distribution (log log).png")
-    os.remove(path)
+    if os.path.isfile(path):
+        os.remove(path)
     plt.savefig(path)
 
     plt.scatter(df_log["n_col"], df_log["n_row"], c="green", alpha=0.8)
@@ -166,7 +167,8 @@ def plot(result_directory):
     plt.yscale("linear")
     plt.title("Files size (%i files)" % df_log.shape[0])
     path = os.path.join(graph_directory, "size distribution.png")
-    os.remove(path)
+    if os.path.isfile(path):
+        os.remove(path)
     plt.savefig(path)
 
     plt.scatter(df_log["n_col"], df_log["n_row"], c="green", alpha=0.8)
@@ -176,7 +178,8 @@ def plot(result_directory):
     plt.yscale("log")
     plt.title("Files size (%i files)" % df_log.shape[0])
     path = os.path.join(graph_directory, "size distribution (log linear).png")
-    os.remove(path)
+    if os.path.isfile(path):
+        os.remove(path)
     plt.savefig(path)
 
     return

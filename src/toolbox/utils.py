@@ -42,7 +42,7 @@ def save_dictionary(dictionary, path, header):
         f.write(";".join(header))
         f.write("\n")
         for key in dictionary:
-            s = ";".join([key, str(dictionary[key])])
+            s = ";".join([str(key), str(dictionary[key])])
             f.write(s)
             f.write("\n")
     return
