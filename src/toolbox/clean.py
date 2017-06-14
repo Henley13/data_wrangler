@@ -57,13 +57,20 @@ def get_ready(result_directory, reset=False):
     reset_log_error(path_error)
     # reset the log
     if reset:
-        if os.path.isfile(path_log):
-            os.remove(path_log)
-        with open(path_log, mode="at", encoding="utf-8") as f:
+        with open(path_log, mode="wt", encoding="utf-8") as f:
             f.write("matrix_name;file_name;source_file;n_row;n_col;integer;"
                     "float;object;metadata;time;header;multiheader;header_name;"
                     "extension;zipfile")
             f.write("\n")
+    else:
+        if os.path.isfile(path_log):
+            pass
+        else:
+            with open(path_log, mode="wt", encoding="utf-8") as f:
+                f.write("matrix_name;file_name;source_file;n_row;n_col;integer;"
+                        "float;object;metadata;time;header;multiheader;"
+                        "header_name;extension;zipfile")
+                f.write("\n")
     # check output directory for metadata exists
     if reset:
         if os.path.isdir(path_metadata):
@@ -219,8 +226,6 @@ def plain(filename, input_directory, output_directory, path_log,
         get_sample(path, encoding, nrow, dict_param["threshold_n_row"],
                    dict_param["ratio_sample"], dict_param["max_sample"],
                    dict_param["threshold_n_col"])
-    # threshold_n_row, ratio_sample, max_sample,
-    # threshold_n_col, check_header, threshold_json
     # get a matrix
     if is_json(full_sample, dict_param["threshold_json"]):
         dict_result["extension"] = "json"
@@ -547,6 +552,28 @@ def search_header(list_content, separator, n_col, row_to_check_header):
         if h[row] > -1:
             return row, True
     return None, None
+
+
+def file_is_json(filename, input_directory, dict_param):
+    """
+    Function to determine is the file is a json file
+    (directly from the filename)
+    :param filename: string
+    :param input_directory: string
+    :param dict_param: dictionary
+    :return: boolean
+    """
+    path = os.path.join(input_directory, filename)
+    # number of rows
+    nrow = file_len(path)
+    # encoding
+    encoding = detect_encoding(path)
+    # sample
+    sample, full_sample, threshold_n_col = \
+        get_sample(path, encoding, nrow, dict_param["threshold_n_row"],
+                   dict_param["ratio_sample"], dict_param["max_sample"],
+                   dict_param["threshold_n_col"])
+    return is_json(full_sample, dict_param["threshold_json"])
 
 
 def is_json(sample, threshold):

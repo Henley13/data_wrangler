@@ -50,4 +50,11 @@
     n_top_words = integer
     nltk = string
 
+[text_analysis]
+
+    wordcloud = boolean
+    kneighbors = boolean
+    distance_plot = boolean
+
+
 

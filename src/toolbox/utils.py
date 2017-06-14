@@ -48,13 +48,14 @@ def save_dictionary(dictionary, path, header):
     return
 
 
-def dict_to_list(dictionary):
+def dict_to_list(dictionary, reversed=False):
     """
     Function to convert a dictionary to a list of keys, ordering by value
     :param dictionary: dictionary
+    :param reversed: boolean
     :return: list of keys
     """
-    return sorted(dictionary, key=dictionary.get)
+    return sorted(dictionary, key=dictionary.get, reverse=reversed)
 
 
 def load_sparse_csr(path):

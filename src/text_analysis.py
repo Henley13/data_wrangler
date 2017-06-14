@@ -133,6 +133,7 @@ def make_wordcloud(result_directory, n_top_words):
         if os.path.isfile(path):
             os.remove(path)
         wc.to_file(path)
+        plt.close()
 
     return
 
@@ -251,6 +252,7 @@ def plot_mean_kneighbors(result_directory):
     plt.ylabel("Mean distance")
     plt.savefig(path)
     # plt.show()
+    plt.close()
 
     return
 

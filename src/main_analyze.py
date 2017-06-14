@@ -6,6 +6,7 @@
 import os
 import text_extraction
 import text_analysis
+import source_topics
 from toolbox.utils import get_config_tag
 print("\n")
 
@@ -43,4 +44,7 @@ text_analysis.main(result_directory=result_directory,
                    distance_plot_bool=distance_plot_bool,
                    n_queries=5,
                    n_neighbors=5)
+
+# source topics
+source_topics.main(result_directory=result_directory)
 

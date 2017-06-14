@@ -7,7 +7,7 @@ import os
 import pandas as pd
 from joblib import Parallel, delayed
 from toolbox.utils import log_error, get_config_tag, get_config_trace
-from toolbox.clean import cleaner, get_ready
+from toolbox.clean import cleaner, get_ready, file_is_json
 print("\n")
 
 
@@ -32,12 +32,16 @@ def worker_cleaning_activity(filename,
     try:
         cleaner(filename, input_directory, output_directory, path_log,
                 path_metadata, dict_param)
-    except:
+    except Exception:
         path = os.path.join(input_directory, filename)
         size_file = os.path.getsize(path)
         extension = "empty file"
         if size_file > 0:
             extension = magic.Magic(mime=True).from_file(path)
+            if extension == "text/plain" and file_is_json(filename,
+                                                          input_directory,
+                                                          dict_param):
+                extension = "json"
         log_error(os.path.join(path_error, filename), [filename, extension])
     return
 
