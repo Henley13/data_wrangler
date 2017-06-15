@@ -12,7 +12,7 @@ print("\n")
 
 
 def plot_extension_cleaned(result_directory, df_log):
-    print(df_log.columns)
+    # print(df_log.columns)
     return
 
 

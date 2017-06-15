@@ -9,6 +9,7 @@ import os
 import magic
 import zipfile
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 from tempfile import TemporaryDirectory
 from toolbox.utils import get_config_tag
 print("\n")
@@ -32,7 +33,7 @@ def extension(result_directory, files_directory):
         f.write("\n")
     # collect data
     errors = 0
-    for filename in os.listdir(files_directory):
+    for filename in tqdm(os.listdir(files_directory)):
         path_file = os.path.join(files_directory, filename)
         size_file = os.path.getsize(path_file)
         if size_file <= 0:
@@ -205,7 +206,7 @@ def error(result_directory):
 
     # get data
     errors_directory = os.path.join(result_directory, "fit_errors")
-    for filename in os.listdir(errors_directory):
+    for filename in tqdm(os.listdir(errors_directory)):
         path = os.path.join(errors_directory, filename)
         with open(path, mode="rt", encoding="utf-8") as f:
             c = f.readlines()

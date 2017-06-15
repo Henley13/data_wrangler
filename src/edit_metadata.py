@@ -6,6 +6,7 @@
 # libraries
 import os
 import pandas as pd
+from tqdm import tqdm
 from lxml import etree
 from toolbox.utils import get_config_tag
 print("\n")
@@ -68,7 +69,7 @@ def edit(result_directory, original_metadata):
 
     # gather metadata
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
-    for i in range(df_log.shape[0]):
+    for i in tqdm(range(df_log.shape[0])):
 
         matrix = df_log.at[i, "matrix_name"]
         # get metadata extracted from the matrix

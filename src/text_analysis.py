@@ -8,8 +8,9 @@ import pandas as pd
 import numpy as np
 import random
 import pickle
-from wordcloud.wordcloud import WordCloud
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+from wordcloud.wordcloud import WordCloud
 from sklearn.externals import joblib
 from text_extraction import get_ordered_features
 from toolbox.utils import print_top_words, load_sparse_csr, get_config_tag
@@ -215,7 +216,7 @@ def plot_mean_kneighbors(result_directory):
 
     # collect mean distance
     d = {}
-    for k in [i for i in range(5, 300, 5)]:
+    for k in tqdm([i for i in range(5, 300, 5)]):
         mean_distance = []
         for n in range(df_log.shape[0]):
             kneighbors_test = knn.kneighbors(w[n].reshape(1, -1), n_neighbors=k)

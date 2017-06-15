@@ -5,6 +5,7 @@
 import magic
 import os
 import pandas as pd
+from tqdm import tqdm
 from joblib import Parallel, delayed
 from toolbox.utils import log_error, get_config_tag, get_config_trace
 from toolbox.clean import cleaner, get_ready, file_is_json
@@ -81,7 +82,7 @@ def main(input_directory, result_directory, workers, reset, dict_param, multi):
                                              for file in
                                              os.listdir(input_directory))
     else:
-        for file in os.listdir(input_directory):
+        for file in tqdm(os.listdir(input_directory)):
             worker_cleaning_activity(filename=file,
                                      input_directory=input_directory,
                                      output_directory=output_directory,
