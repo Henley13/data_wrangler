@@ -24,6 +24,7 @@
     input = string
     result = string
     reset = boolean
+    multi = boolean
     n_jobs = integer
     threshold_n_row = integer
     ratio_sample = integer

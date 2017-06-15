@@ -7,6 +7,7 @@ import os
 import text_extraction
 import text_analysis
 import source_topics
+import graphs
 from toolbox.utils import get_config_tag
 print("\n")
 
@@ -46,5 +47,8 @@ text_analysis.main(result_directory=result_directory,
                    n_neighbors=5)
 
 # source topics
-source_topics.main(result_directory=result_directory)
+source_topics.main(result_directory=result_directory,
+                   n_top_words=5)
 
+# plot graphs and build tables
+graphs.main(result_directory=result_directory)

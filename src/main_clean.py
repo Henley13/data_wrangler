@@ -19,6 +19,7 @@ metadata_directory = get_config_tag("output", "metadata")
 # get parameters
 workers = get_config_tag("n_jobs", "cleaning")
 reset = get_config_tag("reset", "cleaning")
+multi_bool = get_config_tag("multi", "cleaning")
 dict_param = dict()
 dict_param["threshold_n_row"] = get_config_tag("threshold_n_row", "cleaning")
 dict_param["ratio_sample"] = get_config_tag("ratio_sample", "cleaning")
@@ -38,7 +39,8 @@ clean_files.main(input_directory=input_directory,
                  result_directory=result_directory,
                  workers=workers,
                  reset=reset,
-                 dict_param=dict_param)
+                 dict_param=dict_param,
+                 multi=multi_bool)
 
 # compute and show distribution
 distribution_files.main(extension_bool=extension_bool,

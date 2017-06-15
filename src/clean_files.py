@@ -38,15 +38,17 @@ def worker_cleaning_activity(filename,
         extension = "empty file"
         if size_file > 0:
             extension = magic.Magic(mime=True).from_file(path)
-            if extension == "text/plain" and file_is_json(filename,
-                                                          input_directory,
-                                                          dict_param):
-                extension = "json"
+            try:
+                is_json = file_is_json(filename, input_directory, dict_param)
+                if extension == "text/plain" and is_json:
+                    extension = "json"
+            except Exception:
+                pass
         log_error(os.path.join(path_error, filename), [filename, extension])
     return
 
 
-def main(input_directory, result_directory, workers, reset, dict_param):
+def main(input_directory, result_directory, workers, reset, dict_param, multi):
     """
     Function to run all the script
     :param input_directory: string
@@ -54,6 +56,7 @@ def main(input_directory, result_directory, workers, reset, dict_param):
     :param workers: integer
     :param reset: boolean
     :param dict_param: dictionary
+    :param multi: boolean
     :return:
     """
 
@@ -65,17 +68,27 @@ def main(input_directory, result_directory, workers, reset, dict_param):
     output_directory, path_log, path_error, path_metadata = \
         get_ready(result_directory, reset)
 
-    # multiprocessing
-    Parallel(n_jobs=workers, verbose=20)(delayed(worker_cleaning_activity)
-                                         (filename=file,
-                                          input_directory=input_directory,
-                                          output_directory=output_directory,
-                                          path_log=path_log,
-                                          path_metadata=path_metadata,
-                                          dict_param=dict_param,
-                                          path_error=path_error)
-                                         for file in
-                                         os.listdir(input_directory))
+    if multi:
+        # multiprocessing
+        Parallel(n_jobs=workers, verbose=20)(delayed(worker_cleaning_activity)
+                                             (filename=file,
+                                              input_directory=input_directory,
+                                              output_directory=output_directory,
+                                              path_log=path_log,
+                                              path_metadata=path_metadata,
+                                              dict_param=dict_param,
+                                              path_error=path_error)
+                                             for file in
+                                             os.listdir(input_directory))
+    else:
+        for file in os.listdir(input_directory):
+            worker_cleaning_activity(filename=file,
+                                     input_directory=input_directory,
+                                     output_directory=output_directory,
+                                     path_log=path_log,
+                                     path_metadata=path_metadata,
+                                     dict_param=dict_param,
+                                     path_error=path_error)
 
     print("\n")
     print("total number of files :", n_files)
@@ -96,6 +109,7 @@ if __name__ == "__main__":
     result_directory = get_config_tag("result", "cleaning")
     workers = get_config_tag("n_jobs", "cleaning")
     reset = get_config_tag("reset", "cleaning")
+    multi = get_config_tag("multi", "cleaning")
 
     dict_param = dict()
     dict_param["threshold_n_row"] = get_config_tag("threshold_n_row",
@@ -112,4 +126,5 @@ if __name__ == "__main__":
          result_directory=result_directory,
          workers=workers,
          reset=reset,
-         dict_param=dict_param)
+         dict_param=dict_param,
+         multi=multi)

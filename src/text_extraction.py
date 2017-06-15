@@ -14,8 +14,8 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.decomposition import NMF
 from sklearn.neighbors import NearestNeighbors
 from sklearn.externals import joblib
-from toolbox.utils import get_config_tag, save_sparse_csr, save_dictionary, \
-    print_top_words, dict_to_list
+from toolbox.utils import get_config_tag, save_sparse_csr, save_dictionary
+from toolbox.utils import print_top_words, dict_to_list
 print("\n")
 
 

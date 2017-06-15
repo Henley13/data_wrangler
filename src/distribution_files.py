@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" Function to compute some basic statistics on the fitted files. """
+""" Functions to compute some basic statistics on the fitted files. """
 
 # libraries
 import pandas as pd
@@ -36,7 +36,7 @@ def extension(result_directory, files_directory):
         path_file = os.path.join(files_directory, filename)
         size_file = os.path.getsize(path_file)
         if size_file <= 0:
-            return
+            continue
         ext = magic.Magic(mime=True).from_file(path_file)
         if ext == "application/zip":
             try:

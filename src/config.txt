@@ -28,11 +28,14 @@
 [cleaning]
 
     # paths
-    input = "../data/data_collected_xml"
-    result = "../data/res1"
+    input = "../data/data_collected"
+    result = "../data/res2"
 
     # boolean to reset the output directory or not
-    reset = False
+    reset = True
+
+    # allow multiprocessing
+    multi = True
 
     # number of workers to use
     n_jobs = 2

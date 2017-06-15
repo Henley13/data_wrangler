@@ -3,7 +3,6 @@
 """ Analyze text elements, extract topics and make a wordcloud."""
 
 # libraries
-import time
 import os
 import pandas as pd
 import numpy as np
@@ -118,7 +117,7 @@ def make_wordcloud(result_directory, n_top_words):
             weight = topic[i]
             if weight > 0:
                 d[word] = weight
-        wc = WordCloud(width=1000, height=500, margin=2, prefer_horizontal=0.9,
+        wc = WordCloud(width=1000, height=500, margin=2, prefer_horizontal=1,
                        background_color='white', colormap="viridis")
         wc = wc.fit_words(d)
         plt.figure()
@@ -138,7 +137,7 @@ def make_wordcloud(result_directory, n_top_words):
     return
 
 
-def find_kneighbors(result_directory, n_queries, n_neighbors):
+def find_kneighbors_random(result_directory, n_queries, n_neighbors):
     """
     Function to find closest kneighbors
     :param result_directory: string
@@ -274,7 +273,7 @@ def main(result_directory, n_top_words, wordcloud_bool, kneighbors_bool,
     if wordcloud_bool:
         make_wordcloud(result_directory, n_top_words)
     if kneighbors_bool:
-        find_kneighbors(result_directory, n_queries, n_neighbors)
+        find_kneighbors_random(result_directory, n_queries, n_neighbors)
     if distance_plot_bool:
         plot_mean_kneighbors(result_directory)
     return
