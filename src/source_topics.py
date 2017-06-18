@@ -15,6 +15,8 @@ from toolbox.utils import save_dictionary
 from tqdm import tqdm
 print("\n")
 
+# TODO refactor graph paths
+
 
 def count_tag(result_directory, df_log):
     """

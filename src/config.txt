@@ -64,7 +64,6 @@
 [distribution]
 
     # boolean parameters
-    extension = True
     count = True
     log = True
     plot = True

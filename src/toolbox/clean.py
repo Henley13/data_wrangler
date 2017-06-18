@@ -33,17 +33,21 @@ def get_ready(result_directory, reset=False):
     Function to make the output directory ready to host extracted data
     :param result_directory: string
     :param reset: boolean
-    :return: string, string, string, string
+    :return: string, string, string, string, string
     """
+    print("make folders ready", "\n")
+
     # paths
     output_directory = os.path.join(result_directory, "data_fitted")
     path_log = os.path.join(result_directory, "log_cleaning")
     path_error = os.path.join(result_directory, "fit_errors")
     path_metadata = os.path.join(result_directory, "metadata_cleaning")
+    error_directory = os.path.join(result_directory, "files_to_fix")
+    temporary_directory = os.path.join(result_directory, "tmp")
     # check result directory
     if not os.path.isdir(result_directory):
         os.mkdir(result_directory)
-    # check output directory exists
+    # check output directory
     if reset:
         if os.path.isdir(output_directory):
             shutil.rmtree(output_directory)
@@ -53,9 +57,19 @@ def get_ready(result_directory, reset=False):
     else:
         if not os.path.isdir(output_directory):
             os.mkdir(output_directory)
-    # reset the error
-    reset_log_error(path_error)
-    # reset the log
+    # check the error log
+    reset_log_error(path_error, reset)
+    # check the error directory
+    if reset:
+        if os.path.isdir(error_directory):
+            shutil.rmtree(error_directory)
+            os.mkdir(error_directory)
+        else:
+            os.mkdir(error_directory)
+    else:
+        if not os.path.isdir(error_directory):
+            os.mkdir(error_directory)
+    # check the log
     if reset:
         with open(path_log, mode="wt", encoding="utf-8") as f:
             f.write("matrix_name;file_name;source_file;n_row;n_col;integer;"
@@ -71,7 +85,7 @@ def get_ready(result_directory, reset=False):
                         "float;object;metadata;time;header;multiheader;"
                         "header_name;extension;zipfile")
                 f.write("\n")
-    # check output directory for metadata exists
+    # check output directory for metadata
     if reset:
         if os.path.isdir(path_metadata):
             shutil.rmtree(path_metadata)
@@ -81,11 +95,19 @@ def get_ready(result_directory, reset=False):
     else:
         if not os.path.isdir(path_metadata):
             os.mkdir(path_metadata)
-    return output_directory, path_log, path_error, path_metadata
+    # check temporary directory
+    if os.path.isdir(temporary_directory):
+        shutil.rmtree(temporary_directory)
+        os.mkdir(temporary_directory)
+    else:
+        os.mkdir(temporary_directory)
+
+    return (output_directory, path_log, path_error, path_metadata,
+            error_directory, temporary_directory)
 
 
 def cleaner(filename, input_directory, output_directory, path_log,
-            metadata_directory, dict_param):
+            metadata_directory, dict_param, temp_dir):
     """
     Function to clean a file (unzipped or not)
     :param filename: string
@@ -94,6 +116,7 @@ def cleaner(filename, input_directory, output_directory, path_log,
     :param path_log: string
     :param metadata_directory:string
     :param dict_param: dictionary
+    :param temp_dir: string
     :return:
     """
     path = os.path.join(input_directory, filename)
@@ -109,14 +132,15 @@ def cleaner(filename, input_directory, output_directory, path_log,
     extension = magic.Magic(mime=True).from_file(path)
     if extension == "application/zip":
         z = zipfile.ZipFile(path)
-        with TemporaryDirectory() as big_temp_directory:
-            z.extractall(big_temp_directory)
-            for file in z.namelist():
-                temp_path = os.path.join(big_temp_directory, file)
-                if os.path.isfile(temp_path):
-                    cleaner_file(file, big_temp_directory, output_directory,
-                                 path_log, metadata_directory, True,
-                                 dict_param, dict_result)
+        path_extraction = os.path.join(temp_dir, filename)
+        os.mkdir(path_extraction)
+        z.extractall(path_extraction)
+        for file in z.namelist():
+            temp_path = os.path.join(path_extraction, file)
+            if os.path.isfile(temp_path):
+                cleaner_file(file, path_extraction, output_directory,
+                             path_log, metadata_directory, True,
+                             dict_param, dict_result)
     else:
         cleaner_file(filename, input_directory, output_directory, path_log,
                      metadata_directory, False, dict_param, dict_result)

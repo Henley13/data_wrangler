@@ -21,15 +21,32 @@ from toolbox.utils import get_config_tag, save_sparse_csr, save_dictionary
 from toolbox.utils import print_top_words, dict_to_list
 print("\n")
 
+# TODO Rethink the stemming process
+# TODO give a chance to spacy
+
 
 def _most_common(l):
     """
     Function to return the most common item from a list
     :param l: list
-    :return: most common item
+    :return: string (most common item)
     """
     data = Counter(l)
     return data.most_common(1)[0][0]
+
+
+def _stem_to_unstem(result_directory, d):
+    """
+    Function to match each stem with its most frequent unstem apparition
+    :param result_directory: string
+    :param d: dictionary {stem : list of unstem}
+    :return: dictionary {stem : unstem}
+    """
+    for stem in tqdm(d):
+        d[stem] = _most_common(d[stem])
+    path = os.path.join(result_directory, "stem_to_unstem")
+    save_dictionary(d, path, ["stem", "unstem"])
+    return d
 
 
 def _text_content_extraction(log, result_directory):
@@ -39,11 +56,8 @@ def _text_content_extraction(log, result_directory):
     :param result_directory: string
     :return: list of strings
     """
-    stemmer = SnowballStemmer("french")
-
     # collect text
     full_text = []
-    d_stem = defaultdict(lambda: [])
     for i in tqdm(range(log.shape[0])):
         filename = log.at[i, "matrix_name"]
         multi_header = log.at[i, "multiheader"]
@@ -56,24 +70,8 @@ def _text_content_extraction(log, result_directory):
             for j in range(len(index)):
                 f.readline()
             full_text.append(f.read())
-        text = full_text[-1]
-        tokens = word_tokenize(text)
-        for token in tokens:
-            # TODO remove accent
-            d_stem[stemmer.stem(token)].append(token.lower())
 
-    # stemming
-    full_text_stem = []
-    for text in tqdm(full_text):
-        tokens = word_tokenize(text)
-        l_text = []
-        for token in tokens:
-            token_stem = stemmer.stem(token)
-            unstem = _most_common(token_stem)
-            l_text.append(unstem)
-        full_text_stem.append(" ".join(l_text))
-
-    return full_text_stem
+    return full_text
 
 
 def _text_metadata_extraction(log, result_directory):
@@ -83,37 +81,18 @@ def _text_metadata_extraction(log, result_directory):
     :param result_directory: string
     :return: list of strings
     """
-    stemmer = SnowballStemmer("french")
-
     # collect text
     full_text = []
-    d_stem = defaultdict(lambda: [])
     for i in tqdm(range(log.shape[0])):
-        metadata = log.at[i, "metadata"]
-        if metadata:
+        if log.at[i, "metadata"]:
             filename = log.at[i, "matrix_name"]
             path = os.path.join(result_directory, "metadata_cleaning", filename)
             with open(path, mode='rt', encoding='utf-8') as f:
                 full_text.append(f.read())
         else:
             full_text.append("")
-        text = full_text[-1]
-        tokens = word_tokenize(text)
-        for token in tokens:
-            d_stem[stemmer.stem(token)].append(token.lower())
 
-    # stemming
-    full_text_stem = []
-    for text in tqdm(full_text):
-        tokens = word_tokenize(text)
-        l_text = []
-        for token in tokens:
-            token_stem = stemmer.stem(token)
-            unstem = _most_common(token_stem)
-            l_text.append(unstem)
-        full_text_stem.append(" ".join(l_text))
-
-    return full_text_stem
+    return full_text
 
 
 def _text_header_extraction(log):
@@ -122,27 +101,7 @@ def _text_header_extraction(log):
     :param log: dataframe pandas
     :return: list of strings
     """
-    stemmer = SnowballStemmer("french")
-
-    # collect text
-    d_stem = defaultdict(lambda: [])
-    for text in tqdm(list(log["header_name"])):
-        tokens = word_tokenize(text)
-        for token in tokens:
-            d_stem[stemmer.stem(token)].append(token.lower())
-
-    # stemming
-    full_text_stem = []
-    for text in tqdm(list(log["header_name"])):
-        tokens = word_tokenize(text)
-        l_text = []
-        for token in tokens:
-            token_stem = stemmer.stem(token)
-            unstem = _most_common(token_stem)
-            l_text.append(unstem)
-        full_text_stem.append(" ".join(l_text))
-
-    return full_text_stem
+    return list(log["header_name"])
 
 
 def _text_content_header_extraction(log, result_directory):
@@ -152,33 +111,15 @@ def _text_content_header_extraction(log, result_directory):
     :param result_directory: string
     :return: list of strings
     """
-    stemmer = SnowballStemmer("french")
-
     # collect text
     full_text = []
-    d_stem = defaultdict(lambda: [])
     for i in tqdm(range(log.shape[0])):
         filename = log.at[i, "matrix_name"]
         path = os.path.join(result_directory, "data_fitted", filename)
         with open(path, mode="rt", encoding="utf-8") as f:
             full_text.append(f.read())
-        text = full_text[-1]
-        tokens = word_tokenize(text)
-        for token in tokens:
-            d_stem[stemmer.stem(token)].append(token.lower())
 
-    # stemming
-    full_text_stem = []
-    for text in tqdm(full_text):
-        tokens = word_tokenize(text)
-        l_text = []
-        for token in tokens:
-            token_stem = stemmer.stem(token)
-            unstem = _most_common(token_stem)
-            l_text.append(unstem)
-        full_text_stem.append(" ".join(l_text))
-
-    return full_text_stem
+    return full_text
 
 
 def _text_full_extraction(log, result_directory):
@@ -188,19 +129,15 @@ def _text_full_extraction(log, result_directory):
     :param result_directory: string
     :return: list of strings
     """
-    stemmer = SnowballStemmer("french")
-
     # collect text
     full_text = []
-    d_stem = defaultdict(lambda: [])
     for i in tqdm(range(log.shape[0])):
         text = []
         filename = log.at[i, "matrix_name"]
         path = os.path.join(result_directory, "data_fitted", filename)
         with open(path, mode="rt", encoding="utf-8") as f:
             text.append(f.read())
-        metadata = log.at[i, "metadata"]
-        if metadata:
+        if log.at[i, "metadata"]:
             path_metadata = os.path.join(result_directory, "metadata_cleaning",
                                          filename)
             with open(path_metadata, mode='rt', encoding='utf-8') as f:
@@ -208,21 +145,6 @@ def _text_full_extraction(log, result_directory):
         else:
             text.append("")
         full_text.append(" ".join(text))
-        text = full_text[-1]
-        tokens = word_tokenize(text)
-        for token in tokens:
-            d_stem[stemmer.stem(token)].append(token.lower())
-
-    # stemming
-    full_text_stem = []
-    for text in tqdm(full_text):
-        tokens = word_tokenize(text)
-        l_text = []
-        for token in tokens:
-            token_stem = stemmer.stem(token)
-            unstem = _most_common(token_stem)
-            l_text.append(unstem)
-        full_text_stem.append(" ".join(l_text))
 
     return full_text
 
@@ -259,7 +181,7 @@ def _text_extraction(path_log, result_directory, content_bool, header_bool,
     else:
         raise ValueError("No text extracted")
 
-
+#     stemmer = SnowballStemmer("french")
 def count_computation(path_log, result_directory, content_bool, header_bool,
                       metadata_bool, stop_words, path_count, path_vocabulary,
                       max_df, min_df):
@@ -416,6 +338,7 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               min_df=2)
         print("normalization...")
         matrix, weighting = normalize_matrix(count_matrix)
+        path_count = os.path.join(result_directory, "count_content_normalized.npz")
         print("count shape :", matrix.shape)
         features = get_ordered_features(path_vocabulary)
         print("number of unique words :", len(features), "\n")
@@ -575,11 +498,11 @@ def main(content_bool, header_bool, metadata_bool, n_topics, n_top_words,
     nltk.data.path.append(nltk_path)
     french_stopwords = list(set(stopwords.words('french')))
     french_stopwords += ["unnamed", "http", "les", "des"]
-    geojson = ["FeatureCollection", "geometry", "type", "Polygon",
-               "coordinates", "properties", "Feature", "crs", "urn", "ogc",
-               "def", "LIBELLE", "MultiPolygon", "name", "point", "linestring",
-               "multilinestring", "pprt", "ppri", "mvt", "nda", "bdx", "gid",
-               "pci", "pprn"]
+    geojson = ['featurecollection', 'geometry', 'type', 'polygon',
+               'coordinates', 'properties', 'feature', 'crs', 'urn', 'ogc',
+               'def', 'libelle', 'multipolygon', 'name', 'point', 'linestring',
+               'multilinestring', 'pprt', 'ppri', 'mvt', 'nda', 'bdx', 'gid',
+               'pci', 'pprn']
     french_stopwords += geojson
 
     # extract textual features

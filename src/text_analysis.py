@@ -16,7 +16,7 @@ from text_extraction import get_ordered_features
 from toolbox.utils import print_top_words, load_sparse_csr, get_config_tag
 print("\n")
 
-
+# TODO refactor graph paths
 def check_graph_folder(result_directory):
     """
     Function to check if the graph folder exists

@@ -35,7 +35,6 @@
 
 [distribution]
 
-    extension = boolean
     count = boolean
     log = boolean
     plot = boolean

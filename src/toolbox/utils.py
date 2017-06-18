@@ -90,10 +90,11 @@ def load_numpy_matrix(path):
     return np.load(path)
 
 
-def reset_log_error(path_error):
+def reset_log_error(path_error, reset):
     """
     Function to reset the error directory
     :param path_error: string
+    :param reset: boolean
     :return:
     """
     # initialize files and directories
@@ -102,8 +103,11 @@ def reset_log_error(path_error):
     if not os.path.isdir(path_error):
         os.mkdir(path_error)
     else:
-        for file in os.listdir(path_error):
-            os.remove(os.path.join(path_error, file))
+        if reset:
+            for file in os.listdir(path_error):
+                os.remove(os.path.join(path_error, file))
+        else:
+            pass
     return
 
 
@@ -145,8 +149,8 @@ def get_config_tag(tag, section):
 def log_error(path_error, source):
     """
     Function to write errors in a text file
-    :param source: list of strings
     :param path_error: string
+    :param source: list of strings
     :return:
     """
     exc_type, exc_value, exc_traceback = sys.exc_info()

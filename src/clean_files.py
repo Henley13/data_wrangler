@@ -5,6 +5,8 @@
 import magic
 import os
 import pandas as pd
+import shutil
+from shutil import copyfile
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from toolbox.utils import log_error, get_config_tag, get_config_trace
@@ -12,13 +14,9 @@ from toolbox.clean import cleaner, get_ready, file_is_json
 print("\n")
 
 
-def worker_cleaning_activity(filename,
-                             input_directory,
-                             output_directory,
-                             path_log,
-                             path_metadata,
-                             dict_param,
-                             path_error):
+def worker_cleaning_activity(filename, input_directory, output_directory,
+                             path_log, path_metadata, dict_param, path_error,
+                             error_directory, temp_dir):
     """
     Function to encapsulate the process and use multiprocessing.
     :param filename: string
@@ -27,25 +25,30 @@ def worker_cleaning_activity(filename,
     :param path_log: string
     :param path_metadata: string
     :param dict_param: dictionary
-    :param path_error: string
+    :param path_error: string (to store error log)
+    :param error_directory: string (to store files)
+    :param temp_dir: string
     :return:
     """
     try:
         cleaner(filename, input_directory, output_directory, path_log,
-                path_metadata, dict_param)
+                path_metadata, dict_param, temp_dir)
     except Exception:
         path = os.path.join(input_directory, filename)
-        size_file = os.path.getsize(path)
-        extension = "empty file"
-        if size_file > 0:
-            extension = magic.Magic(mime=True).from_file(path)
-            try:
-                is_json = file_is_json(filename, input_directory, dict_param)
-                if extension == "text/plain" and is_json:
-                    extension = "json"
-            except Exception:
-                pass
+        if os.path.getsize(path) == 0:
+            return
+        extension = magic.Magic(mime=True).from_file(path)
+        try:
+            is_json = file_is_json(filename, input_directory, dict_param)
+            if (extension in ["text/plain", "application/octet-stream"] and
+                    is_json):
+                extension = "json"
+        except Exception:
+            pass
         log_error(os.path.join(path_error, filename), [filename, extension])
+        path_out = os.path.join(error_directory, filename)
+        if not os.path.isfile(path_out):
+            copyfile(path, path_out)
     return
 
 
@@ -61,13 +64,11 @@ def main(input_directory, result_directory, workers, reset, dict_param, multi):
     :return:
     """
 
-    print("clean files...")
-    n_files = len(os.listdir(input_directory))
-    print("number of files :", n_files, "\n")
+    print("clean files...", "\n")
 
     # make the result directory ready
-    output_directory, path_log, path_error, path_metadata = \
-        get_ready(result_directory, reset)
+    (output_directory, path_log, path_error, path_metadata, error_directory,
+     temporary_directory) = get_ready(result_directory, reset)
 
     if multi:
         # multiprocessing
@@ -78,7 +79,9 @@ def main(input_directory, result_directory, workers, reset, dict_param, multi):
                                               path_log=path_log,
                                               path_metadata=path_metadata,
                                               dict_param=dict_param,
-                                              path_error=path_error)
+                                              path_error=path_error,
+                                              error_directory=error_directory,
+                                              temp_dir=temporary_directory)
                                              for file in
                                              os.listdir(input_directory))
     else:
@@ -89,11 +92,16 @@ def main(input_directory, result_directory, workers, reset, dict_param, multi):
                                      path_log=path_log,
                                      path_metadata=path_metadata,
                                      dict_param=dict_param,
-                                     path_error=path_error)
+                                     path_error=path_error,
+                                     error_directory=error_directory,
+                                     temp_dir=temporary_directory)
 
-    print("\n")
-    print("total number of files :", n_files)
-    print("total number of files cleaned :", len(os.listdir(output_directory)))
+    print()
+    print("close temporary directory", "\n")
+    shutil.rmtree(temporary_directory)
+
+    print("total number of files cleaned (excel sheets included) :",
+          len(os.listdir(output_directory)))
     df = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
     print("total number of files saved in the log :", df.shape[0])
     print("total number of extra data :", len(os.listdir(path_metadata)))

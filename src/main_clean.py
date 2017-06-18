@@ -3,6 +3,7 @@
 """ Main script to clean data and edit metadata """
 
 # libraries
+import remove_empty
 import clean_files
 import distribution_files
 import edit_metadata
@@ -34,6 +35,9 @@ plot_bool = get_config_tag("plot", "distribution")
 error_bool = get_config_tag("error", "distribution")
 efficiency_bool = get_config_tag("efficiency", "distribution")
 
+# remove empty
+remove_empty.main(input_directory=input_directory)
+
 # clean files
 clean_files.main(input_directory=input_directory,
                  result_directory=result_directory,
@@ -43,10 +47,8 @@ clean_files.main(input_directory=input_directory,
                  multi=multi_bool)
 
 # compute and show distribution
-distribution_files.main(extension_bool=extension_bool,
-                        count_bool=count_bool,
+distribution_files.main(count_bool=count_bool,
                         log_bool=log_bool,
-                        plot_bool=plot_bool,
                         error_bool=error_bool,
                         efficiency_bool=efficiency_bool,
                         result_directory=result_directory,
