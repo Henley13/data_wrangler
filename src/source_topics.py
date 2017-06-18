@@ -15,8 +15,6 @@ from toolbox.utils import save_dictionary
 from tqdm import tqdm
 print("\n")
 
-# TODO refactor graph paths
-
 
 def count_tag(result_directory, df_log):
     """
@@ -345,7 +343,10 @@ def make_wordcloud_object(result_directory, n_top_words):
                                             "producer_vocabulary")
     path_vocabulary_extension = os.path.join(result_directory,
                                              "extension_vocabulary")
-    path_graph = os.path.join(result_directory, "graphs")
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
 
     # load tag data
     df_tag = pd.read_csv(path_vocabulary_tag, header=0, encoding="utf-8",
@@ -400,12 +401,28 @@ def make_wordcloud_object(result_directory, n_top_words):
             ax = plt.gca()
             ttl = ax.title
             ttl.set_position([.5, 1.06])
-            # plt.show()
-            path = os.path.join(path_graph, "topic %i (%s).png" %
+
+            path = os.path.join(path_jpeg, "topic %i (%s).jpeg" %
                                 (topic_ind, object_string))
             if os.path.isfile(path):
                 os.remove(path)
             wc.to_file(path)
+            path = os.path.join(path_pdf, "topic %i (%s).pdf" %
+                                (topic_ind, object_string))
+            if os.path.isfile(path):
+                os.remove(path)
+            wc.to_file(path)
+            path = os.path.join(path_png, "topic %i (%s).png" %
+                                (topic_ind, object_string))
+            if os.path.isfile(path):
+                os.remove(path)
+            wc.to_file(path)
+            path = os.path.join(path_svg, "topic %i (%s).svg" %
+                                (topic_ind, object_string))
+            if os.path.isfile(path):
+                os.remove(path)
+            wc.to_file(path)
+
             plt.close()
 
     return

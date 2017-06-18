@@ -13,6 +13,31 @@ from configobj import ConfigObj, ConfigObjError
 from validate import Validator
 
 
+def _check_graph_folders(result_directory):
+    """
+    Function to check if the folders exist
+    :param result_directory: string
+    :return:
+    """
+    # paths
+    path_graph = os.path.join(result_directory, "graphs")
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
+
+    if os.path.isdir(path_graph):
+        pass
+    else:
+        os.mkdir(path_graph)
+
+    for path in [path_pdf, path_svg, path_png, path_jpeg]:
+        if not os.path.isdir(path):
+            os.mkdir(path)
+
+    return
+
+
 def print_top_words(model, feature_names, n_top_words):
     """
         Function to print the most important words per topic

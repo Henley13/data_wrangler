@@ -12,7 +12,6 @@ from tqdm import tqdm
 from collections import defaultdict, Counter
 from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
-from nltk import word_tokenize
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.decomposition import NMF
 from sklearn.neighbors import NearestNeighbors
@@ -181,7 +180,7 @@ def _text_extraction(path_log, result_directory, content_bool, header_bool,
     else:
         raise ValueError("No text extracted")
 
-#     stemmer = SnowballStemmer("french")
+
 def count_computation(path_log, result_directory, content_bool, header_bool,
                       metadata_bool, stop_words, path_count, path_vocabulary,
                       max_df, min_df):
@@ -245,12 +244,14 @@ def tfidf_computation(count_matrix):
     return tfidf
 
 
-def normalize_matrix(matrix):
+def normalize_matrix(matrix, result_directory, title):
     """
     Function to normalize a matrix (the sum of each row gives the same value)
     :param matrix: sparse csr matrix [n_samples, n_features]
+    :param result_directory: string
+    :param title: string
     :return: sparse csr matrix [n_samples, n_features],
-             sparse csr matrix [n_samples, 1]
+             numpy array [n_samples, 1]
     """
     sum = np.zeros((matrix.shape[0], 1))
     weight = np.zeros((matrix.shape[0], 1))
@@ -265,7 +266,9 @@ def normalize_matrix(matrix):
             weight[i, 0] = m / sum[i, 0]
     weight = sp.csr_matrix(weight)
     new_matrix = matrix.multiply(weight)
-    return new_matrix, weight
+    path_count_normalized(result_directory, title)
+    save_sparse_csr(path_count_normalized, new_matrix)
+    return new_matrix, weight.todense()
 
 
 def mix_matrices(matrices, weights, vocabularies):
@@ -299,6 +302,54 @@ def mix_matrices(matrices, weights, vocabularies):
         res[:, col_index] = col
         col_index += 1
     return res.tocsr(), features
+
+
+def stemming_matrix(matrix, features):
+    """
+    Function to concatenate the columns of a matrix by stemming and merging
+    its features
+    :param matrix: sparse csr matrix [n_samples, n_words]
+    :param features: list of string (ordered with the right index)
+    :return: sparse csr matrix [n_samples, n_stem_words], list of string
+    """
+    stemmer = SnowballStemmer("french")
+    d_stem = defaultdict(lambda: [])
+    d_index = defaultdict(lambda: [])
+    features_stem = []
+    for i, feature in tqdm(enumerate(features), desc="stemming"):
+        stem = stemmer.stem(feature)
+        d_stem[stem].append(feature)
+        d_index[stem].append(i)
+        if stem in features_stem:
+            continue
+        else:
+            features_stem.append(stem)
+    features_unstem = []
+    for stem in features_stem:
+        unstem = _most_common(d_stem[stem])
+        d_stem[stem] = unstem
+        features_unstem.append(unstem)
+
+    print("length features :", len(features))
+    print("length stem features :", len(features_stem))
+    print("length unstem features :", len(features_unstem), "\n")
+
+    new_matrix = []
+    for stem in features_stem:
+        index_to_stack = d_index[stem]
+        columns_to_stack = []
+        for i in index_to_stack:
+            columns_to_stack.append(matrix.getcol(i))
+        new_columns = sp.hstack(columns_to_stack, format="csc")
+        new_matrix.append(new_columns)
+    matrix_stem = sp.hstack(new_matrix, format="csr")
+
+    print("shape matrix :", matrix.shape)
+    print("type matrix :", type(matrix))
+    print("shape stem matrix :", matrix_stem.shape)
+    print("type stem matrix :", type(matrix_stem), "\n")
+
+    return matrix_stem, features_unstem
 
 
 def extract_features(path_log, result_directory, content_bool, header_bool,
@@ -337,8 +388,8 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               max_df=0.95,
                               min_df=2)
         print("normalization...")
-        matrix, weighting = normalize_matrix(count_matrix)
-        path_count = os.path.join(result_directory, "count_content_normalized.npz")
+        matrix, weighting = normalize_matrix(count_matrix, result_directory,
+                                             "count_content_normalized")
         print("count shape :", matrix.shape)
         features = get_ordered_features(path_vocabulary)
         print("number of unique words :", len(features), "\n")
@@ -363,7 +414,8 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               max_df=0.95,
                               min_df=2)
         print("normalization...")
-        matrix, weighting = normalize_matrix(count_matrix)
+        matrix, weighting = normalize_matrix(count_matrix, result_directory,
+                                             "count_header_normalized")
         print("count shape :", matrix.shape)
         features = get_ordered_features(path_vocabulary)
         print("number of unique word :", len(features), "\n")
@@ -388,7 +440,8 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               max_df=0.95,
                               min_df=2)
         print("normalization...")
-        matrix, weighting = normalize_matrix(count_matrix)
+        matrix, weighting = normalize_matrix(count_matrix, result_directory,
+                                             "count_metadata_normalized")
         print("count shape :", matrix.shape)
         features = get_ordered_features(path_vocabulary)
         print("number of unique word :", len(features), "\n")
@@ -398,22 +451,32 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
         weighting_list.append(weighting)
     print("--- mixing matrices ---")
     count_matrix, features = mix_matrices(matrices, weights, vocabularies)
+    path_count = os.path.join(result_directory, "count_normalized.npz")
+    save_sparse_csr(path_count, count_matrix)
     d_features = {}
     for i, word in enumerate(features):
         d_features[word] = i
+    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+    save_dictionary(d_features, path_vocabulary, ["word", "index"])
     print("count shape :", count_matrix.shape, "\n")
+    print("--- stemming matrix ---")
+    count_stem_matrix, unstem_features = stemming_matrix(count_matrix,
+                                                         features)
+    path_count_stem = os.path.join(result_directory,
+                                   "count_normalized_stem.npz")
+    save_sparse_csr(path_count_stem, count_stem_matrix)
+    d_features = {}
+    for i, word in enumerate(unstem_features):
+        d_features[word] = i
+    path_vocabulary = os.path.join(result_directory, "token_vocabulary_unstem")
+    save_dictionary(d_features, path_vocabulary, ["word", "index"])
+    print("count shape :", count_stem_matrix.shape, "\n")
     # tfidf
     print("--- tfidf ---")
-    tfidf = tfidf_computation(count_matrix)
-    print("tfidf shape :", tfidf.shape, "\n")
-    # results
-    print("--- saving ---", "\n")
-    path_count = os.path.join(result_directory, "count.npz")
+    tfidf = tfidf_computation(count_stem_matrix)
     path_tfidf = os.path.join(result_directory, "tfidf.npz")
-    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
-    save_sparse_csr(path_count, count_matrix)
     save_sparse_csr(path_tfidf, tfidf)
-    save_dictionary(d_features, path_vocabulary, ["word", "index"])
+    print("tfidf shape :", tfidf.shape, "\n")
 
     return count_matrix, d_features, tfidf, weighting_list
 

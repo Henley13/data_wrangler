@@ -11,27 +11,9 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import manifold
-from toolbox.utils import (get_config_tag, save_sparse_csr, load_sparse_csr,
-                           load_numpy_matrix)
+from toolbox.utils import (get_config_tag, load_sparse_csr, load_numpy_matrix,
+                           _check_graph_folders)
 print("\n")
-
-
-def _check_graph_folders(result_directory):
-    """
-    Function to check if the folders exist
-    :param result_directory: string
-    :return:
-    """
-    # paths
-    path_png = os.path.join(result_directory, "graphs", "png")
-    path_pdf = os.path.join(result_directory, "graphs", "pdf")
-    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
-    path_svg = os.path.join(result_directory, "graphs", "svg")
-
-    for path in [path_pdf, path_svg, path_png, path_jpeg]:
-        if not os.path.isdir(path):
-            os.mkdir(path)
-    return
 
 
 def plot_extension_cleaned(result_directory, df_log):
@@ -236,22 +218,22 @@ def plot_tsne(result_directory, df_log):
     print("W shape :", w.shape)
 
     # t-SNE embedding of the count matrix
-    tsne = manifold.TSNE(n_components=2,
-                         perplexity=30.0,
-                         early_exaggeration=4.0,
-                         learning_rate=1000.0,
-                         n_iter=1000,
-                         n_iter_without_progress=30,
-                         min_grad_norm=1e-07,
-                         metric='euclidean',
-                         init='pca',
-                         verbose=0,
-                         random_state=0,
-                         method='barnes_hut',
-                         angle=0.5)
-    X_tsne = tsne.fit_transform(X.todense())
-    path = os.path.join(result_directory, "x_tsne.npy")
-    np.save(path, X_tsne)
+    #tsne = manifold.TSNE(n_components=2,
+    #                     perplexity=30.0,
+    #                     early_exaggeration=4.0,
+    #                     learning_rate=1000.0,
+    #                     n_iter=1000,
+    #                     n_iter_without_progress=30,
+    #                     min_grad_norm=1e-07,
+    #                     metric='euclidean',
+    #                     init='pca',
+    #                     verbose=0,
+    #                     random_state=0,
+    #                     method='barnes_hut',
+    #                     angle=0.5)
+    #X_tsne = tsne.fit_transform(X.todense())
+    #path = os.path.join(result_directory, "x_tsne.npy")
+    #np.save(path, X_tsne)
     tsne = manifold.TSNE(n_components=2,
                          perplexity=30.0,
                          early_exaggeration=4.0,
@@ -268,47 +250,47 @@ def plot_tsne(result_directory, df_log):
     w_tsne = tsne.fit_transform(w)
     path = os.path.join(result_directory, "w_tsne.npy")
     np.save(path, w_tsne)
-    print("X t-SNE shape :", X_tsne.shape)
+    #print("X t-SNE shape :", X_tsne.shape)
     print("W t-SNE shape :", w_tsne.shape)
 
     # plot X_tsne
-    df_tsne = pd.DataFrame({"component_1": X_tsne[:, 0],
-                            "component_2": X_tsne[:, 1],
-                            "extension": df_log["extension"]})
-    groups = df_tsne.groupby("extension")
-    fig, ax = plt.subplots(figsize=(4, 3))
-    ax.set_xlabel("")
-    ax.set_ylabel("")
-    #ax.set_position([0.12, 0.14, 0.8, 0.8])  # left, bottom, witdh, hight
-    plt.xticks([], [])
-    plt.yticks([], [])
-    for name, group in groups:
-        ax.scatter(x=group.component_1,
-                   y=group.component_2,
-                   s=10,
-                   c=None,
-                   marker="o",
-                   cmap=None,
-                   norm=None,
-                   vmin=None,
-                   vmax=None,
-                   alpha=0.8,
-                   linewidths=None,
-                   verts=None,
-                   edgecolors=None,
-                   label=name)
-    plt.legend()
-    ax.legend(prop={'size': 7})
+    #df_tsne = pd.DataFrame({"component_1": X_tsne[:, 0],
+    #                        "component_2": X_tsne[:, 1],
+    #                        "extension": df_log["extension"]})
+    #groups = df_tsne.groupby("extension")
+    #fig, ax = plt.subplots(figsize=(4, 3))
+    #ax.set_xlabel("")
+    #ax.set_ylabel("")
+    ##ax.set_position([0.12, 0.14, 0.8, 0.8])  # left, bottom, witdh, hight
+    #plt.xticks([], [])
+    #plt.yticks([], [])
+    #for name, group in groups:
+    #    ax.scatter(x=group.component_1,
+    #               y=group.component_2,
+    #               s=10,
+    #               c=None,
+    #               marker="o",
+    #               cmap=None,
+    #               norm=None,
+    #               vmin=None,
+    #               vmax=None,
+    #               alpha=0.8,
+    #               linewidths=None,
+    #               verts=None,
+    #               edgecolors=None,
+    #               label=name)
+    #plt.legend()
+    #ax.legend(prop={'size': 7})
 
     # save figures
-    path = os.path.join(path_jpeg, "X_tsne.jpeg")
-    plt.savefig(path)
-    path = os.path.join(path_pdf, "X_tsne.pdf")
-    plt.savefig(path)
-    path = os.path.join(path_png, "X_tsne.png")
-    plt.savefig(path)
-    path = os.path.join(path_svg, "X_tsne.svg")
-    plt.savefig(path)
+    #path = os.path.join(path_jpeg, "X_tsne.jpeg")
+    #plt.savefig(path)
+    #path = os.path.join(path_pdf, "X_tsne.pdf")
+    #plt.savefig(path)
+    #path = os.path.join(path_png, "X_tsne.png")
+    #plt.savefig(path)
+    #path = os.path.join(path_svg, "X_tsne.svg")
+    #plt.savefig(path)
 
     # plot W_tsne
     df_tsne = pd.DataFrame({"component_1": w_tsne[:, 0],

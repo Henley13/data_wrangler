@@ -13,22 +13,9 @@ from tqdm import tqdm
 from wordcloud.wordcloud import WordCloud
 from sklearn.externals import joblib
 from text_extraction import get_ordered_features
-from toolbox.utils import print_top_words, load_sparse_csr, get_config_tag
+from toolbox.utils import (print_top_words, load_sparse_csr, get_config_tag,
+                           _check_graph_folders)
 print("\n")
-
-# TODO refactor graph paths
-def check_graph_folder(result_directory):
-    """
-    Function to check if the graph folder exists
-    :param result_directory: string
-    :return:
-    """
-    path_graph = os.path.join(result_directory, "graphs")
-    if os.path.isdir(path_graph):
-        return
-    else:
-        os.mkdir(path_graph)
-    return
 
 
 def origin_word(words, n_top, result_directory):
@@ -99,7 +86,10 @@ def make_wordcloud(result_directory, n_top_words):
     # paths
     path_vocabulary = os.path.join(result_directory, "token_vocabulary")
     path_nmf = os.path.join(result_directory, "nmf.pkl")
-    path_graph = os.path.join(result_directory, "graphs")
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
 
     # load data
     nmf = joblib.load(path_nmf)
@@ -128,11 +118,25 @@ def make_wordcloud(result_directory, n_top_words):
         ax = plt.gca()
         ttl = ax.title
         ttl.set_position([.5, 1.06])
-        # plt.show()
-        path = os.path.join(path_graph, "topic %i.png" % topic_ind)
+
+        # save figures
+        path = os.path.join(path_jpeg, "topic %i.jpeg" % topic_ind)
         if os.path.isfile(path):
             os.remove(path)
         wc.to_file(path)
+        path = os.path.join(path_pdf, "topic %i.pdf" % topic_ind)
+        if os.path.isfile(path):
+            os.remove(path)
+        wc.to_file(path)
+        path = os.path.join(path_png, "topic %i.png" % topic_ind)
+        if os.path.isfile(path):
+            os.remove(path)
+        wc.to_file(path)
+        path = os.path.join(path_svg, "topic %i.svg" % topic_ind)
+        if os.path.isfile(path):
+            os.remove(path)
+        wc.to_file(path)
+
         plt.close()
 
     return
@@ -207,7 +211,10 @@ def plot_mean_kneighbors(result_directory):
     path_distance = os.path.join(result_directory, "distances.pkl")
     path_knn = os.path.join(result_directory, "knn.pkl")
     path_w = os.path.join(result_directory, "w.npy")
-    path_graph = os.path.join(result_directory, "graphs")
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
 
     # load data and model
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
@@ -245,13 +252,27 @@ def plot_mean_kneighbors(result_directory):
     plt.boxplot(data, labels=labels)
     plt.title("KNN distances (%i matrices)" % df_log.shape[0],
               fontweight="bold")
-    path = os.path.join(path_graph, "boxplot knn distances.png")
-    if os.path.isfile(path):
-        os.remove(path)
     plt.xlabel("Number of neighbors")
     plt.ylabel("Mean distance")
+
+    # save figures
+    path = os.path.join(path_jpeg, "boxplot knn distances.jpeg")
+    if os.path.isfile(path):
+        os.remove(path)
     plt.savefig(path)
-    # plt.show()
+    path = os.path.join(path_pdf, "boxplot knn distances.pdf")
+    if os.path.isfile(path):
+        os.remove(path)
+    plt.savefig(path)
+    path = os.path.join(path_png, "boxplot knn distances.png")
+    if os.path.isfile(path):
+        os.remove(path)
+    plt.savefig(path)
+    path = os.path.join(path_svg, "boxplot knn distances.svg")
+    if os.path.isfile(path):
+        os.remove(path)
+    plt.savefig(path)
+
     plt.close()
 
     return
@@ -270,7 +291,7 @@ def main(result_directory, n_top_words, wordcloud_bool, kneighbors_bool,
     :param n_neighbors: integer
     :return:
     """
-    check_graph_folder(result_directory)
+    _check_graph_folders(result_directory)
     if wordcloud_bool:
         make_wordcloud(result_directory, n_top_words)
     if kneighbors_bool:
