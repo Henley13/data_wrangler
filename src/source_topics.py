@@ -8,6 +8,8 @@ import os
 import pandas as pd
 import numpy as np
 import scipy.sparse as sp
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from wordcloud.wordcloud import WordCloud
 from toolbox.utils import get_config_tag, save_sparse_csr, load_sparse_csr
@@ -346,7 +348,6 @@ def make_wordcloud_object(result_directory, n_top_words):
     path_png = os.path.join(result_directory, "graphs", "png")
     path_pdf = os.path.join(result_directory, "graphs", "pdf")
     path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
-    path_svg = os.path.join(result_directory, "graphs", "svg")
 
     # load tag data
     df_tag = pd.read_csv(path_vocabulary_tag, header=0, encoding="utf-8",
@@ -413,11 +414,6 @@ def make_wordcloud_object(result_directory, n_top_words):
                 os.remove(path)
             wc.to_file(path)
             path = os.path.join(path_png, "topic %i (%s).png" %
-                                (topic_ind, object_string))
-            if os.path.isfile(path):
-                os.remove(path)
-            wc.to_file(path)
-            path = os.path.join(path_svg, "topic %i (%s).svg" %
                                 (topic_ind, object_string))
             if os.path.isfile(path):
                 os.remove(path)

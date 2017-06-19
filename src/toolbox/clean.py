@@ -141,6 +141,7 @@ def cleaner(filename, input_directory, output_directory, path_log,
                 cleaner_file(file, path_extraction, output_directory,
                              path_log, metadata_directory, True,
                              dict_param, dict_result)
+        shutil.rmtree(path_extraction)
     else:
         cleaner_file(filename, input_directory, output_directory, path_log,
                      metadata_directory, False, dict_param, dict_result)

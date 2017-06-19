@@ -8,6 +8,8 @@ import pandas as pd
 import numpy as np
 import random
 import pickle
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from wordcloud.wordcloud import WordCloud
@@ -84,12 +86,11 @@ def make_wordcloud(result_directory, n_top_words):
     print("wordcloud...", "\n")
 
     # paths
-    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+    path_vocabulary = os.path.join(result_directory, "token_vocabulary_unstem")
     path_nmf = os.path.join(result_directory, "nmf.pkl")
     path_png = os.path.join(result_directory, "graphs", "png")
     path_pdf = os.path.join(result_directory, "graphs", "pdf")
     path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
-    path_svg = os.path.join(result_directory, "graphs", "svg")
 
     # load data
     nmf = joblib.load(path_nmf)
@@ -129,10 +130,6 @@ def make_wordcloud(result_directory, n_top_words):
             os.remove(path)
         wc.to_file(path)
         path = os.path.join(path_png, "topic %i.png" % topic_ind)
-        if os.path.isfile(path):
-            os.remove(path)
-        wc.to_file(path)
-        path = os.path.join(path_svg, "topic %i.svg" % topic_ind)
         if os.path.isfile(path):
             os.remove(path)
         wc.to_file(path)

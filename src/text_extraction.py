@@ -20,9 +20,6 @@ from toolbox.utils import get_config_tag, save_sparse_csr, save_dictionary
 from toolbox.utils import print_top_words, dict_to_list
 print("\n")
 
-# TODO Rethink the stemming process
-# TODO give a chance to spacy
-
 
 def _most_common(l):
     """
@@ -266,7 +263,7 @@ def normalize_matrix(matrix, result_directory, title):
             weight[i, 0] = m / sum[i, 0]
     weight = sp.csr_matrix(weight)
     new_matrix = matrix.multiply(weight)
-    path_count_normalized(result_directory, title)
+    path_count_normalized = os.path.join(result_directory, title)
     save_sparse_csr(path_count_normalized, new_matrix)
     return new_matrix, weight.todense()
 
@@ -317,6 +314,8 @@ def stemming_matrix(matrix, features):
     d_index = defaultdict(lambda: [])
     features_stem = []
     for i, feature in tqdm(enumerate(features), desc="stemming"):
+        if str(feature) == "nan":
+            feature = "nan"
         stem = stemmer.stem(feature)
         d_stem[stem].append(feature)
         d_index[stem].append(i)
@@ -335,14 +334,19 @@ def stemming_matrix(matrix, features):
     print("length unstem features :", len(features_unstem), "\n")
 
     new_matrix = []
-    for stem in features_stem:
+    n_row = matrix.shape[0]
+    for stem in tqdm(features_stem, desc="stacking stemmed columns"):
         index_to_stack = d_index[stem]
         columns_to_stack = []
         for i in index_to_stack:
             columns_to_stack.append(matrix.getcol(i))
-        new_columns = sp.hstack(columns_to_stack, format="csc")
+        new_columns = sum(columns_to_stack)
         new_matrix.append(new_columns)
-    matrix_stem = sp.hstack(new_matrix, format="csr")
+    matrix_stem = sp.lil_matrix((n_row, len(features_stem)))
+    for col_index in tqdm(range(len(features_stem)),
+                          desc="building stem matrix"):
+        matrix_stem[:, col_index] = new_matrix[col_index]
+    matrix_stem = matrix_stem.tocsr()
 
     print("shape matrix :", matrix.shape)
     print("type matrix :", type(matrix))

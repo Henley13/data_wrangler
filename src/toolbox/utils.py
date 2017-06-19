@@ -26,9 +26,7 @@ def _check_graph_folders(result_directory):
     path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
     path_svg = os.path.join(result_directory, "graphs", "svg")
 
-    if os.path.isdir(path_graph):
-        pass
-    else:
+    if not os.path.isdir(path_graph):
         os.mkdir(path_graph)
 
     for path in [path_pdf, path_svg, path_png, path_jpeg]:
