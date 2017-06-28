@@ -375,12 +375,14 @@ def make_wordcloud_object(result_directory, n_top_words):
                        producer_names, extension_names, n_top_words)
 
     # build wordclouds
-    l_object = [(topic_tag, tag_names, "tag"),
-                (topic_producer, producer_names, "producer"),
-                (topic_extension, extension_names, "extension")]
+    stopwords = {'passerelle_inspire', 'donnees_ouvertes',
+                 'geoscientific_information', 'grand_public'}
+    l_object = [(topic_tag, tag_names, "tag", "Oranges"),
+                (topic_producer, producer_names, "producer", "Blues"),
+                (topic_extension, extension_names, "extension", "Greens")]
     for topic_ind in range(topic_tag.shape[0]):
         print("Topic #%i" % topic_ind)
-        for object, object_names, object_string in l_object:
+        for object, object_names, object_string, color in l_object:
             print("---", object_string)
             topic_object = np.asarray(object.todense())
             topic = topic_object[topic_ind, ]
@@ -392,7 +394,8 @@ def make_wordcloud_object(result_directory, n_top_words):
                     d[word] = weight
             wc = WordCloud(width=1000, height=500, margin=2,
                            prefer_horizontal=1,
-                           background_color='grey', colormap="viridis")
+                           background_color="white", colormap=color,
+                           stopwords=stopwords)
             wc = wc.fit_words(d)
             plt.figure()
             plt.imshow(wc, interpolation="bilinear")
@@ -402,6 +405,7 @@ def make_wordcloud_object(result_directory, n_top_words):
             ax = plt.gca()
             ttl = ax.title
             ttl.set_position([.5, 1.06])
+            plt.tight_layout()
 
             path = os.path.join(path_jpeg, "topic %i (%s).jpeg" %
                                 (topic_ind, object_string))
@@ -432,7 +436,7 @@ def main(result_directory, n_top_words):
     :return:
     """
     # paths
-    path_log = os.path.join(result_directory, "log_final")
+    path_log = os.path.join(result_directory, "log_final_reduced")
 
     # get data
     df_log = pd.read_csv(path_log, header=0, encoding="utf-8", sep=";",

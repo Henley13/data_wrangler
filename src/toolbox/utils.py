@@ -13,7 +13,7 @@ from configobj import ConfigObj, ConfigObjError
 from validate import Validator
 
 
-def _check_graph_folders(result_directory):
+def check_graph_folders(result_directory):
     """
     Function to check if the folders exist
     :param result_directory: string

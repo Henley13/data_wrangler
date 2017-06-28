@@ -6,6 +6,11 @@
 
     output = string
     error = string
+    output_organization = string
+    error_organization = string
+    output_reuse = string
+    error_reuse = string
+    reset = boolean
 
 [basex]
 

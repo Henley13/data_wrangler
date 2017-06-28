@@ -31,20 +31,6 @@ def _most_common(l):
     return data.most_common(1)[0][0]
 
 
-def _stem_to_unstem(result_directory, d):
-    """
-    Function to match each stem with its most frequent unstem apparition
-    :param result_directory: string
-    :param d: dictionary {stem : list of unstem}
-    :return: dictionary {stem : unstem}
-    """
-    for stem in tqdm(d):
-        d[stem] = _most_common(d[stem])
-    path = os.path.join(result_directory, "stem_to_unstem")
-    save_dictionary(d, path, ["stem", "unstem"])
-    return d
-
-
 def _text_content_extraction(log, result_directory):
     """
     Function to extract the textual content from the files
@@ -309,6 +295,7 @@ def stemming_matrix(matrix, features):
     :param features: list of string (ordered with the right index)
     :return: sparse csr matrix [n_samples, n_stem_words], list of string
     """
+    # TODO fix unstemming
     stemmer = SnowballStemmer("french")
     d_stem = defaultdict(lambda: [])
     d_index = defaultdict(lambda: [])
@@ -326,7 +313,6 @@ def stemming_matrix(matrix, features):
     features_unstem = []
     for stem in features_stem:
         unstem = _most_common(d_stem[stem])
-        d_stem[stem] = unstem
         features_unstem.append(unstem)
 
     print("length features :", len(features))

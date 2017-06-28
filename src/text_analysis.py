@@ -7,7 +7,6 @@ import os
 import pandas as pd
 import numpy as np
 import random
-import pickle
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -17,6 +16,7 @@ from sklearn.externals import joblib
 from text_extraction import get_ordered_features
 from toolbox.utils import (print_top_words, load_sparse_csr, get_config_tag,
                            _check_graph_folders)
+from scipy.spatial.distance import cosine
 print("\n")
 
 
@@ -28,10 +28,11 @@ def origin_word(words, n_top, result_directory):
     :param result_directory: string
     :return:
     """
-
+    # TODO make it consistent with the reduced version of log
     # paths
-    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
-    path_count = os.path.join(result_directory, "count.npz")
+    path_vocabulary = os.path.join(result_directory,
+                                   "token_vocabulary_unstem_bis")
+    path_count = os.path.join(result_directory, "count_normalized.npz")
     path_log = os.path.join(result_directory, "log_final")
 
     # get data
@@ -86,7 +87,8 @@ def make_wordcloud(result_directory, n_top_words):
     print("wordcloud...", "\n")
 
     # paths
-    path_vocabulary = os.path.join(result_directory, "token_vocabulary_unstem")
+    path_vocabulary = os.path.join(result_directory,
+                                   "token_vocabulary_unstem_bis")
     path_nmf = os.path.join(result_directory, "nmf.pkl")
     path_png = os.path.join(result_directory, "graphs", "png")
     path_pdf = os.path.join(result_directory, "graphs", "pdf")
@@ -119,6 +121,7 @@ def make_wordcloud(result_directory, n_top_words):
         ax = plt.gca()
         ttl = ax.title
         ttl.set_position([.5, 1.06])
+        plt.tight_layout()
 
         # save figures
         path = os.path.join(path_jpeg, "topic %i.jpeg" % topic_ind)
@@ -150,8 +153,9 @@ def find_kneighbors_random(result_directory, n_queries, n_neighbors):
     print("kneighbors", "\n")
 
     # paths
-    path_log = os.path.join(result_directory, "log_final")
-    path_vocabulary = os.path.join(result_directory, "token_vocabulary")
+    path_log = os.path.join(result_directory, "log_final_reduced")
+    path_vocabulary = os.path.join(result_directory,
+                                   "token_vocabulary_unstem_bis")
     path_tfidf = os.path.join(result_directory, "tfidf.npz")
     path_knn = os.path.join(result_directory, "knn.pkl")
     path_w = os.path.join(result_directory, "w.npy")
@@ -194,19 +198,16 @@ def find_kneighbors_random(result_directory, n_queries, n_neighbors):
     return
 
 
-def plot_mean_kneighbors(result_directory):
+def plot_kneighbors(result_directory):
     """
-    Function to plot the mean distances for different number of kneighbors
-    considered
+    Function to plot the topic distance vs the tag distance between two files
     :param result_directory: string
     :return:
     """
     print("distance plots", "\n")
 
     # paths
-    path_log = os.path.join(result_directory, "log_final")
-    path_distance = os.path.join(result_directory, "distances.pkl")
-    path_knn = os.path.join(result_directory, "knn.pkl")
+    path_log = os.path.join(result_directory, "log_final_reduced")
     path_w = os.path.join(result_directory, "w.npy")
     path_png = os.path.join(result_directory, "graphs", "png")
     path_pdf = os.path.join(result_directory, "graphs", "pdf")
@@ -216,56 +217,80 @@ def plot_mean_kneighbors(result_directory):
     # load data and model
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
     w = np.load(path_w)
-    knn = joblib.load(path_knn)
 
-    # collect mean distance
-    d = {}
-    for k in tqdm([i for i in range(5, 300, 5)]):
-        mean_distance = []
-        for n in range(df_log.shape[0]):
-            kneighbors_test = knn.kneighbors(w[n].reshape(1, -1), n_neighbors=k)
-            id_kneighbors = kneighbors_test[1][0]
-            distance = []
-            for i in range(len(id_kneighbors)):
-                distance.append(kneighbors_test[0][0][i])
-            mean_distance.append(np.mean(distance))
-        d[k] = mean_distance
+    # collect several random couple of files
+    df = df_log.query("extension != 'geojson'")
+    df.reset_index(drop=False, inplace=True)
+    indexes = [i for i in range(df.shape[0])]
 
-    # save results
-    joblib.dump(d, path_distance, compress=0, protocol=pickle.HIGHEST_PROTOCOL)
-
-    # change labels
-    data = []
-    labels = []
-    for key in d:
-        data.append(d[key])
-        if key % 10 == 0:
-            labels.append(str(key))
+    # compute distances between couples
+    l_topic = []
+    l_tag = []
+    l_extension = []
+    for i in tqdm(range(100000)):
+        couple = random.sample(indexes, k=2)
+        i_a = couple[0]
+        i_b = couple[1]
+        a_topic = w[i_a, :]
+        b_topic = w[i_b, :]
+        a_tag = str(df.at[i_a, "tags_page"]).split(" ")
+        b_tag = str(df.at[i_b, "tags_page"]).split(" ")
+        distance_topic = cosine(a_topic, b_topic)
+        n_tag_union = len(set(a_tag + b_tag))
+        n_tag_inter = len(set(a_tag).intersection(b_tag))
+        distance_tag = (1 + n_tag_union - n_tag_inter) / (n_tag_union + 1)
+        l_topic.append(distance_topic)
+        l_tag.append(distance_tag)
+        if df.at[i_a, "extension"] == df.at[i_b, "extension"]:
+            l_extension.append(df.at[i_a, "extension"])
         else:
-            labels.append("")
+            l_extension.append("different")
 
-    # plot figures
-    plt.figure()
-    plt.boxplot(data, labels=labels)
-    plt.title("KNN distances (%i matrices)" % df_log.shape[0],
-              fontweight="bold")
-    plt.xlabel("Number of neighbors")
-    plt.ylabel("Mean distance")
+    # reshape data
+    df = pd.DataFrame({"topic_distance": l_topic,
+                       "tag_distance": l_tag,
+                       "extension": l_extension})
+    groups = df.groupby("extension")
+
+    # plot a scatter plot
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.set_xlabel("Topic distance", fontsize=15)
+    ax.set_ylabel("Tags distance", fontsize=15)
+    plt.xticks(fontsize=7)
+    plt.yticks(fontsize=7)
+    for name, group in groups:
+        ax.scatter(x=group.topic_distance,
+                   y=group.tag_distance,
+                   s=17,
+                   c=None,
+                   marker=".",
+                   cmap=None,
+                   norm=None,
+                   vmin=None,
+                   vmax=None,
+                   alpha=1,
+                   linewidths=None,
+                   verts=None,
+                   edgecolors=None,
+                   label=name)
+    plt.legend()
+    ax.legend(prop={'size': 13})
+    plt.tight_layout()
 
     # save figures
-    path = os.path.join(path_jpeg, "boxplot knn distances.jpeg")
+    path = os.path.join(path_jpeg, "topic tag distances.jpeg")
     if os.path.isfile(path):
         os.remove(path)
     plt.savefig(path)
-    path = os.path.join(path_pdf, "boxplot knn distances.pdf")
+    path = os.path.join(path_pdf, "topic tag distances.pdf")
     if os.path.isfile(path):
         os.remove(path)
     plt.savefig(path)
-    path = os.path.join(path_png, "boxplot knn distances.png")
+    path = os.path.join(path_png, "topic tag distances.png")
     if os.path.isfile(path):
         os.remove(path)
     plt.savefig(path)
-    path = os.path.join(path_svg, "boxplot knn distances.svg")
+    path = os.path.join(path_svg, "topic tag distances.svg")
     if os.path.isfile(path):
         os.remove(path)
     plt.savefig(path)
@@ -294,7 +319,7 @@ def main(result_directory, n_top_words, wordcloud_bool, kneighbors_bool,
     if kneighbors_bool:
         find_kneighbors_random(result_directory, n_queries, n_neighbors)
     if distance_plot_bool:
-        plot_mean_kneighbors(result_directory)
+        plot_kneighbors(result_directory)
     return
 
 if __name__ == "__main__":

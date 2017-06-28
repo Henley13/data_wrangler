@@ -6,8 +6,13 @@
 [metadata]
 
     # paths
-    output = "../data/metadata"
-    error = "../data/errors/metadata_api_errors"
+    output = "../data/metadata_dataset"
+    error = "../data/errors/collect_metadata_errors"
+    output_organization = "../data/metadata_organization"
+    error_organization = "../data/errors/collect_organization_errors"
+    output_reuse = "../data/metadata_reuse"
+    error_reuse = "../data/errors/collect_reuse_errors"
+    reset = True
 
 [basex]
 

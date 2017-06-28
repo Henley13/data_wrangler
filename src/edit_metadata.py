@@ -9,6 +9,10 @@ import pandas as pd
 from tqdm import tqdm
 from lxml import etree
 from toolbox.utils import get_config_tag
+import nltk
+from nltk import word_tokenize
+nltk_path = get_config_tag("nltk", "text_extraction")
+nltk.data.path.append(nltk_path)
 print("\n")
 
 
@@ -157,6 +161,79 @@ def edit(result_directory, original_metadata):
     return
 
 
+def _refactor_extension(row):
+    """
+    Function to rename extension values
+    :param row: row from a pandas Dataframe
+    :return: string
+    """
+    if row["extension"] == "text/plain":
+        return "text"
+    elif row["extension"] == "application/CDFV2-unknown":
+        return "cdfv2"
+    elif row["extension"] == "application/octet-stream":
+        return "binary"
+    elif row["extension"] == "application/vnd.ms-excel":
+        return "excel"
+    elif row["extension"] == "text/xml":
+        return "xml"
+    elif row["extension"] == "json":
+        if row["geojson"]:
+            return "geojson"
+        else:
+            return "json"
+
+    else:
+        return row["extension"]
+
+
+def _is_geojson(header):
+    """
+    Function to detect if a file is a geojson or a json
+    :param header: string
+    :return: boolean
+    """
+    m = 0
+    n = 0
+    for i in word_tokenize(header):
+        n += 1
+        if ("type" in i or "properties" in i or "geometry" in i
+            or "coordinates" in i):
+            m += 1
+    ratio = m / n
+    return ratio >= 0.2
+
+
+def edit_reduced(result_directory):
+    """
+    Function to extract smaller dataframe from the edited one
+    :param result_directory: string
+    :return: pandas Dataframe
+    """
+
+    # paths
+    path_log = os.path.join(result_directory, "log_final")
+    path_reduced = os.path.join(result_directory, "log_final_reduced")
+
+    # get data
+    df_log = pd.read_csv(path_log, header=0, encoding="utf-8", sep=";",
+                         index_col=False)
+
+    # reduced data log
+    df = df_log[["matrix_name", "file_name", "source_file", "n_row", "n_col",
+                 "integer", "float", "object", "header", "header_name",
+                 "zipfile", "id_page", "title_page", "title_producer",
+                 "tags_page"]]
+    df_log["geojson"] = df_log["header_name"].apply(func=_is_geojson)
+    df["extension"] = df_log.apply(func=_refactor_extension, axis=1)
+
+    print("reduced shape :", df.shape, "\n")
+    print(df["extension"].value_counts(), "\n")
+    df.to_csv(path_reduced, sep=";", encoding="utf-8", index=False, header=True)
+
+    return
+
+
 def main(result_directory, metadata_directory):
     """
     Function to run all the script
@@ -182,11 +259,19 @@ def main(result_directory, metadata_directory):
     # edit metadata
     edit(result_directory, d)
 
+    # reduce edit
+    edit_reduced(result_directory)
+
     # check changes
     path_metadata_edited = os.path.join(result_directory, "log_final")
     df = pd.read_csv(path_metadata_edited, sep=";", encoding="utf-8",
                      index_col=False)
     print("metadata edited shape :", df.shape)
+    path_metadata_edited_reduced = os.path.join(result_directory,
+                                                "log_final_reduced")
+    df = pd.read_csv(path_metadata_edited_reduced, sep=";", encoding="utf-8",
+                     index_col=False)
+    print("metadata edited_reduced shape :", df.shape)
 
     return
 
