@@ -111,3 +111,22 @@ print(execute_command("DROP database metadata"))
 
 # stop the server
 subprocess.call(os.path.join(basex_directory, "basexhttpstop"))
+
+
+def main():
+    return
+
+if __name__ == "__main__":
+
+    # paths
+    input_dataset = get_config_tag("output", "metadata")
+    input_organization = get_config_tag("output_organization", "metadata")
+    input_reuse = get_config_tag("output_reuse", "metadata")
+    output_directory = get_config_tag("output", "basex")
+
+
+
+
+
+    # run
+    main()

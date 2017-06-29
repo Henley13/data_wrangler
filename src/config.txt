@@ -17,8 +17,7 @@
 [basex]
 
     # paths
-    input = "../data/metadata"
-    output = "../data/url/url.xml"
+    output = "../data/url"
 
 [download]
 
