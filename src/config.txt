@@ -12,17 +12,22 @@
     error_organization = "../data/errors/collect_organization_errors"
     output_reuse = "../data/metadata_reuse"
     error_reuse = "../data/errors/collect_reuse_errors"
+
+    # parameters
     reset = True
 
 [basex]
 
     # paths
-    output = "../data/url"
+    output = "../data/basex_results"
+    query = "./xquery"
+
+    # parameters
+    reset = True
 
 [download]
 
     # paths
-    input = "../data/url/url.xml"
     output = "../data/data_collected"
     error = "../data/errors/download_errors"
 

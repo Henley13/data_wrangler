@@ -144,7 +144,6 @@ def _create_tables(tables):
         table_e.title = table["title"]
         table_e.id = table["id"]
         table_e.url = table["url"]
-        table_e.description = table["description"]
         table_e.creation = table["created_at"]
         table_e.publication = table["published"]
         table_e.last_modification = table["last_modified"]
@@ -152,6 +151,10 @@ def _create_tables(tables):
         table_e.format = table["format"]
         table_e.url_destination = table["filetype"]
         table_e.availability = table["is_available"]
+        try:
+            table_e.description = table["description"]
+        except ValueError:
+            table_e.description = None
     return tables_e
 
 

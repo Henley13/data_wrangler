@@ -7,18 +7,32 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import random
+import joblib
 from tqdm import tqdm
 from sklearn import manifold
 from sklearn.decomposition import TruncatedSVD
-from toolbox.utils import (get_config_tag, load_sparse_csr,
-                           _check_graph_folders)
+from toolbox.utils import (get_config_tag, load_sparse_csr, check_graph_folders)
 from scipy.spatial.distance import cosine
 from scipy.stats import spearmanr
-matplotlib.use('agg')
 print("\n")
+
+
+def _get_path_cachedir(result_directory):
+    """
+    Function to get the path of the cache directory
+    :param result_directory: string
+    :return: string
+    """
+    path_cache = os.path.join(result_directory, "cache")
+    if os.path.isdir(path_cache):
+        pass
+    else:
+        os.mkdir(path_cache)
+    return path_cache
 
 
 def plot_extension_cleaned(result_directory, df_log):
@@ -47,13 +61,17 @@ def plot_extension_cleaned(result_directory, df_log):
 
     # plot
     data_counts = df_log['extension'].value_counts()
-    extension_names = data_counts.index
+    extension_names = []
     extension_counts = data_counts.get_values()
+    for i in range(len(data_counts.index)):
+        name = data_counts.index[i]
+        count = extension_counts[i]
+        extension_names.append(name + " (%i)" % count)
     y_pos = np.arange(len(extension_names))
     fig, ax = plt.subplots(figsize=(5, 5))
     ax.set_xlabel("Number of files (log scale)", fontsize=15)
     plt.xticks(fontsize=7)
-    plt.yticks(fontsize=15)
+    plt.yticks(fontsize=10)
     ax.set_yticks(y_pos)
     ax.set_yticklabels(extension_names)
     ax.invert_yaxis()
@@ -65,9 +83,9 @@ def plot_extension_cleaned(result_directory, df_log):
             alpha=0.8,
             fill=True,
             log=True)
-    for i, v in enumerate(y_pos):
-        ax.text(1000, i + 0.1, str(extension_counts[i]), color='black',
-                fontsize=10)
+    # for i, v in enumerate(y_pos):
+    #     ax.text(800, i + 0.1, str(extension_counts[i]), color='black',
+    #             fontsize=10)
     plt.tight_layout()
 
     # save figures
@@ -374,11 +392,13 @@ def plot_score_nmf(result_directory):
     print("plot NMF scores", "\n")
 
     # paths
-    path_log = os.path.join(result_directory, "log_final_reduced")
     path_w = os.path.join(result_directory, "w.npy")
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
 
     # get data
-    df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
     w = np.load(path_w)
     print("shape W:", w.shape)
 
@@ -386,25 +406,47 @@ def plot_score_nmf(result_directory):
     n = np.count_nonzero(w)
     x, y = w.shape
     sparsity = 1 - (n / (x * y))
-    print("sparsity of W:", sparsity)
+    print("sparsity rate of W:", sparsity, "\n")
 
-    # collect scores
+    # get values and labels
+    values = []
+    names = []
     for i in range(y):
-        w[:, i]
+        values.append(w[:, i])
+        names.append("topic %i" % i)
 
-        sns.set(style="ticks", palette="muted", color_codes=True)
+    # plot with boxplot
+    fig, ax = plt.subplots(figsize=(5, 5))
+    bp = ax.boxplot(values,
+                    notch=False,
+                    vert=False,
+                    manage_xticks=False,
+                    patch_artist=True)
+    for box in bp["boxes"]:
+        box.set(facecolor="darkcyan", linewidth=1, alpha=0.8)
+    for median in bp["medians"]:
+        median.set(color="darkred", alpha=0.8)
+    ax.set_xlim(left=-0.1, right=w.max() + 0.1)
+    xticks = ax.xaxis.get_major_ticks()
+    xticks[0].label1.set_visible(False)
+    xticks[-1].label1.set_visible(False)
+    ax.set_yticklabels([""] + names, fontsize=10)
+    ax.set_xlabel("NMF weights (sparsity rate : %s)"
+                  % str(round(sparsity, 2)), fontsize=15)
+    plt.tight_layout()
 
-        # Load the example planets dataset
-        planets = sns.load_dataset("planets")
+    # save figures
+    path = os.path.join(path_jpeg, "NMF scores boxplot.jpeg")
+    plt.savefig(path)
+    path = os.path.join(path_pdf, "NMF scores boxplot.pdf")
+    plt.savefig(path)
+    path = os.path.join(path_png, "NMF scores boxplot.png")
+    plt.savefig(path)
+    path = os.path.join(path_svg, "NMF scores boxplot.svg")
+    plt.savefig(path)
 
-        # Plot the orbital period with horizontal boxes
-        ax = sns.boxplot(x="distance", y="method", data=planets,
-                         orient="h",
-                         whis=1.5, color="c")
+    plt.close("all")
 
-        # Make the quantitative axis logarithmic
-        ax.set_xscale("log")
-        sns.despine(trim=True)
     return
 
 
@@ -412,40 +454,28 @@ def make_table_source_topic(result_directory):
     return
 
 
-def plot_distribution_distance(result_directory, df_log):
+def _compute_distances(df_log, w):
     """
-    Function to plot the distribution of distance
-    :param result_directory: string
+    Function to randomly compute distances between files
     :param df_log: pandas Dataframe
-    :return:
+    :param w: matrix [n_samples, n_topics]
+    :return: list of floats, list of floats, list of floats, list of floats,
+             list of floats
     """
-    print("plot distribution distances", "\n")
-
-    # paths
-    path_log = os.path.join(result_directory, "log_final_reduced")
-    path_w = os.path.join(result_directory, "w.npy")
-    path_png = os.path.join(result_directory, "graphs", "png")
-    path_pdf = os.path.join(result_directory, "graphs", "pdf")
-    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
-    path_svg = os.path.join(result_directory, "graphs", "svg")
-
-    # load data and model
-    df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
-    w = np.load(path_w)
-
     # collect several random couples of files
     same_tag = []
     same_producer = []
     same_page = []
     other = []
-    all = []
+    all_ = []
     for i in tqdm(range(df_log.shape[0])):
         i_tag = str(df_log.at[i, "tags_page"]).split(" ")
         i_producer = df_log.at[i, "title_producer"]
         i_page = df_log.at[i, "title_page"]
         i_topic = w[i, :]
-        partners = random.sample([j for j in range(df_log.shape[0]) if j != i],
-                                 k=100)
+        partners = random.sample(
+            [j for j in range(df_log.shape[0]) if j != i],
+            k=100)
         for j in partners:
             j_tag = str(df_log.at[j, "tags_page"]).split(" ")
             j_producer = df_log.at[j, "title_producer"]
@@ -466,57 +496,168 @@ def plot_distribution_distance(result_directory, df_log):
                     c = False
                 if c:
                     other.append(distance_ij)
-                all.append(distance_ij)
+                all_.append(distance_ij)
 
+    return same_tag, same_producer, same_page, other, all_
+
+
+def plot_distribution_distance(result_directory, df_log):
+    """
+    Function to plot the distribution of distance
+    :param df_log: pandas Dataframe
+    :param result_directory: string
+    :return:
+    """
+    print("plot distribution distances", "\n")
+
+    # memory cache
+    memory = joblib.Memory(cachedir=_get_path_cachedir(result_directory),
+                           verbose=0)
+    _compute_distances_cached = memory.cache(_compute_distances)
+
+    # paths
+    path_w = os.path.join(result_directory, "w.npy")
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
+
+    # load data
+    w = np.load(path_w)
+
+    # collect several random couples of files
+    (same_tag, same_producer, same_page, other,
+     all_) = _compute_distances_cached(df_log, w)
+    values = [all_, same_page, same_tag, same_producer, other]
+    names = ["all \n (%i pairs)" % len(all_),
+             "same page \n (%s%%)" % str(
+                 round(len(same_page) * 100 / len(all_), 2)),
+             "same tags \n (%s%%)" % str(
+                 round(len(same_tag) * 100 / len(all_), 2)),
+             "same producer \n (%s%%)" % str(
+                 round(len(same_producer) * 100 / len(all_), 2)),
+             "other \n (%s%%)" % str(
+                 round(len(other) * 100 / len(all_), 2))]
     print("same page :", len(same_page))
     print("same tag :", len(same_tag))
     print("same producer :", len(same_producer))
     print("other :", len(other))
-    print("all :", len(all), "\n")
+    print("all :", len(all_), "\n")
 
-    # plot distribution
-    sns.set(style="white",
-            color_codes=True,
-            palette="muted",
-            font='sans-serif',
-            font_scale=1,
-            rc=None)
+    # plot with boxplot
+    fig, ax = plt.subplots(figsize=(5, 5))
+    bp = ax.boxplot(values,
+                    notch=False,
+                    vert=False,
+                    manage_xticks=False,
+                    patch_artist=True)
+    for box in bp["boxes"]:
+        box.set(facecolor="darkcyan", linewidth=1, alpha=0.8)
+    for median in bp["medians"]:
+        median.set(color="darkred", alpha=0.8)
+    ax.set_xlim(left=-0.1, right=1.1)
+    xticks = ax.xaxis.get_major_ticks()
+    xticks[0].label1.set_visible(False)
+    xticks[-1].label1.set_visible(False)
+    ax.set_yticklabels([""] + names, fontsize=10)
+    ax.set_xlabel("cosine similarity", fontsize=15)
+    plt.tight_layout()
 
-    # plot with histograms
-    if True:
-        plt.figure(figsize=(5, 5))
-        sns.set_context("paper",
-                        rc={"font.size": 7,
-                            "axes.titlesize": 7,
-                            "axes.labelsize": 7})
-        ax = sns.kdeplot(np.asarray(all), bw=2, label="all")
-        sns.kdeplot(np.asarray(same_page), bw=2, label="same page")
-        sns.kdeplot(np.asarray(same_producer), bw=2, label="same producer")
-        sns.kdeplot(np.asarray(same_tag), bw=2, label="same tag")
-        sns.kdeplot(np.asarray(other), bw=2, label="different")
-        ax.legend(fontsize=13)
-        ax.set_xlabel("distance", fontsize=15)
-        ax.set_ylabel("density", fontsize=15)
+    # save figures
+    path = os.path.join(path_jpeg, "distance distribution boxplot.jpeg")
+    plt.savefig(path)
+    path = os.path.join(path_pdf, "distance distribution boxplot.pdf")
+    plt.savefig(path)
+    path = os.path.join(path_png, "distance distribution boxplot.png")
+    plt.savefig(path)
+    path = os.path.join(path_svg, "distance distribution boxplot.svg")
+    plt.savefig(path)
 
-        plt.legend()
-        plt.tight_layout()
+    # plot with violin
+    data = pd.DataFrame()
+    distance = []
+    category = []
+    for i in range(len(values)):
+        distance += values[i]
+        l = [names[i]] * len(values[i])
+        category += l
+    data["distance"] = distance
+    data["category"] = category
+    fig, ax = plt.subplots(figsize=(5, 5))
+    sns.set_context("paper")
+    sns.violinplot(x="distance",
+                   y="category",
+                   hue=None,
+                   data=data,
+                   order=reversed(names),
+                   hue_order=None,
+                   bw='scott',
+                   cut=0,
+                   scale='area',
+                   scale_hue=True,
+                   gridsize=100,
+                   width=0.8,
+                   inner="box",
+                   split=False,
+                   orient="h",
+                   linewidth=None,
+                   color=None,
+                   palette=None,
+                   saturation=0.8,
+                   ax=ax)
+    ax.set_xlabel("cosine similarity", fontsize=15)
+    ax.yaxis.label.set_visible(False)
+    plt.tight_layout()
 
-        # save figures
-        path = os.path.join(path_jpeg, "distance distribution.jpeg")
-        plt.savefig(path)
-        path = os.path.join(path_pdf, "distance distribution.pdf")
-        plt.savefig(path)
-        path = os.path.join(path_png, "distance distribution.png")
-        plt.savefig(path)
-        path = os.path.join(path_svg, "distance distribution.svg")
-        plt.savefig(path)
+    # save figures
+    path = os.path.join(path_jpeg, "distance distribution violin plot.jpeg")
+    plt.savefig(path)
+    path = os.path.join(path_pdf, "distance distribution violin plot.pdf")
+    plt.savefig(path)
+    path = os.path.join(path_png, "distance distribution violin plot.png")
+    plt.savefig(path)
+    path = os.path.join(path_svg, "distance distribution violin plot.svg")
+    plt.savefig(path)
 
-        plt.close("all")
+    plt.close("all")
 
     return
 
 
+def test(param1, param2, param3):
+    """ Short blabla.
+
+    long blablabla
+
+    Parameters
+    ----------
+    param1 : str
+        blabla 1
+
+    param2 : ndarray, shape (bla, blabla)
+        blabla 2
+
+    param3 : array-like, shape(bla, blabla)
+        blabla 3
+
+    Returns
+    -------
+    out1 : int
+        blabla out
+
+    """
+    return
+
+test("a", np.array([]), [])
+
+
 def main(result_directory):
+    """
+    Function to run all the script
+    :param result_directory: string
+    :return:
+    """
+
     # paths
     path_log = os.path.join(result_directory, "log_final_reduced")
 
@@ -526,7 +667,7 @@ def main(result_directory):
     print("log length :", df_log.shape[0], "\n")
 
     # check folders
-    _check_graph_folders(result_directory)
+    check_graph_folders(result_directory)
 
     # preprocessed data
     #prepocessed_tsne(result_directory, df_log)

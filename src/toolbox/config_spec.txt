@@ -15,10 +15,10 @@
 [basex]
 
     output = string
+    reset = boolean
 
 [download]
 
-    input = string
     output = string
     error = string
     n_jobs = integer
