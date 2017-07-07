@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
+""" Initialize and configure BaseX server to manipulate XML files. """
+
 # libraries
 import os
 import re
 import shutil
 import subprocess
 import time
-import glob
-from requests import Session, adapters
+from requests import Session, adapters, codes
 from lxml import etree
 from urllib.parse import urljoin
 from toolbox.utils import TryMultipleTimes, get_config_tag
@@ -34,11 +35,20 @@ def _check_output_directory(output_directory, reset):
     return
 
 
+def _ping_server(hostname):
+    response = os.system("ping -c 1 " + hostname)
+    if response == 0:
+        return True
+    else:
+        return False
+
+
 def backend_configuration():
     requests_session = Session()
     adapter = adapters.HTTPAdapter(max_retries=5)
     requests_session.mount('http://', adapter)
     requests_session.auth = ("admin", "admin")
+    hostname = "localhost:8984"
     server_url = "http://localhost:8984/rest/"
     basex_directory = os.path.join(os.path.expanduser("~/"), "basex", "bin")
     post_query_template = (
@@ -56,15 +66,16 @@ def backend_configuration():
         """)
 
     return (server_url, basex_directory, post_query_template,
-            post_command_template, requests_session)
+            post_command_template, requests_session, hostname)
 
 
 class BaseXServer:
 
-    def __init__(self, session, url, query_template, command_template,
+    def __init__(self, session, url, hostname, query_template, command_template,
                  basex_directory):
         self.session = session
         self.server_url = url
+        self.hostname = hostname
         self.query_template = query_template
         self.command_template = command_template
         self.basex_directory = basex_directory
@@ -97,14 +108,30 @@ class BaseXServer:
     def execute_command(self, command):
         return self.post_request(body=command, template=self.command_template)
 
+    def check_server(self):
+        print(_ping_server(self.hostname))
+        return _ping_server(self.hostname)
+
+    def check_database(self):
+        print(self.database_url)
+        if self.database_url is None:
+            return False
+        else:
+            response = self.session.get(self.database_url).status_code
+            print(response)
+            return response == codes.ok
+
     def launch_server(self):
         """
         Function to start a BaseX http server.
 
         """
-        subprocess.Popen(os.path.join(self.basex_directory, "basexhttp"),
-                         stdout=subprocess.PIPE)
-        time.sleep(5)
+        if not self.check_server():
+            subprocess.Popen(os.path.join(self.basex_directory, "basexhttp"),
+                             stdout=subprocess.PIPE)
+            time.sleep(5)
+        else:
+            pass
         return
 
     def create_database(self, name_database, input_directory):
@@ -123,12 +150,14 @@ class BaseXServer:
         -------
 
         """
-        command = "CREATE DB {database} {input}".format(database=name_database,
-                                                        input=input_directory)
-        self.execute_command(command)
-        self.execute_command("list")
-        self.database_name = name_database
-        self.database_url = urljoin(self.server_url, name_database)
+        if not self.check_database():
+            command = "CREATE DB {database} {input}".format(
+                database=name_database,
+                input=input_directory)
+            self.execute_command(command)
+            self.execute_command("list")
+            self.database_name = name_database
+            self.database_url = urljoin(self.server_url, name_database)
         return
 
     def drop_database(self, name_database):
@@ -172,18 +201,18 @@ def get_url(server, input_dataset, output_directory, query_directory,
     server.create_database(database_name, input_dataset)
 
     # queries
-    for query_file in glob.glob(query_directory):
+    for query_file in os.listdir(query_directory):
         path_query = os.path.join(query_directory, query_file)
         format_files = query_file.split("_")[0]
         x = server.run_query_file(path_query)
         tree = etree.fromstring(x)
         url_list = [url.text for url in tree.xpath("/results/table/url")]
-        print(format_files, ": number of files :", len(url_list))
+        print(format_files, ":", len(url_list), "files")
         # save the xml
         obj_xml = etree.tostring(tree, pretty_print=True, xml_declaration=True,
                                  encoding="utf-8")
         output_path = os.path.join(output_directory,
-                                   "url_" + format_files + ".xml")
+                                   "url_" + str(format_files) + ".xml")
         with open(output_path, "wb") as xml_writer:
             xml_writer.write(obj_xml)
 
@@ -205,15 +234,15 @@ def main(input_directory, output_directory, query_directory, reset):
 
     # get backend configurations
     (server_url, basex_directory, post_query_template, post_command_template,
-     session) = backend_configuration()
+     session, hostname) = backend_configuration()
 
     # initialized BaseX server
-    basex = BaseXServer(session, server_url, post_query_template,
+    basex = BaseXServer(session, server_url, hostname, post_query_template,
                         post_command_template, basex_directory)
 
     # get urls
     get_url(basex, input_directory, output_directory, query_directory,
-            "metadata_dataset")
+            "metadata")
 
     return
 

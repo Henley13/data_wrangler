@@ -15,6 +15,7 @@
 [basex]
 
     output = string
+    query = string
     reset = boolean
 
 [download]
