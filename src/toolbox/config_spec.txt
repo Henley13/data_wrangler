@@ -23,6 +23,9 @@
     output = string
     error = string
     n_jobs = integer
+    reset = boolean
+    format = string
+    multi = boolean
 
 [cleaning]
 

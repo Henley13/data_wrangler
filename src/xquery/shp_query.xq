@@ -7,6 +7,6 @@ let $url_destination := $table/url_destination
 let $format := $table/format
 where $url_destination = 'file'
 where $format = ('SHP', 'shp')
-return <table>{$url, $id}</table>
+return <table>{$url, $id, $format}</table>
 }
 </results>

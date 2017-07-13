@@ -5,22 +5,101 @@
 # libraries
 import os
 import shutil
+from tqdm import tqdm
 from contextlib import closing
 from joblib import Parallel, delayed
 from lxml import etree
 from urllib.request import urlopen
-from toolbox.utils import log_error, get_config_tag, reset_log_error
+from toolbox.utils import (log_error, get_config_tag, get_config_trace,
+                           reset_log_error)
 print("\n")
 
 
-def download(url, title):
+def _check_output_directory(output_directory, reset):
     """
-    Download data.
-    :param url: str
-    :param title: str
-    :return:
+    Function to check if the output directory exists.
+
+    Parameters
+    ----------
+    output_directory : str
+        Path of the output directory
+
+    reset : bool
+        boolean to determine if the directory needs to be cleaned up before
+        starting the download
+
+    Returns
+    -------
+
     """
-    local_file_name = os.path.join(directory, title)
+    # check if the output directory exists
+    if not os.path.isdir(output_directory):
+        os.mkdir(output_directory)
+    else:
+        if reset:
+            shutil.rmtree(output_directory)
+        else:
+            pass
+    return
+
+
+def get_format_urls(input_directory, format='all'):
+    """
+    Function to get the urls for the requested format.
+
+    Parameters
+    ----------
+    input_directory : str
+        Path of the urls directory
+    format : str
+        Requested format('all', 'csv', 'geojson', 'html', 'json', 'kml', 'pdf',
+        'shp', 'text','xls''xml', 'zip')
+
+    Returns
+    -------
+    l_urls : list of tuples(str, str, str)
+        List of tuples (url, filename, format)
+    """
+    # get the path for the requested format
+    filepath = os.path.join(input_directory, "url_" + format + ".xml")
+
+    # get the list
+    l_urls = []
+    tree = etree.parse(filepath)
+    for table in tree.xpath("/results/table"):
+        url, filename, format = table[0].text, table[1].text, table[2].text
+        if url is not None and filename is not None:
+            l_urls.append((url, filename, format))
+    print("number of urls :", len(l_urls), "\n")
+
+    return l_urls
+
+
+def download(url, filename, format, output_directory, error_directory):
+    """
+    Function to download datasets from their url.
+
+    Parameters
+    ----------
+    url : str
+        Url to download the file.
+
+    filename : str
+        Id of the file in data.gouv.fr
+
+    format : str
+        Format specified in data.gouv.fr
+
+    output_directory : str
+        Path of the output directory
+
+    error_directory : str
+        Path of the error directory
+
+    Returns
+    -------
+    """
+    local_file_name = os.path.join(output_directory, filename)
     try:
         if not os.path.isfile(local_file_name):
             with open(local_file_name, 'wb') as local_istream:
@@ -30,66 +109,108 @@ def download(url, title):
             with open(local_file_name, 'wb') as local_istream:
                 with closing(urlopen(url)) as remote_file:
                     shutil.copyfileobj(remote_file, local_istream)
-        else:
-            pass
-    except:
-        path = os.path.join(path_error, title)
-        log_error(path, [url, title])
+    except Exception:
+        path_error = os.path.join(error_directory, filename)
+        log_error(path_error, [url, filename, format])
         if os.path.isfile(local_file_name):
             os.remove(local_file_name)
     return
 
 
-def directory_size(path):
+def worker_activity(tuple_file, output_directory, error_directory):
     """
-    Compute the size of a directory.
-    :param path: str
-    :return: int
+    Function to encapsulate the downloading and allow a multiprocessing process.
+
+    Parameters
+    ----------
+    tuple_file : tuple(str, str, str)
+        Tuple (url, filename, format)
+
+    output_directory : str
+        Path of the output directory
+
+    error_directory : str
+        Path of the error directory
+
+    Returns
+    -------
     """
-    size = 0
-    for (path, dirs, files) in os.walk(path):
-        for file in files:
-            filename = os.path.join(path, file)
-            size += os.path.getsize(filename)
-    return size
+    download(tuple_file[0], tuple_file[1], tuple_file[2], output_directory,
+             error_directory)
+    return
 
 
-def worker_activity(url_title):
+def main(input_directory, output_directory, error_directory, n_jobs, reset,
+         format, multi):
     """
-    Function to encapsulate the process and use multiprocessing.
-    :param url_title: [url, title]
-    :return:
+    Function to run all the script and handle the multiprocessing.
+
+    Parameters
+    ----------
+    input_directory : str
+        Path of the BaseX results directory
+
+    output_directory : str
+        Path of the output directory
+
+    error_directory : str
+        Path of the error directory
+
+    n_jobs : int
+        Number of workers to use
+
+    reset : bool
+        Boolean to determine if the output and the error directories have
+        to be cleaned
+
+    format : str
+        Format requested to download
+
+    multi : bool
+        Boolean to determine if the multiprocessing has to be used
+
+    Returns
+    -------
     """
-    download(url_title[0], url_title[1])
+    # check the output directory
+    _check_output_directory(output_directory, reset)
 
-# path
-filename = get_config_tag("input", "download")
-directory = get_config_tag("output", "download")
-path_error = get_config_tag("error", "download")
-n_jobs = get_config_tag("n_jobs", "download")
+    # check the error directory
+    reset_log_error(error_directory, reset)
 
-# reset the log
-reset_log_error(path_error)
+    # get urls list
+    data_files = get_format_urls(input_directory, format)
 
-# check if the output directory exists
-if not os.path.isdir(directory):
-    os.mkdir(directory)
+    if multi:
+        # multiprocessing
+        Parallel(n_jobs=n_jobs, verbose=20)(delayed(worker_activity)
+                                            (tuple_file=tuple_file,
+                                             output_directory=output_directory,
+                                             error_directory=error_directory)
+                                            for tuple_file in data_files)
+    else:
+        for tuple_file in tqdm(data_files):
+            worker_activity(tuple_file=tuple_file,
+                            output_directory=output_directory,
+                            error_directory=error_directory)
+    return
 
-# get the url list
-l_tables = []
-tree = etree.parse(filename)
-url_list = [url.text for url in tree.xpath("/results/table/url")]
-print("number of urls :", len(url_list), "\n")
-for table in tree.xpath("/results/table"):
-    url, id = table[0].text, table[1].text
-    title = str(id)
-    if url is not None and title is not None:
-        l_tables.append([url, title])
 
-# multiprocessing
-Parallel(n_jobs=n_jobs, verbose=20)(delayed(worker_activity)(url_title=l)
-                                    for l in l_tables)
+if __name__ == "__main__":
 
-print()
-print("total number of files :", len(os.listdir(directory)))
-directory_size(directory)
+    get_config_trace()
+
+    # paths
+    input_directory = get_config_tag("output", "basex")
+    output_directory = get_config_tag("output", "download")
+    error_directory = get_config_tag("error", "download")
+
+    # parameters
+    n_jobs = get_config_tag("n_jobs", "download")
+    reset = get_config_tag("reset", "download")
+    format = get_config_tag("format", "download")
+    multi = get_config_tag("multi", "download")
+
+    # run
+    main(input_directory, output_directory, error_directory, n_jobs, reset,
+         format, multi)

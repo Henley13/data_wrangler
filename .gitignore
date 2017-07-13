@@ -8,6 +8,8 @@ src/WEB-INF
 # cache folder
 src/__pycache__
 src/toolbox/__pycache__
+src/test/__pycache__
+.cache
 
 # gitkeep
 !__init__.py
