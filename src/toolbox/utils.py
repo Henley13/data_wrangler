@@ -199,7 +199,7 @@ def _raise_again(exception):
     raise exception
 
 
-def _pause(duration=5):
+def _pause(duration=2):
     time.sleep(duration)
 
 

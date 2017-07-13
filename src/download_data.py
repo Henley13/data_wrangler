@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 from lxml import etree
 from urllib.request import urlopen
 from toolbox.utils import (log_error, get_config_tag, get_config_trace,
-                           reset_log_error)
+                           reset_log_error, TryMultipleTimes)
 print("\n")
 
 
@@ -75,45 +75,30 @@ def get_format_urls(input_directory, format='all'):
     return l_urls
 
 
-def download(url, filename, format, output_directory, error_directory):
+@TryMultipleTimes(n_tries=2)
+def download(url, local_file_name):
     """
     Function to download datasets from their url.
 
     Parameters
     ----------
     url : str
-        Url to download the file.
+        Url to download the file
 
-    filename : str
-        Id of the file in data.gouv.fr
-
-    format : str
-        Format specified in data.gouv.fr
-
-    output_directory : str
-        Path of the output directory
-
-    error_directory : str
-        Path of the error directory
+    local_file_name : str
+        Path to save the file
 
     Returns
     -------
     """
-    local_file_name = os.path.join(output_directory, filename)
-    try:
-        if not os.path.isfile(local_file_name):
-            with open(local_file_name, 'wb') as local_istream:
-                with closing(urlopen(url)) as remote_file:
-                    shutil.copyfileobj(remote_file, local_istream)
-        elif os.path.getsize(local_file_name) == 0:
-            with open(local_file_name, 'wb') as local_istream:
-                with closing(urlopen(url)) as remote_file:
-                    shutil.copyfileobj(remote_file, local_istream)
-    except Exception:
-        path_error = os.path.join(error_directory, filename)
-        log_error(path_error, [url, filename, format])
-        if os.path.isfile(local_file_name):
-            os.remove(local_file_name)
+    if not os.path.isfile(local_file_name):
+        with open(local_file_name, 'wb') as local_istream:
+            with closing(urlopen(url)) as remote_file:
+                shutil.copyfileobj(remote_file, local_istream)
+    elif os.path.getsize(local_file_name) == 0:
+        with open(local_file_name, 'wb') as local_istream:
+            with closing(urlopen(url)) as remote_file:
+                shutil.copyfileobj(remote_file, local_istream)
     return
 
 
@@ -135,8 +120,15 @@ def worker_activity(tuple_file, output_directory, error_directory):
     Returns
     -------
     """
-    download(tuple_file[0], tuple_file[1], tuple_file[2], output_directory,
-             error_directory)
+    url = tuple_file[0]
+    local_file_name = os.path.join(output_directory, tuple_file[1])
+    try:
+        download(url, local_file_name)
+    except Exception:
+        path_error = os.path.join(error_directory, tuple_file[1])
+        log_error(path_error, [tuple_file[0], tuple_file[1], tuple_file[2]])
+        if os.path.isfile(local_file_name):
+            os.remove(local_file_name)
     return
 
 
