@@ -1,0 +1,68 @@
+[general]
+
+    path = string
+
+[metadata]
+
+    output = string
+    error = string
+    output_organization = string
+    error_organization = string
+    output_reuse = string
+    error_reuse = string
+    reset = boolean
+
+[basex]
+
+    output = string
+    query = string
+    reset = boolean
+
+[download]
+
+    output = string
+    error = string
+    n_jobs = integer
+    reset = boolean
+    format = string
+    multi = boolean
+
+[cleaning]
+
+    input = string
+    result = string
+    reset = boolean
+    multi = boolean
+    n_jobs = integer
+    threshold_n_row = integer
+    ratio_sample = integer
+    max_sample = integer
+    threshold_n_col = float
+    check_header = integer
+    threshold_json = float
+
+[distribution]
+
+    count = boolean
+    log = boolean
+    plot = boolean
+    error = boolean
+    efficiency = boolean
+
+[text_extraction]
+
+    content = boolean
+    header = boolean
+    metadata = boolean
+    n_topics = integer
+    n_top_words = integer
+    nltk = string
+
+[text_analysis]
+
+    wordcloud = boolean
+    kneighbors = boolean
+    distance_plot = boolean
+
+
+

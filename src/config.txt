@@ -1,0 +1,102 @@
+[general]
+
+    # path
+    path = "../data/last_config_ran.txt"
+
+[metadata]
+
+    # paths
+    output = "../data/metadata_dataset"
+    error = "../data/errors/collect_metadata_errors"
+    output_organization = "../data/metadata_organization"
+    error_organization = "../data/errors/collect_organization_errors"
+    output_reuse = "../data/metadata_reuse"
+    error_reuse = "../data/errors/collect_reuse_errors"
+
+    # parameters
+    reset = True
+
+[basex]
+
+    # paths
+    output = "../data/basex_results"
+    query = "./xquery"
+
+    # parameters
+    reset = True
+
+[download]
+
+    # paths
+    output = "../data/data_collected"
+    error = "../data/errors/download_errors"
+
+    # parameters
+    n_jobs = 4
+    reset = True
+    format = "all"
+    multi = True
+
+[cleaning]
+
+    # paths
+    input = "../data/data_collected"
+    result = "../data/res2"
+
+    # boolean to reset the output directory or not
+    reset = True
+
+    # allow multiprocessing
+    multi = True
+
+    # number of workers to use
+    n_jobs = 2
+
+    # minimum number of rows needed to analyze a sample of the file
+    # (otherwise, we use the entire file)
+    threshold_n_row = 100
+
+    # percentage of rows to extract from the file to build a sample
+    ratio_sample = 20
+
+    # maximum size of a sample
+    max_sample = 1000
+
+    # minimum frequency to reach in order to accept a number of columns
+    # (n_col = N if at least threshold_n_col * 100 % rows have N columns)
+    threshold_n_col = 0.8
+
+    # number of rows to analyze when we are searching for a consistent header
+    check_header = 10
+
+    # minimum frequency to reach for specific characters in order to classify
+    # a file as a json
+    threshold_json = 0.004
+
+[distribution]
+
+    # boolean parameters
+    count = True
+    log = True
+    plot = True
+    error = True
+    efficiency = True
+
+[text_extraction]
+
+    # parameters
+    content = True
+    header = True
+    metadata = True
+    n_topics = 5
+    n_top_words = 20
+
+    # path
+    nltk = "../data/nltk_data"
+
+[text_analysis]
+
+    # boolean parameters
+    wordcloud = True
+    kneighbors = True
+    distance_plot = True

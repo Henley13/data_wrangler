@@ -1,20 +1,21 @@
-python/data
-python/old
-python/src/test*
-python/.idea
-python/*.xml
-!.gitignore
-!README.md
-!.git
-notebooks
-python/.gitkeep
-python/src/__pycache__
-python/src/WEB-INF
-python/src/old
-python/src/clean_test.py
-python/src/clean_test_json.py
-python/src/clean_test_xls.py
-python/src/clean_test_xml.py
-python/src/clean_test_zip.py
-python/src/scratch.py
-dev/
+# scratch folder
+src/old
+src/sandbox.py
+
+# basex folder
+src/WEB-INF
+
+# cache folder
+src/__pycache__
+src/toolbox/__pycache__
+src/test/__pycache__
+.cache
+
+# gitkeep
+!__init__.py
+
+# PyCharm
+.idea
+
+# data folder
+data
