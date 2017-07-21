@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-""" Main script to analyze data """
+""" Main script to collect data """
 
 # libraries
 from toolbox.utils import get_config_tag, get_config_trace
 import collect_metadata
 import basex_http_management
 import download_data
-import remove_empty
+import post_download
 print("\n")
 
 get_config_trace()
@@ -56,6 +56,6 @@ download_data.main(input_directory=output_basex,
                    format=format_download,
                    multi=multiprocessing_download)
 
-remove_empty.main(input_directory=output_download,
-                  basex_directory=output_basex,
-                  error_directory=error_download)
+post_download.main(input_directory=output_download,
+                   basex_directory=output_basex,
+                   error_directory=error_download)

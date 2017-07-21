@@ -75,6 +75,12 @@ class BaseXServer:
         self.database_url = None
         self.database_name = None
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop_server()
+
     @TryMultipleTimes()
     def post_request(self, body, template):
         assert not re.search(r'\]\s*\]\s*>', body)
@@ -207,7 +213,7 @@ def get_url(server, input_dataset, output_directory, query_directory,
     """
     print("collect urls", "\n")
 
-    # launch the server
+    # launch server
     server.launch_server()
 
     # create database
@@ -241,16 +247,32 @@ def get_url(server, input_dataset, output_directory, query_directory,
     # drop database
     server.drop_database(database_name)
 
-    # stop the server
-    server.stop_server()
-
     print()
 
     return
 
 
 def main(input_directory, output_directory, query_directory, reset):
+    """
+    Function to run all the script.
 
+    Parameters
+    ----------
+    input_directory : str
+        Path of the metadata directory
+
+    output_directory : str
+        Path of the BaseX results directory
+
+    query_directory : str
+        Path of the query directory
+
+    reset : bool
+        Boolean to decide if the BaseX result directory should be cleaned or not
+
+    Returns
+    -------
+    """
     # check output directory
     _check_output_directory(output_directory, reset)
 
@@ -258,13 +280,14 @@ def main(input_directory, output_directory, query_directory, reset):
     (server_url, basex_directory, post_query_template, post_command_template,
      session, hostname) = backend_configuration()
 
-    # initialized BaseX server
+    # initialized basex server
     basex = BaseXServer(session, server_url, hostname, post_query_template,
                         post_command_template, basex_directory)
 
     # get urls
-    get_url(basex, input_directory, output_directory, query_directory,
-            "metadata")
+    with basex:
+        get_url(basex, input_directory, output_directory, query_directory,
+                "metadata")
 
     return
 

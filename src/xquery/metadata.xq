@@ -21,7 +21,8 @@ for $page in collection('metadata')//metadata
         where $page/tables/table/url_destination = 'file'
         let $c := $table/id
         let $idtable := functx:wrap-values-in-elements($c, xs:QName('idtable'))
+        let $url := $table/url
 
-        return <page>{$id, $title, $idtable, $idorg, $titleorg}</page>
+        return <page>{$id, $title, $idtable, $idorg, $titleorg, $url}</page>
 }
 </results>

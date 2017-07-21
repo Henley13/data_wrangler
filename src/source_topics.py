@@ -77,6 +77,69 @@ def count_tag(result_directory, df_log):
     return matrix, d
 
 
+def count_reuse(result_directory, df_log):
+    print("--- count reuses ---", "\n")
+
+    # load log reuse
+    path_reuse = os.path.join(result_directory, "log_reuse")
+    df_reuse = pd.read_csv(path_reuse, header=0, encoding="utf-8", sep=";",
+                           index_col=False)
+    df_reuse.set_index("id_reuse", drop=True, inplace=True)
+
+    # count reuses
+    d = {}
+    dd = {}
+    reuses_id = []
+    row_indices = []
+    col_indices = []
+    total_reuse_counted = 0
+    for row in tqdm(range(df_log.shape[0])):
+        reuses = df_log.at[row, "reuse"]
+        if isinstance(reuses, str):
+            reuses = reuses.split(" ")
+        elif isinstance(reuses, float):
+            if np.isnan(reuses):
+                continue
+            else:
+                raise ValueError("wrong type for the tag")
+        else:
+            raise ValueError("wrong type for the tag")
+        for reuse in reuses:
+            if reuse in reuses_id:
+                col = reuses_id.index(reuse)
+            else:
+                reuses_id.append(reuse)
+                col = len(reuses_id) - 1
+            title_reuse = df_reuse.loc[reuse, "title_reuse"].replace(";", "")
+            d[title_reuse] = col
+            row_indices.append(row)
+            col_indices.append(col)
+            total_reuse_counted += 1
+
+    # TODO new way to get names
+    print("col_indice :", len(col_indices))
+    print("number of unique reuses :", len(d))
+    print("total number of reuses counted :", total_reuse_counted)
+
+    data = np.ones((total_reuse_counted,))
+    row_indices = np.array(row_indices)
+    col_indices = np.array(col_indices)
+
+    # compute a sparse csr matrix
+    matrix = sp.coo_matrix((data, (row_indices, col_indices)),
+                           shape=(df_log.shape[0], len(d)))
+    matrix = matrix.tocsr()
+    print("count shape :", matrix.shape, "\n")
+
+    # save matrix and vocabulary
+    path = os.path.join(result_directory, "reuse_count.npz")
+    save_sparse_csr(path, matrix)
+    path = os.path.join(result_directory, "reuse_vocabulary")
+    save_dictionary(d, path, ["word", "index"])
+
+    return matrix, d
+
+
 def count_producer(result_directory, df_log):
     """
     Function to count the producer per file
@@ -222,6 +285,29 @@ def topic_tag(result_directory):
     return res
 
 
+def topic_reuse(result_directory):
+    # paths
+    path_w = os.path.join(result_directory, "w.npy")
+    path_reuse = os.path.join(result_directory, "reuse_count.npz")
+
+    # get data
+    w = sp.csr_matrix(np.load(path_w))
+    reuse = load_sparse_csr(path_reuse)
+    print("w shape :", w.shape)
+    print("reuse shape :", reuse.shape)
+
+    # multiply matrices
+    w = w.transpose().tocsr()
+    res = w.dot(reuse).tocsr()
+    print("topic x reuse shape :", res.shape, "\n")
+
+    # save matrix
+    path = os.path.join(result_directory, "topic_reuse.npz")
+    save_sparse_csr(path, res)
+
+    return res
+
+
 def topic_producer(result_directory):
     """
     Function to embed the topic vectors within the extension space
@@ -296,27 +382,34 @@ def print_top_object(topic, feature_names, n_top_words):
     return
 
 
-def print_source_topic(embedding_tag, embedding_producer, embedding_extension,
-                       tag_names, producer_names, extension_names, n_top_words):
+def print_source_topic(embedding_tag, embedding_reuse, embedding_producer,
+                       embedding_extension, tag_names, reuse_names,
+                       producer_names, extension_names, n_top_words):
     """
     Function to print the most important objects for on topic
     :param embedding_tag: csr sparse matrix [n_topics, n_tags]
+    :param embedding_reuse: csr sparse matrix [n_topics, n_reuses]
     :param embedding_producer: csr sparse matrix [n_topics, n_producers]
     :param embedding_extension: csr sparse matrix [n_topics, n_extensions]
     :param tag_names: list of tags name with the right index
+    :param reuse_names: list of reuses name with the right index
     :param producer_names: list of producers name with the right index
     :param extension_names: list of extensions name with the right index
     :param n_top_words: integer
     :return:
     """
     tag = np.asarray(embedding_tag.todense())
+    reuse = np.asarray(embedding_reuse.todense())
     producer = np.asarray(embedding_producer.todense())
     extension = np.asarray(embedding_extension.todense())
-    z = zip(tag, producer, extension)
-    for topic_idx, (topic_tag, topic_producer, topic_extension) in enumerate(z):
+    z = zip(tag, reuse, producer, extension)
+    for topic_idx, (topic_tag, topic_reuse, topic_producer,
+                    topic_extension) in enumerate(z):
         print("Topic #%d:" % topic_idx, "\n")
         print("--- tag ---")
         print_top_object(topic_tag, tag_names, n_top_words)
+        print("--- reuse ---")
+        print_top_object(topic_reuse, reuse_names, n_top_words)
         print("--- producer ---")
         print_top_object(topic_producer, producer_names, n_top_words)
         print("--- extension ---")
@@ -338,9 +431,11 @@ def make_wordcloud_object(result_directory, n_top_words):
 
     # paths
     path_tag = os.path.join(result_directory, "topic_tag.npz")
+    path_reuse = os.path.join(result_directory, "topic_reuse.npz")
     path_producer = os.path.join(result_directory, "topic_producer.npz")
     path_extension = os.path.join(result_directory, "topic_extension.npz")
     path_vocabulary_tag = os.path.join(result_directory, "tag_vocabulary")
+    path_vocabulary_reuse = os.path.join(result_directory, "reuse_vocabulary")
     path_vocabulary_producer = os.path.join(result_directory,
                                             "producer_vocabulary")
     path_vocabulary_extension = os.path.join(result_directory,
@@ -355,6 +450,13 @@ def make_wordcloud_object(result_directory, n_top_words):
     df_tag.sort_values(by="index", axis=0, ascending=True, inplace=True)
     tag_names = list(df_tag["word"])
     topic_tag = load_sparse_csr(path_tag)
+
+    # load reuse data
+    df_reuse = pd.read_csv(path_vocabulary_reuse, header=0, encoding="utf-8",
+                           sep=";", index_col=False)
+    df_reuse.sort_values(by="index", axis=0, ascending=True, inplace=True)
+    reuse_names = list(df_reuse["word"])
+    topic_reuse = load_sparse_csr(path_reuse)
 
     # load producer data
     df_producer = pd.read_csv(path_vocabulary_producer, header=0,
@@ -371,13 +473,15 @@ def make_wordcloud_object(result_directory, n_top_words):
     topic_extension = load_sparse_csr(path_extension)
 
     # print
-    print_source_topic(topic_tag, topic_producer, topic_extension, tag_names,
-                       producer_names, extension_names, n_top_words)
+    print_source_topic(topic_tag, topic_reuse, topic_producer, topic_extension,
+                       tag_names, reuse_names, producer_names, extension_names,
+                       n_top_words)
 
     # build wordclouds
     stopwords = {'passerelle_inspire', 'donnees_ouvertes',
                  'geoscientific_information', 'grand_public'}
     l_object = [(topic_tag, tag_names, "tag", "Oranges"),
+                (topic_reuse, reuse_names, "reuse", "Reds"),
                 (topic_producer, producer_names, "producer", "Blues"),
                 (topic_extension, extension_names, "extension", "Greens")]
     for topic_ind in range(topic_tag.shape[0]):
@@ -436,7 +540,7 @@ def main(result_directory, n_top_words):
     :return:
     """
     # paths
-    path_log = os.path.join(result_directory, "log_final_reduced")
+    path_log = os.path.join(result_directory, "log_final_reduced_with_reuse")
 
     # get data
     df_log = pd.read_csv(path_log, header=0, encoding="utf-8", sep=";",
@@ -446,6 +550,8 @@ def main(result_directory, n_top_words):
     # functions
     count_tag(result_directory, df_log)
     topic_tag(result_directory)
+    count_reuse(result_directory, df_log)
+    topic_reuse(result_directory)
     count_producer(result_directory, df_log)
     topic_producer(result_directory)
     count_extension(result_directory, df_log)

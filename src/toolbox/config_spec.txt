@@ -1,6 +1,7 @@
 [general]
 
     path = string
+    data = string
 
 [metadata]
 

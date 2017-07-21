@@ -13,6 +13,26 @@ from configobj import ConfigObj, ConfigObjError
 from validate import Validator
 
 
+def get_path_cachedir(directory):
+    """
+    Function to check the cache directory.
+
+    Parameters
+    ----------
+    directory : str
+        Path of the cache directory
+
+    Returns
+    -------
+    """
+    path_cache = os.path.join(directory, "cache")
+    if os.path.isdir(path_cache):
+        pass
+    else:
+        os.mkdir(path_cache)
+    return path_cache
+
+
 def check_graph_folders(result_directory):
     """
     Function to check if the folders exist
@@ -199,7 +219,7 @@ def _raise_again(exception):
     raise exception
 
 
-def _pause(duration=2):
+def _pause(duration=5):
     time.sleep(duration)
 
 

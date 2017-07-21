@@ -454,6 +454,22 @@ def make_table_source_topic(result_directory):
     return
 
 
+def _split_str(s):
+    stopwords = ["passerelle_inspire", "donnees_ouvertes",
+                 "geoscientific_information", "grand_public"]
+    if isinstance(s, str):
+        s = s.split(" ")
+        for word in stopwords:
+            if word in s:
+                s.remove(word)
+        return s
+    elif isinstance(s, float) and np.isnan(s):
+        return []
+    else:
+        print(type(s), s)
+        raise ValueError("wrong type")
+
+
 def _compute_distances(df_log, w):
     """
     Function to randomly compute distances between files
@@ -466,39 +482,45 @@ def _compute_distances(df_log, w):
     same_tag = []
     same_producer = []
     same_page = []
+    same_reuse = []
     other = []
     all_ = []
     for i in tqdm(range(df_log.shape[0])):
-        i_tag = str(df_log.at[i, "tags_page"]).split(" ")
+        i_tag = _split_str(df_log.at[i, "tags_page"])
         i_producer = df_log.at[i, "title_producer"]
         i_page = df_log.at[i, "title_page"]
+        i_reuse = _split_str(df_log.at[i, "reuse"])
         i_topic = w[i, :]
         partners = random.sample(
             [j for j in range(df_log.shape[0]) if j != i],
             k=100)
         for j in partners:
-            j_tag = str(df_log.at[j, "tags_page"]).split(" ")
+            j_tag = _split_str(df_log.at[j, "tags_page"])
             j_producer = df_log.at[j, "title_producer"]
             j_page = df_log.at[j, "title_page"]
+            j_reuse = _split_str(df_log.at[j, "reuse"])
             j_topic = w[j, :]
             distance_ij = cosine(i_topic, j_topic)
 
             if not np.isnan(distance_ij) and np.isfinite(distance_ij):
                 c = True
+                if i_page == j_page:
+                    same_page.append(distance_ij)
+                    continue
                 if len(set(i_tag).intersection(j_tag)) > 0:
                     same_tag.append(distance_ij)
                     c = False
                 if i_producer == j_producer:
                     same_producer.append(distance_ij)
                     c = False
-                if i_page == j_page:
-                    same_page.append(distance_ij)
+                if len(set(i_reuse).intersection(j_reuse)) > 0:
+                    same_reuse.append(distance_ij)
                     c = False
                 if c:
                     other.append(distance_ij)
                 all_.append(distance_ij)
 
-    return same_tag, same_producer, same_page, other, all_
+    return same_tag, same_producer, same_page, same_reuse, other, all_
 
 
 def plot_distribution_distance(result_directory, df_log):
@@ -526,9 +548,9 @@ def plot_distribution_distance(result_directory, df_log):
     w = np.load(path_w)
 
     # collect several random couples of files
-    (same_tag, same_producer, same_page, other,
+    (same_tag, same_producer, same_page, same_reuse, other,
      all_) = _compute_distances_cached(df_log, w)
-    values = [all_, same_page, same_tag, same_producer, other]
+    values = [all_, same_page, same_tag, same_producer, same_reuse, other]
     names = ["all \n (%i pairs)" % len(all_),
              "same page \n (%s%%)" % str(
                  round(len(same_page) * 100 / len(all_), 2)),
@@ -536,11 +558,14 @@ def plot_distribution_distance(result_directory, df_log):
                  round(len(same_tag) * 100 / len(all_), 2)),
              "same producer \n (%s%%)" % str(
                  round(len(same_producer) * 100 / len(all_), 2)),
+             "same reuses \n (%s%%)" % str(
+                 round(len(same_reuse) * 100 / len(all_), 2)),
              "other \n (%s%%)" % str(
                  round(len(other) * 100 / len(all_), 2))]
     print("same page :", len(same_page))
     print("same tag :", len(same_tag))
     print("same producer :", len(same_producer))
+    print("same reuse :", len(same_reuse))
     print("other :", len(other))
     print("all :", len(all_), "\n")
 
@@ -560,7 +585,7 @@ def plot_distribution_distance(result_directory, df_log):
     xticks[0].label1.set_visible(False)
     xticks[-1].label1.set_visible(False)
     ax.set_yticklabels([""] + names, fontsize=10)
-    ax.set_xlabel("cosine similarity", fontsize=15)
+    ax.set_xlabel("cosine distance", fontsize=15)
     plt.tight_layout()
 
     # save figures
@@ -605,7 +630,7 @@ def plot_distribution_distance(result_directory, df_log):
                    palette=None,
                    saturation=0.8,
                    ax=ax)
-    ax.set_xlabel("cosine similarity", fontsize=15)
+    ax.set_xlabel("cosine distance", fontsize=15)
     ax.yaxis.label.set_visible(False)
     plt.tight_layout()
 
@@ -624,33 +649,6 @@ def plot_distribution_distance(result_directory, df_log):
     return
 
 
-def test(param1, param2, param3):
-    """ Short blabla.
-
-    long blablabla
-
-    Parameters
-    ----------
-    param1 : str
-        blabla 1
-
-    param2 : ndarray, shape (bla, blabla)
-        blabla 2
-
-    param3 : array-like, shape(bla, blabla)
-        blabla 3
-
-    Returns
-    -------
-    out1 : int
-        blabla out
-
-    """
-    return
-
-test("a", np.array([]), [])
-
-
 def main(result_directory):
     """
     Function to run all the script
@@ -659,7 +657,7 @@ def main(result_directory):
     """
 
     # paths
-    path_log = os.path.join(result_directory, "log_final_reduced")
+    path_log = os.path.join(result_directory, "log_final_reduced_with_reuse")
 
     # get data
     df_log = pd.read_csv(path_log, header=0, encoding="utf-8", sep=";",
@@ -673,13 +671,13 @@ def main(result_directory):
     #prepocessed_tsne(result_directory, df_log)
 
     # table
-    make_table_source_topic(result_directory)
+    #make_table_source_topic(result_directory)
 
     # plot
-    plot_extension_cleaned(result_directory, df_log)
+    #plot_extension_cleaned(result_directory, df_log)
     #plot_size_cleaned(result_directory, df_log)
     #plot_mds(result_directory, df_log)
-    plot_score_nmf(result_directory)
+    #plot_score_nmf(result_directory)
     plot_distribution_distance(result_directory, df_log)
 
     return

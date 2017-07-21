@@ -2,6 +2,7 @@
 
     # path
     path = "../data/last_config_ran.txt"
+    data = "../data"
 
 [metadata]
 

@@ -7,10 +7,15 @@
 import os
 import requests
 import shutil
+import joblib
 from tqdm import tqdm
 from lxml import etree, objectify
-from toolbox.utils import log_error, get_config_tag
+from toolbox.utils import log_error, get_config_tag, get_path_cachedir
 print("\n")
+
+# memory cache
+general_directory = get_config_tag("data", "general")
+memory = joblib.Memory(cachedir=get_path_cachedir(general_directory), verbose=0)
 
 
 def _check_error_directory(error_directory, error_organization_directory,
@@ -174,12 +179,13 @@ def _create_datasets(datasets):
     return datasets_e
 
 
+@memory.cache()
 def _create_xml_metadata(data, output_directory):
     """
     Create an XML file for the metadata
     :param data: dictionary
     :param output_directory: string
-    :return:
+    :return: str, xml object
     """
     xml = '''<?xml version="1.0" encoding="UTF-8"?><metadata></metadata>'''
     root = objectify.fromstring(xml.encode('UTF-8'))
@@ -253,20 +259,19 @@ def _create_xml_metadata(data, output_directory):
     obj_xml = etree.tostring(root, pretty_print=True, xml_declaration=True,
                              encoding="utf-8")
 
-    # save the xml
+    # path of the xml
     filepath = os.path.join(output_directory, data["id"] + ".xml")
-    with open(filepath, "wb") as xml_writer:
-        xml_writer.write(obj_xml)
 
-    return
+    return filepath, obj_xml
 
 
+@memory.cache()
 def _create_xml_organization(data, organization_directory):
     """
     Create an XML file for the organization metadata
     :param data: dictionary
     :param organization_directory: string
-    :return:
+    :return: str, xml object
     """
     xml = '''<?xml version="1.0" encoding="UTF-8"?><metadata></metadata>'''
     root = objectify.fromstring(xml.encode('UTF-8'))
@@ -316,20 +321,19 @@ def _create_xml_organization(data, organization_directory):
     # create the xml string
     obj_xml = etree.tostring(root, pretty_print=True, xml_declaration=True,
                              encoding="utf-8")
-    # save the xml
+    # path of the xml
     filepath = os.path.join(organization_directory, data["id"] + ".xml")
-    with open(filepath, "wb") as xml_writer:
-        xml_writer.write(obj_xml)
 
-    return
+    return filepath, obj_xml
 
 
+@memory.cache()
 def _create_xml_reuse(data, reuse_directory):
     """
     Create an XML file for the reuse metadata
     :param data: dictionary
     :param reuse_directory: string
-    :return:
+    :return: str, xml object
     """
     xml = '''<?xml version="1.0" encoding="UTF-8"?><metadata></metadata>'''
     root = objectify.fromstring(xml.encode('UTF-8'))
@@ -376,11 +380,29 @@ def _create_xml_reuse(data, reuse_directory):
     obj_xml = etree.tostring(root, pretty_print=True, xml_declaration=True,
                              encoding="utf-8")
 
-    # save the xml
+    # path of the xml
     filepath = os.path.join(reuse_directory, data["id"] + ".xml")
-    with open(filepath, "wb") as xml_writer:
-        xml_writer.write(obj_xml)
 
+    return filepath, obj_xml
+
+
+def _save_xml(filepath, xml):
+    """
+    Function to write a xml file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path of the filename
+
+    xml : bytes
+        xml file
+
+    Returns
+    -------
+    """
+    with open(filepath, "wb") as xml_writer:
+        xml_writer.write(xml)
     return
 
 
@@ -422,7 +444,9 @@ def collect_organization_metadata(organization_directory,
             try:
                 id = data["id"]
                 id_organizations.append(id)
-                _create_xml_organization(data, organization_directory)
+                filepath, xml = _create_xml_organization(data,
+                                                         organization_directory)
+                _save_xml(filepath, xml)
                 organizations_collected_total += 1
             except (ValueError, UnicodeDecodeError):
                 path = os.path.join(error_organization_directory, data["id"])
@@ -487,7 +511,9 @@ def collect_metadata(output_directory, error_directory, id_organizations):
             # build an XML per dataset included all metadata needed
             for data in d["data"]:
                 try:
-                    _create_xml_metadata(data, output_directory)
+                    filepath, xml = _create_xml_metadata(data,
+                                                         output_directory)
+                    _save_xml(filepath, xml)
                     datasets_collected += 1
                 except (ValueError, UnicodeDecodeError):
                     path = os.path.join(error_directory, data["id"])
@@ -536,7 +562,8 @@ def collect_reuse_metadata(reuse_directory, error_reuse_directory):
         # get the id and collect the metadata
         for data in d["data"]:
             try:
-                _create_xml_reuse(data, reuse_directory)
+                filepath, xml = _create_xml_reuse(data, reuse_directory)
+                _save_xml(filepath, xml)
                 reuses_collected_total += 1
             except (ValueError, UnicodeDecodeError):
                 path = os.path.join(error_reuse_directory, data["id"])

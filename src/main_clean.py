@@ -3,10 +3,11 @@
 """ Main script to clean data and edit metadata """
 
 # libraries
-import remove_empty
+import os
 import clean_files
 import distribution_files
 import edit_metadata
+import text_extraction
 from toolbox.utils import get_config_tag, get_config_trace
 print("\n")
 
@@ -16,6 +17,8 @@ get_config_trace()
 input_directory = get_config_tag("input", "cleaning")
 result_directory = get_config_tag("result", "cleaning")
 metadata_directory = get_config_tag("output", "metadata")
+path_log = os.path.join(result_directory, "log_final")
+nltk_path = get_config_tag("nltk", "text_extraction")
 
 # get parameters
 workers = get_config_tag("n_jobs", "cleaning")
@@ -33,9 +36,11 @@ log_bool = get_config_tag("log", "distribution")
 plot_bool = get_config_tag("plot", "distribution")
 error_bool = get_config_tag("error", "distribution")
 efficiency_bool = get_config_tag("efficiency", "distribution")
-
-# remove empty
-remove_empty.main(input_directory=input_directory)
+content_bool = get_config_tag("content", "text_extraction")
+header_bool = get_config_tag("header", "text_extraction")
+metadata_bool = get_config_tag("metadata", "text_extraction")
+n_topics = get_config_tag("n_topics", "text_extraction")
+n_top_words = get_config_tag("n_top_words", "text_extraction")
 
 # clean files
 clean_files.main(input_directory=input_directory,
@@ -56,3 +61,13 @@ distribution_files.main(count_bool=count_bool,
 # edit metadata
 edit_metadata.main(result_directory=result_directory,
                    metadata_directory=metadata_directory)
+
+# extract text
+text_extraction.main(content_bool=content_bool,
+                     header_bool=header_bool,
+                     metadata_bool=metadata_bool,
+                     n_topics=n_topics,
+                     n_top_words=n_top_words,
+                     nltk_path=nltk_path,
+                     result_directory=result_directory,
+                     path_log=path_log)

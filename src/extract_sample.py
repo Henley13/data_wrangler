@@ -13,9 +13,9 @@ random.seed(13)
 print("\n")
 
 
-def initialize_folder(output_directory):
+def _check_directory(output_directory):
     """
-    Function to initialize the output folder
+    Function to initialize the output directory
     :param output_directory: string
     :return:
     """
@@ -27,10 +27,10 @@ def initialize_folder(output_directory):
     return
 
 
-def extraction(data_directory, output_directory, n_sample):
+def extraction(input_directory, output_directory, n_sample):
     """
-    Function to randomly copy some files in a new folder
-    :param data_directory: string
+    Function to randomly copy some files in a new directory
+    :param input_directory: string
     :param output_directory: string
     :param n_sample: integer
     :return:
@@ -38,39 +38,40 @@ def extraction(data_directory, output_directory, n_sample):
     print("sample extraction", "\n")
 
     # sample
-    files = os.listdir(data_directory)
+    files = os.listdir(input_directory)
     sample = random.sample(files, n_sample)
     print("number of files extracted :", n_sample, "\n")
 
     # copy
     for filename in tqdm(sample):
-        path_in = os.path.join(data_directory, filename)
+        path_in = os.path.join(input_directory, filename)
         path_out = os.path.join(output_directory, filename)
         shutil.copyfile(path_in, path_out)
 
     return
 
 
-def main(data_directory, output_directory, n_sample=500):
+def main(input_directory, output_directory, n_sample=200):
     """
     Function to run all the script
-    :param data_directory: string
+    :param input_directory: string
     :param output_directory: string
     :param n_sample: integer
     :return:
     """
-    initialize_folder(output_directory)
-    extraction(data_directory, output_directory, n_sample)
+    _check_directory(output_directory)
+    extraction(input_directory, output_directory, n_sample)
     return
 
 if __name__ == "__main__":
 
     # paths
-    data_directory = get_config_tag("output", "download")
-    output_directory = os.path.join(os.path.dirname(data_directory), "sample")
+    input_directory = get_config_tag("output", "download")
+    output_directory = os.path.join(os.path.dirname(input_directory),
+                                    "sample_2")
 
     # run
-    main(data_directory, output_directory)
+    main(input_directory, output_directory)
 
 
 
