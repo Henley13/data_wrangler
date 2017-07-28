@@ -17,15 +17,6 @@
     # parameters
     reset = True
 
-[basex]
-
-    # paths
-    output = "../data/basex_results"
-    query = "./xquery"
-
-    # parameters
-    reset = True
-
 [download]
 
     # paths
@@ -35,7 +26,6 @@
     # parameters
     n_jobs = 4
     reset = True
-    format = "all"
     multi = True
 
 [cleaning]

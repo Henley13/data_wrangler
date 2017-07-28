@@ -5,92 +5,48 @@
 # libraries
 import os
 import shutil
-import hashlib
+import pandas as pd
+import joblib
 from tqdm import tqdm
 from contextlib import closing
 from joblib import Parallel, delayed
-from lxml import etree
 from urllib.request import urlopen
 from toolbox.utils import (log_error, get_config_tag, get_config_trace,
-                           reset_log_error, TryMultipleTimes)
+                           reset_log_error, TryMultipleTimes, check_directory,
+                           get_path_cachedir)
 print("\n")
 
+# memory cache
+general_directory = get_config_tag("data", "general")
+memory = joblib.Memory(cachedir=get_path_cachedir(general_directory), verbose=0)
 
-def _check_output_directory(output_directory, reset):
+
+@memory.cache()
+def _get_format_urls(metadata_dataset):
     """
-    Function to check if the output directory exists.
+    Function to get the urls to download the files.
 
     Parameters
     ----------
-    output_directory : str
-        Path of the output directory
-
-    reset : bool
-        boolean to determine if the directory needs to be cleaned up before
-        starting the download
-
-    Returns
-    -------
-
-    """
-    # check if the output directory exists
-    if not os.path.isdir(output_directory):
-        os.mkdir(output_directory)
-    else:
-        if reset:
-            shutil.rmtree(output_directory)
-            os.mkdir(output_directory)
-        else:
-            pass
-    return
-
-
-def get_format_urls(input_directory, format_requested):
-    """
-    Function to get the urls for the requested format.
-
-    Parameters
-    ----------
-    input_directory : str
-        Path of the urls directory
-    format_requested : str
-        Requested format('all', 'csv', 'geojson', 'html', 'json', 'kml', 'pdf',
-        'shp', 'text','xls''xml', 'zip')
+    metadata_dataset : pandas Dataframe
+        Dataframe with the metadata of the datasets
 
     Returns
     -------
     l_urls : list of tuples(str, str, str)
         List of tuples (url, filename, format)
     """
-    # get the path for the requested format
-    filepath = os.path.join(input_directory, "url_" + format_requested + ".xml")
+    # get the lists
+    df = metadata_dataset.query("url_destination_file == 'file'")
+    l_url = list(df["url_file"].astype(str))
+    l_filename = list(df["id_file"].astype(str))
+    l_format = list(df["format_file"].astype(str))
+    print("number of files to download :", df.shape[0], "\n")
 
-    # get the list
-    l_urls = []
-    tree = etree.parse(filepath)
-    duplicated_id = 0
-    duplicated_id_removed = 0
-    l_filename = []
-    for table in tqdm(tree.xpath("/results/table"), desc="format & url"):
-        url, filename, format = table[0].text, table[1].text, table[2].text
-        if url is not None and filename is not None:
-            if filename not in l_filename:
-                l_filename.append(filename)
-            else:
-                duplicated_id += 1
-                filename = hashlib.sha224(bytes(url, 'utf-8')).hexdigest()
-                if filename not in l_filename:
-                    l_filename.append(filename)
-                else:
-                    duplicated_id_removed += 1
-                    continue
-            l_urls.append((str(url), str(filename), str(format)))
+    # create a list of tuples
+    res = zip(l_url, l_filename, l_format)
 
-    print("number of urls with duplicated ids : %i (%i of them removed)"
-          % (duplicated_id, duplicated_id_removed))
-    print("number of urls :", len(l_urls), "\n")
-
-    return l_urls
+    return res
 
 
 @TryMultipleTimes()
@@ -138,30 +94,29 @@ def worker_activity(tuple_file, output_directory, error_directory):
     Returns
     -------
     """
-    url = tuple_file[0]
-    local_file_name = os.path.join(output_directory, tuple_file[1])
+    (url, filename, format) = tuple_file
+    path_file = os.path.join(output_directory, filename)
+    path_error = os.path.join(error_directory, filename)
     try:
-        download(url, local_file_name)
-        path_error = os.path.join(error_directory, tuple_file[1])
+        download(url, path_file)
         if os.path.isfile(path_error):
             os.remove(path_error)
     except Exception:
-        path_error = os.path.join(error_directory, tuple_file[1])
-        log_error(path_error, [tuple_file[0], tuple_file[1], tuple_file[2]])
-        if os.path.isfile(local_file_name):
-            os.remove(local_file_name)
+        log_error(path_error, [url, filename, format])
+        if os.path.isfile(path_file):
+            os.remove(path_file)
     return
 
 
-def main(basex_directory, output_directory, error_directory, n_jobs, reset,
-         format_requested, multi):
+def main(general_directory, output_directory, error_directory, n_jobs, reset,
+         multi):
     """
     Function to run all the script and handle the multiprocessing.
 
     Parameters
     ----------
-    basex_directory : str
-        Path of the BaseX results directory
+    general_directory : str
+        Path of the general data directory
 
     output_directory : str
         Path of the output directory
@@ -176,9 +131,6 @@ def main(basex_directory, output_directory, error_directory, n_jobs, reset,
         Boolean to determine if the output and the error directories have
         to be cleaned
 
-    format_requested : str
-        Format requested to download
-
     multi : bool
         Boolean to determine if the multiprocessing has to be used
 
@@ -186,13 +138,16 @@ def main(basex_directory, output_directory, error_directory, n_jobs, reset,
     -------
     """
     # check the output directory
-    _check_output_directory(output_directory, reset)
+    check_directory(output_directory, reset)
 
     # check the error directory
     reset_log_error(error_directory, reset)
 
     # get urls list
-    data_files = get_format_urls(basex_directory, format_requested)
+    filepath = os.path.join(general_directory, "metadata_dataset.csv")
+    df_dataset = pd.read_csv(filepath, sep=';', encoding='utf-8',
+                             index_col=False)
+    data_files = _get_format_urls(df_dataset)
 
     if multi:
         # multiprocessing
@@ -206,6 +161,7 @@ def main(basex_directory, output_directory, error_directory, n_jobs, reset,
             worker_activity(tuple_file=tuple_file,
                             output_directory=output_directory,
                             error_directory=error_directory)
+
     return
 
 
@@ -214,16 +170,19 @@ if __name__ == "__main__":
     get_config_trace()
 
     # paths
-    basex_directory = get_config_tag("output", "basex")
+    general_directory = get_config_tag("data", "general")
     output_directory = get_config_tag("output", "download")
     error_directory = get_config_tag("error", "download")
 
     # parameters
     n_jobs = get_config_tag("n_jobs", "download")
     reset = get_config_tag("reset", "download")
-    format = get_config_tag("format", "download")
     multi = get_config_tag("multi", "download")
 
     # run
-    main(basex_directory, output_directory, error_directory, n_jobs, reset,
-         format, multi)
+    main(general_directory=general_directory,
+         output_directory=output_directory,
+         error_directory=error_directory,
+         n_jobs=n_jobs,
+         reset=reset,
+         multi=multi)

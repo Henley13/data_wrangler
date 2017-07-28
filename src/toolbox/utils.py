@@ -6,11 +6,37 @@
 import sys
 import os
 import time
+import shutil
 import numpy as np
 import scipy.sparse as sp
 from joblib.format_stack import format_exc
 from configobj import ConfigObj, ConfigObjError
 from validate import Validator
+
+
+def check_directory(path_directory, reset):
+    """
+    Function to check the directory.
+
+    Parameters
+    ----------
+    path_directory : str
+        Path of the output directory
+
+    reset : bool
+        Boolean to decide if the directory should be reset or not
+
+    Returns
+    -------
+    """
+    if not os.path.isdir(path_directory):
+        os.mkdir(path_directory)
+    elif reset:
+        shutil.rmtree(path_directory)
+        os.mkdir(path_directory)
+    else:
+        pass
+    return
 
 
 def get_path_cachedir(directory):
@@ -145,12 +171,11 @@ def reset_log_error(path_error, reset):
         os.mkdir(os.path.dirname(path_error))
     if not os.path.isdir(path_error):
         os.mkdir(path_error)
+    elif reset:
+        shutil.rmtree(path_error)
+        os.mkdir(path_error)
     else:
-        if reset:
-            for file in os.listdir(path_error):
-                os.remove(os.path.join(path_error, file))
-        else:
-            pass
+        pass
     return
 
 

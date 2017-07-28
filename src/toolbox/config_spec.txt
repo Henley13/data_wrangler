@@ -13,19 +13,12 @@
     error_reuse = string
     reset = boolean
 
-[basex]
-
-    output = string
-    query = string
-    reset = boolean
-
 [download]
 
     output = string
     error = string
     n_jobs = integer
     reset = boolean
-    format = string
     multi = boolean
 
 [cleaning]

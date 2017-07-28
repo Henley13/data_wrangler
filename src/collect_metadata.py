@@ -6,11 +6,11 @@
 # libraries
 import os
 import requests
-import shutil
 import joblib
 from tqdm import tqdm
 from lxml import etree, objectify
-from toolbox.utils import log_error, get_config_tag, get_path_cachedir
+from toolbox.utils import (log_error, get_config_tag, get_path_cachedir,
+                           check_directory)
 print("\n")
 
 # memory cache
@@ -30,29 +30,11 @@ def _check_error_directory(error_directory, error_organization_directory,
     if not os.path.isdir(os.path.dirname(error_directory)):
         os.mkdir(os.path.dirname(error_directory))
     # error_directory
-    if not os.path.isdir(error_directory):
-        os.mkdir(error_directory)
-    elif reset:
-        shutil.rmtree(error_directory)
-        os.mkdir(error_directory)
-    else:
-        pass
+    check_directory(error_directory, reset)
     # error_organization_directory
-    if not os.path.isdir(error_organization_directory):
-        os.mkdir(error_organization_directory)
-    elif reset:
-        shutil.rmtree(error_organization_directory)
-        os.mkdir(error_organization_directory)
-    else:
-        pass
+    check_directory(error_organization_directory, reset)
     # error_reuse_directory
-    if not os.path.isdir(error_reuse_directory):
-        os.mkdir(error_reuse_directory)
-    elif reset:
-        shutil.rmtree(error_reuse_directory)
-        os.mkdir(error_reuse_directory)
-    else:
-        pass
+    check_directory(error_reuse_directory, reset)
     return
 
 
@@ -67,29 +49,11 @@ def _check_output_directory(output_directory, organization_directory,
     :return:
     """
     # output_directory
-    if not os.path.isdir(output_directory):
-        os.mkdir(output_directory)
-    elif reset:
-        shutil.rmtree(output_directory)
-        os.mkdir(output_directory)
-    else:
-        pass
+    check_directory(output_directory, reset)
     # organization_directory
-    if not os.path.isdir(organization_directory):
-        os.mkdir(organization_directory)
-    elif reset:
-        shutil.rmtree(organization_directory)
-        os.mkdir(organization_directory)
-    else:
-        pass
+    check_directory(organization_directory, reset)
     # reuse_directory
-    if not os.path.isdir(reuse_directory):
-        os.mkdir(reuse_directory)
-    elif reset:
-        shutil.rmtree(reuse_directory)
-        os.mkdir(reuse_directory)
-    else:
-        pass
+    check_directory(reuse_directory, reset)
     return
 
 

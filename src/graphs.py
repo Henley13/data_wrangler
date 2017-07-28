@@ -6,9 +6,6 @@
 import os
 import pandas as pd
 import numpy as np
-import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
 import seaborn as sns
 import random
 import joblib
@@ -18,6 +15,9 @@ from sklearn.decomposition import TruncatedSVD
 from toolbox.utils import (get_config_tag, load_sparse_csr, check_graph_folders)
 from scipy.spatial.distance import cosine
 from scipy.stats import spearmanr
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 print("\n")
 
 
@@ -476,13 +476,14 @@ def _compute_distances(df_log, w):
     :param df_log: pandas Dataframe
     :param w: matrix [n_samples, n_topics]
     :return: list of floats, list of floats, list of floats, list of floats,
-             list of floats
+             list of floats, list of floats, list of floats
     """
     # collect several random couples of files
     same_tag = []
     same_producer = []
     same_page = []
     same_reuse = []
+    same_extension = []
     other = []
     all_ = []
     for i in tqdm(range(df_log.shape[0])):
@@ -490,6 +491,7 @@ def _compute_distances(df_log, w):
         i_producer = df_log.at[i, "title_producer"]
         i_page = df_log.at[i, "title_page"]
         i_reuse = _split_str(df_log.at[i, "reuse"])
+        i_extension = df_log.at[i, "extension"]
         i_topic = w[i, :]
         partners = random.sample(
             [j for j in range(df_log.shape[0]) if j != i],
@@ -499,11 +501,13 @@ def _compute_distances(df_log, w):
             j_producer = df_log.at[j, "title_producer"]
             j_page = df_log.at[j, "title_page"]
             j_reuse = _split_str(df_log.at[j, "reuse"])
+            j_extension = df_log.at[j, "extension"]
             j_topic = w[j, :]
             distance_ij = cosine(i_topic, j_topic)
 
             if not np.isnan(distance_ij) and np.isfinite(distance_ij):
                 c = True
+                all_.append(distance_ij)
                 if i_page == j_page:
                     same_page.append(distance_ij)
                     continue
@@ -516,11 +520,14 @@ def _compute_distances(df_log, w):
                 if len(set(i_reuse).intersection(j_reuse)) > 0:
                     same_reuse.append(distance_ij)
                     c = False
+                if i_extension == j_extension:
+                    same_extension.append(distance_ij)
+                    c = False
                 if c:
                     other.append(distance_ij)
-                all_.append(distance_ij)
 
-    return same_tag, same_producer, same_page, same_reuse, other, all_
+    return (same_tag, same_producer, same_page, same_reuse, same_extension,
+            other, all_)
 
 
 def plot_distribution_distance(result_directory, df_log):
@@ -548,44 +555,93 @@ def plot_distribution_distance(result_directory, df_log):
     w = np.load(path_w)
 
     # collect several random couples of files
-    (same_tag, same_producer, same_page, same_reuse, other,
+    (same_tag, same_producer, same_page, same_reuse, same_extension, other,
      all_) = _compute_distances_cached(df_log, w)
-    values = [all_, same_page, same_tag, same_producer, same_reuse, other]
-    names = ["all \n (%i pairs)" % len(all_),
-             "same page \n (%s%%)" % str(
-                 round(len(same_page) * 100 / len(all_), 2)),
-             "same tags \n (%s%%)" % str(
+    values = [same_tag, same_producer, same_page, same_reuse, same_extension]
+    name_other = ["other \n(%s%%)" % str(round(len(other) * 100 / len(all_),
+                                                2))]
+    name_all = ["all \n(%i pairs)" % len(all_)]
+    names = ["common tags \n(%s%%)" % str(
                  round(len(same_tag) * 100 / len(all_), 2)),
-             "same producer \n (%s%%)" % str(
+             "same producer \n(%s%%)" % str(
                  round(len(same_producer) * 100 / len(all_), 2)),
-             "same reuses \n (%s%%)" % str(
+             "same page \n(%s%%)" % str(
+                 round(len(same_page) * 100 / len(all_), 2)),
+             "common reuses \n(%s%%)" % str(
                  round(len(same_reuse) * 100 / len(all_), 2)),
-             "other \n (%s%%)" % str(
-                 round(len(other) * 100 / len(all_), 2))]
+             "same extension \n(%s%%)" % str(
+                 round(len(same_extension) * 100 / len(all_), 2))]
     print("same page :", len(same_page))
     print("same tag :", len(same_tag))
     print("same producer :", len(same_producer))
     print("same reuse :", len(same_reuse))
+    print("same extension :", len(same_extension))
     print("other :", len(other))
     print("all :", len(all_), "\n")
 
-    # plot with boxplot
-    fig, ax = plt.subplots(figsize=(5, 5))
-    bp = ax.boxplot(values,
-                    notch=False,
-                    vert=False,
-                    manage_xticks=False,
-                    patch_artist=True)
+    # plot with boxplot...
+    fig = plt.figure(figsize=(5, 5))
+    ax1 = plt.subplot2grid((7, 1), (0, 0), rowspan=1)
+    ax2 = plt.subplot2grid((7, 1), (1, 0), rowspan=5)
+    ax3 = plt.subplot2grid((7, 1), (6, 0), rowspan=1)
+    for ax in fig.axes:
+        ax.set_facecolor('white')
+        ax.axvline(x=0, color='grey', linestyle='--', linewidth=0.8)
+        ax.axvline(x=0.2, color='grey', linestyle='--', linewidth=0.8)
+        ax.axvline(x=0.4, color='grey', linestyle='--', linewidth=0.8)
+        ax.axvline(x=0.6, color='grey', linestyle='--', linewidth=0.8)
+        ax.axvline(x=0.8, color='grey', linestyle='--', linewidth=0.8)
+        ax.axvline(x=1, color='grey', linestyle='--', linewidth=0.8)
+        ax.set_xlim(left=-0.1, right=1.1)
+
+    # ...for all the files...
+    bp = ax1.boxplot(all_,
+                     notch=False,
+                     vert=False,
+                     manage_xticks=False,
+                     patch_artist=True)
     for box in bp["boxes"]:
         box.set(facecolor="darkcyan", linewidth=1, alpha=0.8)
     for median in bp["medians"]:
         median.set(color="darkred", alpha=0.8)
-    ax.set_xlim(left=-0.1, right=1.1)
-    xticks = ax.xaxis.get_major_ticks()
+    ax1.set_yticklabels([""] + name_all, fontsize=10,
+                        multialignment='center')
+    ax1.axes.get_xaxis().set_visible(False)
+
+    # ...for shared characteristics files...
+    bp = ax2.boxplot(values,
+                     notch=False,
+                     vert=False,
+                     manage_xticks=False,
+                     patch_artist=True)
+    for box in bp["boxes"]:
+        box.set(facecolor="darkcyan", linewidth=1, alpha=0.8)
+    for median in bp["medians"]:
+        median.set(color="darkred", alpha=0.8)
+    ax2.axes.get_xaxis().set_visible(False)
+    ax2.set_yticklabels([""] + names, fontsize=10, multialignment='center')
+
+    # ... and for files with nothing in common
+    bp = ax3.boxplot(other,
+                     notch=False,
+                     vert=False,
+                     manage_xticks=False,
+                     patch_artist=True)
+    for box in bp["boxes"]:
+        box.set(facecolor="darkcyan", linewidth=1, alpha=0.8)
+    for median in bp["medians"]:
+        median.set(color="darkred", alpha=0.8)
+    xticks = ax3.xaxis.get_major_ticks()
     xticks[0].label1.set_visible(False)
     xticks[-1].label1.set_visible(False)
-    ax.set_yticklabels([""] + names, fontsize=10)
-    ax.set_xlabel("cosine distance", fontsize=15)
+    ax3.set_xlabel("cosine distance", fontsize=15)
+    ax3.set_yticklabels([""] + name_other, fontsize=10,
+                        multialignment='center')
+
+    plt.text(-0.1, 0.7, "close in the \ntopic space", fontsize=9,
+             multialignment='center')
+    plt.text(0.85, 0.7, "distant in the \ntopic space", fontsize=9,
+             multialignment='center')
     plt.tight_layout()
 
     # save figures
@@ -598,10 +654,12 @@ def plot_distribution_distance(result_directory, df_log):
     path = os.path.join(path_svg, "distance distribution boxplot.svg")
     plt.savefig(path)
 
-    # plot with violin
+    # plot with violinplot
     data = pd.DataFrame()
     distance = []
     category = []
+    values = [other] + values + [all_]
+    names = name_other + names + name_all
     for i in range(len(values)):
         distance += values[i]
         l = [names[i]] * len(values[i])
@@ -609,6 +667,14 @@ def plot_distribution_distance(result_directory, df_log):
     data["distance"] = distance
     data["category"] = category
     fig, ax = plt.subplots(figsize=(5, 5))
+    ax.set_facecolor('white')
+    ax.axvline(x=0, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.2, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.4, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.6, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.8, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=1, color='grey', linestyle='--', linewidth=0.8)
+    ax.set_xlim(left=-0.1, right=1.1)
     sns.set_context("paper")
     sns.violinplot(x="distance",
                    y="category",
@@ -618,11 +684,11 @@ def plot_distribution_distance(result_directory, df_log):
                    hue_order=None,
                    bw='scott',
                    cut=0,
-                   scale='area',
+                   scale='width',
                    scale_hue=True,
                    gridsize=100,
                    width=0.8,
-                   inner="box",
+                   inner=None,
                    split=False,
                    orient="h",
                    linewidth=None,
@@ -632,6 +698,10 @@ def plot_distribution_distance(result_directory, df_log):
                    ax=ax)
     ax.set_xlabel("cosine distance", fontsize=15)
     ax.yaxis.label.set_visible(False)
+    plt.text(-0.1, 7.3, "close in the \ntopic space", fontsize=9,
+             multialignment='center')
+    plt.text(0.85, 7.3, "distant in the \ntopic space", fontsize=9,
+             multialignment='center')
     plt.tight_layout()
 
     # save figures
