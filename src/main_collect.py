@@ -7,6 +7,7 @@ from toolbox.utils import get_config_tag, get_config_trace
 import collect_metadata
 import post_collect
 import download_data
+import post_download
 print("\n")
 
 get_config_trace()
@@ -51,7 +52,7 @@ download_data.main(general_directory=general_directory,
                    reset=reset_download,
                    multi=multiprocessing_download)
 
-# # check results from the download process and edit metadata
-# post_download.main(input_directory=output_download,
-#                    basex_directory=output_basex,
-#                    error_directory=error_download)
+# check results from the download process and edit metadata
+post_download.main(general_directory=general_directory,
+                   input_directory=output_download,
+                   error_directory=error_download)

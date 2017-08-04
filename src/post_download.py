@@ -6,210 +6,84 @@
 import os
 import magic
 import pandas as pd
-import hashlib
-from lxml import etree
+import joblib
 from tqdm import tqdm
-from toolbox.utils import get_config_tag, get_config_trace
-from download_data import get_format_urls
+from toolbox.utils import get_config_tag, get_config_trace, get_path_cachedir
 print("\n")
 
+# memory cache
+general_directory = get_config_tag("data", "general")
+memory = joblib.Memory(cachedir=get_path_cachedir(general_directory), verbose=0)
 
-def _initialize_log():
+
+def _analyze_download(download_directory):
     """
-    Function to initialize the csv file with a summary of the download process.
+    Function to check the different files successfully downloaded.
+
+    Parameters
+    ----------
+    download_directory : str
+        Path of the downloaded files directory
+
     Returns
     -------
-    summary_download_path : str
-        Path of the csv file
+    df_download_summary : pandas Dataframe
+        Dataframe of the download logs
     """
-    summary_download_path = "../data/summary_download"
-    if os.path.isfile(summary_download_path):
-        os.remove(summary_download_path)
-    with open(summary_download_path, mode="wt", encoding="utf-8") as f:
-        f.write("filename;id_page;format_declared;extension;size;downloaded;"
-                "id_producer;title_producer")
-        f.write("\n")
-    return summary_download_path
+    print("analyze downloaded files", "\n")
+
+    # check downloaded files
+    l_filename = []
+    l_size = []
+    l_extension = []
+    for filename in tqdm(os.listdir(download_directory)):
+        path_file = os.path.join(download_directory, filename)
+        size_file = os.path.getsize(path_file)
+        if size_file == 0:
+            extension_file = None
+        else:
+            extension_file = magic.Magic(mime=True).from_file(path_file)
+
+        l_filename.append(filename)
+        l_size.append(size_file)
+        l_extension.append(extension_file)
+
+    # store results in a Dataframe
+    df_download_summary = pd.DataFrame({"id_file": l_filename,
+                                        "size_file": l_size,
+                                        "extension_file": l_extension})
+    df_download_summary["downloaded"] = [True] * df_download_summary.shape[0]
+
+    print()
+
+    return df_download_summary
 
 
-def _initialize_log_error():
+def _initialize_log_error(general_directory):
     """
     Function to initialize the csv file with a summary of the download errors.
+
+    Parameters
+    ----------
+    general_directory : str
+        Path to the general data directory
+
     Returns
     -------
     summary_download_path : str
         Path of the csv file
     """
-    summary_error_path = "../data/summary_download_error"
+    summary_error_path = os.path.join(general_directory,
+                                      "summary_download_error")
     if os.path.isfile(summary_error_path):
         os.remove(summary_error_path)
     with open(summary_error_path, mode="wt", encoding="utf-8") as f:
-        f.write("filename;error;content;url")
+        f.write("id_file;error;content_error;url_file;format_file")
         f.write("\n")
     return summary_error_path
 
 
-def get_id_page(basex_directory):
-    """
-    Function to link each table to its table id.
-
-    Parameters
-    ----------
-    basex_directory : str
-        Path of the BaseX results directory
-
-    Returns
-    -------
-    df : pandas Dataframe
-        (n_tables, [id_table, id_page, title_page, id_producer, title_producer,
-                    url])
-    """
-    print("get id page", "\n")
-
-    # get the path for the xml file
-    filepath = os.path.join(basex_directory, "id_page_table.xml")
-
-    # read the xml and fill in a dataframe with it
-    l_id_table = []
-    l_id_page = []
-    l_title_page = []
-    l_id_producer = []
-    l_title_producer = []
-    l_url = []
-    tree = etree.parse(filepath)
-    for table in tqdm(tree.xpath("/results/page"), desc="id page"):
-        (id_page, title_page, id_table, id_producer,
-         title_producer, url) = (table[0].text, table[1].text, table[2].text,
-                                 table[3].text, table[4].text, table[5].text)
-        if id_table is not None and url is not None:
-            if id_table in l_id_table:
-                id_table = hashlib.sha224(bytes(url, 'utf-8')).hexdigest()
-            l_id_table.append(id_table)
-            l_id_page.append(id_page)
-            l_title_page.append(title_page)
-            l_id_producer.append(id_producer)
-            l_title_producer.append(title_producer)
-            l_url.append(url)
-
-    df = pd.DataFrame({"id_table": l_id_table,
-                       "id_page": l_id_page,
-                       "title_page": l_title_page,
-                       "id_producer": l_id_producer,
-                       "title_producer": l_title_producer,
-                       "url": l_url})
-
-    print("df shape :", df.shape, "\n")
-
-    return df
-
-
-def _log_file(input_directory, tuple_file, df_id_table):
-    """
-    Function to gather the results to save about every files.
-
-    Parameters
-    ----------
-    input_directory : str
-        Path of the input directory (collected data)
-
-    tuple_file : tuple(str, str, str)
-        Tuple (url, filename, format)
-
-    df_id_table : pandas Dataframe
-        (n_tables, [id_table, id_page, title_page, id_producer, title_producer])
-
-    Returns
-    -------
-    row : list
-        Row to write in a text file (list of str)
-    """
-    # path
-    (_, filename, format_declared) = tuple_file
-    path_file = os.path.join(input_directory, filename)
-    # check if the file has been downloaded
-    if os.path.isfile(path_file):
-        downloaded = True
-        size = os.path.getsize(path_file)
-        if size == 0:
-            extension = None
-        else:
-            extension = magic.Magic(mime=True).from_file(path_file)
-    else:
-        downloaded = False
-        size = -1
-        extension = None
-
-    # results to save
-    id_page = df_id_table.loc[filename, "id_page"]
-    id_producer = df_id_table.loc[filename, "id_producer"]
-    title_producer = df_id_table.loc[filename, "title_producer"]
-    row = [filename, id_page, format_declared, extension, size, downloaded,
-           id_producer, title_producer]
-    row = [str(item) for item in row]
-
-    return row
-
-
-def _count_empty_files(input_directory, df_id_table, summary_download_path,
-                       error_directory, basex_directory):
-    """
-    Function to count empty files downloaded and summarize the results.
-
-    Parameters
-    ----------
-    input_directory : str
-        Path of the input directory (collected data)
-
-    df_id_table : pandas Dataframe
-        Dataframe to link each id table to its id page
-
-    summary_download_path : str
-        Path to the summary file
-
-    error_directory : str
-        Path of the download errors directory
-
-    basex_directory : str
-        Path of the BaseX results directory
-
-    Returns
-    -------
-    """
-    print("count empty files", "\n")
-
-    # set the table id as index
-    df_id_table.set_index(keys="id_table", drop=True, inplace=True)
-
-    # count the empty files and store the extensions
-    tuple_files = get_format_urls(basex_directory, format_requested='all')
-    for tuple_file in tqdm(tuple_files, desc="count empty files"):
-        row = _log_file(tuple_file, df_id_table)
-
-        # save results
-        with open(summary_download_path, mode="at", encoding="utf-8") as f:
-            f.write(";".join(row))
-            f.write("\n")
-
-    df = pd.read_csv(summary_download_path, sep=';', encoding='utf-8',
-                     index_col=False)
-
-    # check consistency of the results
-    n_downloaded = df.query("size > 0").shape[0]
-    n_null = df.query("size == 0").count().shape[0]
-    n_errors = df.query("size == -1").count().shape[0]
-
-    print("number of files downloaded (zipped files excluded) :", n_downloaded)
-    print("number of files in the 'collected data' directory :",
-          len(os.listdir(input_directory)))
-    print("number of null files downloaded :", n_null)
-    print("number of errors :", n_errors)
-    print("number of error logs :", len(os.listdir(error_directory)))
-    print("number of urls :", len(tuple_files), "\n")
-
-    return
-
-
-def _analyze_error(error_directory, summary_error_path, summary_download_path):
+def _collect_error(error_directory, summary_error_path):
     """
     Function to count the different errors that occurred during the downloading.
 
@@ -221,108 +95,242 @@ def _analyze_error(error_directory, summary_error_path, summary_download_path):
     summary_error_path : str
         Path of the error summary file
 
-    summary_download_path : str
-        Path of download summary file
-
     Returns
     -------
+    df_error_summary : pandas Dataframe
+        Dataframe of the error logs
     """
 
-    print("analyze download errors", "\n")
+    print("collect download errors", "\n")
 
-    # get data
-    df_download_summary = pd.read_csv(summary_download_path, sep=";",
-                                      encoding="utf-8", index_col=False)
-    for filename in tqdm(os.listdir(error_directory),
-                         desc="analyze download errors"):
+    # check errors
+    for filename in tqdm(os.listdir(error_directory)):
         path = os.path.join(error_directory, filename)
         with open(path, mode="rt", encoding="utf-8") as f:
             c = f.readlines()
             url = c[1].strip()
-            error = c[3].split(" ")[0]
+            filename_saved = c[2].strip()
+            format = c[3].strip()
+            error = c[4].split(" ")[0]
             content = c[-2].strip()
+            if filename != filename_saved:
+                raise ValueError("A wrong filename has been saved!")
         with open(summary_error_path, mode="at", encoding="utf-8") as f:
             f.write(";".join([str(filename), str(error), str(content),
-                              str(url)]))
+                              str(url), str(format)]))
             f.write("\n")
 
-    # merge data
     df_error_summary = pd.read_csv(summary_error_path, sep=";",
                                    encoding="utf-8", index_col=False)
 
-    df = df_error_summary.merge(df_download_summary,
-                                how='left',
-                                left_on='filename',
-                                right_on='filename',
-                                left_index=True,
-                                right_index=False,
-                                copy=False)
-    df.to_csv(summary_error_path, sep=';', encoding='utf-8', index=False,
-              header=True)
+    print()
 
-    print("df download shape :", df_download_summary.shape)
-    print("df error shape :", df_error_summary.shape)
-    print("df shape :", df.shape, "\n")
+    return df_error_summary
 
-    print(df.columns, "\n")
 
-    print(df_download_summary.head(), "\n")
-    print(df_error_summary.head(), "\n")
-    print(df.head(), "\n")
+@memory.cache()
+def _edit_metadata(df_dataset, df_download_summary, df_error_summary):
+    """
+    Function to merge the different dataframes created.
 
-    # analyze data
-    print("analyze errors", "\n")
-    print(list(df.columns))
-    print(df.shape, "\n")
-    print(df['extension'].value_counts(), "\n")
-    print(df['error'].value_counts(), "\n")
+    Parameters
+    ----------
+    df_dataset : pandas Dataframe
+        Dataframe of the metadata collected
+
+    df_download_summary : pandas Dataframe
+        Dataframe of the download logs
+
+    df_error_summary : pandas Dataframe
+        Dataframe of the error logs
+
+    Returns
+    -------
+    df : pandas Dataframe
+        Dataframe merged
+    """
+    print("merge dataframes", "\n")
+
+    # merge data
+    df = df_dataset.merge(df_download_summary,
+                          how='left',
+                          left_on='id_file',
+                          right_on='id_file',
+                          left_index=True,
+                          right_index=False,
+                          copy=False)
+    df_error = df_error_summary[["id_file", "error", "content_error"]]
+    df = df.merge(df_error,
+                  how='left',
+                  left_on='id_file',
+                  right_on='id_file',
+                  left_index=True,
+                  right_index=False,
+                  copy=False)
+
+    # fill nan value
+    df["downloaded"].fillna(False, inplace=True)
+
+    # check consistency between downloaded files and errors
+    if df.query("downloaded == True & error == error").shape[0] > 0:
+        pass
+    elif df.query("downloaded == False & error != error").shape[0] > 0:
+        pass
+    else:
+        print(df.query("downloaded == True & error == error"))
+        raise IndexError("some files are both in the download and error "
+                         "directories")
+
+    # save results
+    summary_download_path = "../data/summary_download"
+    df.to_csv(summary_download_path, sep=";", encoding="utf-8",
+              index=False, header=True)
+
+    n_files = df.shape[0]
+    n_remote = df.query("url_destination_file != 'file'").shape[0]
+    n_downloads = df.query("downloaded == True").shape[0]
+    n_errors = df.query("error == error").shape[0]
+    n_empty = df.query("size_file == 0").shape[0]
+    print("total number of file registered :", n_files)
+    print("number of remote files :", n_remote)
+    print("number of downloaded files :", n_downloads)
+    print("number of empty downloaded files :", n_empty)
+    print("number of error :", n_errors)
+    print("number of ignored files :",
+          n_files - n_remote - n_downloads - n_errors, "\n")
+
+    return df
+
+
+def _analyze_error(df_download):
+    """
+    Function to analyze errors that happened during the download step.
+
+    Parameters
+    ----------
+    df_download : pandas Dataframe
+        Dataframe with the edited metadata (post download)
+
+    Returns
+    -------
+    """
+    print("analyze results", "\n")
+
+    # keep only the data about the errors
+    query = "url_destination_file == 'file'"
+    df_download_attempt = df_download.query(query)
+    query = "url_destination_file == 'file' & error == error"
+    df_download_error = df_download.query(query)
+
+    # general information
+    print("download attempts", "\n")
+    print(df_download_attempt['format_file'].value_counts(), "\n")
 
     print("--------------------", "\n")
 
-    extensions = list(set(list(df["extension"])))
+    # general information
+    print("errors", "\n")
+    print(df_download_error['format_file'].value_counts(), "\n")
+    print(df_download_error['error'].value_counts(), "\n")
+
+    print("--------------------", "\n")
+
+    # specific information per inferred extension
+    extensions = list(set(list(df_download_error["format_file"])))
+    print(extensions)
     for ext in extensions:
-        print("extension :", ext, "\n")
-        query = "extension == '%s'" % ext
-        df_error_ext = df.query(query)
+        print("declared extension :", ext, "\n")
+        if str(ext) == "nan":
+            query = "format_file != format_file"
+        else:
+            query = "format_file == '%s'" % ext
+        df_error_ext = df_download_error.query(query)
         print(df_error_ext["error"].value_counts(), "\n")
         max_e = df_error_ext["error"].value_counts().index.tolist()[0]
-        print(df_error_ext.query("error == '%s'" % max_e)["content"].
+        print(df_error_ext.query("error == '%s'" % max_e)["content_error"].
               value_counts(), "\n")
         print("---", "\n")
+
+    # efficiency rate per extension
+    efficiency = {}
+    extensions = list(set(list(df_download_attempt["format_file"])))
+    for ext in extensions:
+        if str(ext) == "nan":
+            query_success = "format_file != format_file & error != error"
+            query_fail = "format_file != format_file & error == error"
+            ext = "nan"
+        else:
+            query_success = "format_file == '%s' & error != error" % ext
+            query_fail = "format_file == '%s' & error == error" % ext
+        n_success = df_download_attempt.query(query_success).shape[0]
+        n_fail = df_download_attempt.query(query_fail).shape[0]
+        if n_success + n_fail == 0:
+            efficiency[ext] = 0.0
+        else:
+            efficiency[ext] = round(n_success / (n_success + n_fail) * 100, 2)
+    for ext in sorted(efficiency.items(), reverse=True, key=lambda x: x[1]):
+        print(efficiency[ext], "% ==>", ext)
+    print("\n")
+
+    # efficiency rate per producer
+    efficiency = {}
+    producers = list(set(list(df_download_attempt["title_producer"])))
+    for producer in producers:
+        if str(producer) == "nan":
+            query_success = "title_producer != title_producer & error != error"
+            query_fail = "title_producer != title_producer & error == error"
+            producer = "nan"
+        else:
+            query_success = "title_producer == '%s' & error != error" % producer
+            query_fail = "title_producer == '%s' & error == error" % producer
+        n_success = df_download_attempt.query(query_success).shape[0]
+        n_fail = df_download_attempt.query(query_fail).shape[0]
+        if n_success + n_fail == 0:
+            efficiency[producer] = 0.0
+        else:
+            efficiency[producer] = round(
+                n_success / (n_success + n_fail) * 100, 2)
+    for producer in sorted(efficiency.items(), reverse=True,
+                           key=lambda x: x[1]):
+        print(efficiency[producer], "% ==>", producer)
+    print("\n")
 
     return
 
 
-def main(input_directory, basex_directory, error_directory):
+def main(general_directory, input_directory, error_directory):
     """
     Function to run all the script.
 
     Parameters
     ----------
+    general_directory : str
+        Path of the general data directory
+
     input_directory : str
         Path of the collected data directory
 
-    basex_directory : str
-        Path of the BaseX results directory
-
     error_directory : str
         Path of the download errors directory
+
     Returns
     -------
     """
-    # initialize the log files
-    summary_download_path = _initialize_log()
-    summary_error_path = _initialize_log_error()
+    # analyze downloaded files
+    df_download_summary = _analyze_download(input_directory)
 
-    # get the id page for each table
-    df_id_table = get_id_page(basex_directory)
+    # collect errors
+    summary_error_path = _initialize_log_error(general_directory)
+    df_error_summary = _collect_error(error_directory, summary_error_path)
 
-    # count the empty files and save the results
-    _count_empty_files(input_directory, df_id_table, summary_download_path,
-                       error_directory, basex_directory)
+    # merge results
+    path_df_dataset = os.path.join(general_directory, "metadata_dataset.csv")
+    df_dataset = pd.read_csv(path_df_dataset, sep=";", encoding="utf-8",
+                             index_col=False)
+    df = _edit_metadata(df_dataset, df_download_summary, df_error_summary)
 
-    # analyze the errors
-    _analyze_error(error_directory, summary_error_path, summary_download_path)
+    # analyze errors
+    _analyze_error(df)
 
     return
 
@@ -332,12 +340,11 @@ if __name__ == "__main__":
     get_config_trace()
 
     # paths
-    input_directory = "../data/sample"
-    basex_directory = get_config_tag("output", "basex")
+    general_directory = get_config_tag("data", "general")
+    input_directory = get_config_tag("output", "download")
     error_directory = get_config_tag("error", "download")
-    # input_directory = get_config_tag("output", "download")
-    # basex_directory = get_config_tag("output", "basex")
-    # error_directory = get_config_tag("error", "download")
 
     # run
-    main(input_directory, basex_directory, error_directory)
+    main(general_directory=general_directory,
+         input_directory=input_directory,
+         error_directory=error_directory)

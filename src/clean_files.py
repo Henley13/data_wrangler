@@ -11,7 +11,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 from toolbox.utils import (log_error, get_config_tag, get_config_trace,
                            reset_log_error)
-from toolbox.clean import cleaner, file_is_json,
+from toolbox.clean import cleaner, file_is_json
 print("\n")
 
 
