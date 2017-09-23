@@ -1,0 +1,191 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[a4paper]{geometry}
+\geometry{hmargin=2cm, vmargin = 3cm}
+\usepackage{microtype}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{bbm}
+\usepackage[ruled]{algorithm2e}
+\usepackage{acronym}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{cleveref}
+\crefname{algocf}{alg.}{algs.}
+\Crefname{algocf}{Algorithm}{Algorithms}
+
+%\setlength{\parindent}{0pt}
+
+\newacro{TFIDF}{Term Frequency - Inverse Document Frequency}
+\newacro{LDA}{Latent Dirichlet Allocation}
+\newacro{NMF}{Non-negative Matrix Factorization}
+
+\author{Arthur Imbert}
+\title{Integration of heterogeneous datasets}
+\date{September 2017}
+
+\begin{document}
+	
+	\maketitle
+	
+	The internship took place in the Parietal team at INRIA
+	(\url{https://team.inria.fr/parietal/}). My supervisors was Ga\"el Varoquaux.
+	
+	\section{Summary}
+	
+	\section{Introduction}
+	
+	\subsection{Heterogeneous data, producers and value}
+	
+	Nowadays, the production of data has considerably grown. Each organization exploits and issues data, using its own schema. Most of the time, these files are produced for specific purpose, taking into account some internal rules or constraints. That leads to a vast amount of data available online, often sharing the same file formats, but still deeply heterogeneous by their structure. Indeed, this heterogeneity complicates the integration of different files.
+	
+	By the same time, the current enthusiasm around data science and its predictive models shows a high potential for crossing data. 
+	
+	\subsection{A theoritical framework}
+	
+	\paragraph{Related problems}
+	
+	\paragraph{Our strategy}
+	
+	\section{An application to Open Data}
+	
+	\subsection{Open and heterogeneous data}
+	
+	In order to collect a vast amount of heterogeneous data we exploit the Open Data available online.
+	
+	% definition of Open Data 
+	
+	A French platform exists, gathering all the information needed to use the files issued by the French public organizations: \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. This website hosts and indexes multiple sources
+	
+	\subsection{How can we reuse the data}
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width = .9\linewidth]{}
+		\caption{Neighborhood examples}
+		\label{fig:neighbor-police}
+	\end{figure}
+	
+	\subsection{An academic angle}
+	
+	\subsection{Internship's goal}
+	
+	\section{From a bunch of heterogeneous data to a recommendation system}
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width = .9\linewidth]{}
+		\caption{Overview of the process}
+		\label{fig:global-pipeline}
+	\end{figure}
+	
+	\subsection{Build a database}
+	
+	The first step is to store a sufficient amount of dirty data in order to keep a statistically significant volume of data throughout all our process.
+	
+	\paragraph{Collect the metadata}
+	
+	As described above, the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} offers us the opportunity to easily collect a numerous files from different French public organizations. A RESTful API exists in the website. It allows us to get, from a HTTP request, several metadata about more than 25000 pages. These include producer's identity, a description of the page's content, some related tags, the different files belonging to the page and, the most important, an URL for each file\footnote{A more detailed description of metadata is given in annexes}. 
+	
+	Some URL lead us to another website which host files, some directly launch the download of file. We only focus on the latters. It already represents around 60000 URL.
+	
+	\paragraph{Download the data}
+	
+	We use an INRIA's server DRAGO and a parallelized process to efficiently download the maximum of data. We use DRAGOSTORAGE, another server, to store the results of our downloads. By the end it represents around 350 Gb of data for more than 55000 files.
+	
+	\subsection{Clean and filter the data}
+	
+	Among these files, there are several format: text, JSON, XML, spreadsheet, zip... Indeed, the second step consist in inferring the nature of file in order to filter it. The right process could then be applied in a attempt to clean the file and reshape its content in a tabular form.
+	
+	\begin{figure}
+		\centering
+		\begin{subfigure}{0.50\textwidth}
+			\centering
+			\includegraphics[width = .9\linewidth]{}
+			\caption{An example of file easy to clean}
+			\label{fig:good-table}
+		\end{subfigure}
+		\begin{subfigure}{0.50\textwidth}
+			\centering
+			\includegraphics[width = .9\linewidth]{}
+			\caption{An example of 'dirty data'}
+			\label{fig:bad-table}
+		\end{subfigure}
+		\caption{Cleaning data}
+		\label{fig:example-table}
+	\end{figure}
+	
+	\paragraph{Filter the formats}
+	
+	According to the supposed format of the file, we apply a different strategy to clean it. That supposed to avoid the empty files and detect its MIME type. If we have a zip file, we repeat the procedure for every zipped elements. We mainly focus on three type of documents:
+	\begin{itemize}
+		\item
+		
+	\end{itemize}
+	
+	\paragraph{CSV files}
+	
+	\paragraph{Excel files}
+	
+	\paragraph{JSON and GEOJSON files}
+	
+	\paragraph{Errors and metadata}
+	
+	\subsection{Build a file embedding}
+	
+	\paragraph{Text data preprocessing}
+	
+	\paragraph{Topic extraction}
+	
+	\paragraph{Metric learning}
+	
+	\subsection{Find neighborhood}
+	
+	
+	
+	
+	
+	
+	
+	
+	\section{Results and validation}
+	
+	\subsection{Metrics and experimental framework}
+	
+	\subsection{Results}
+	
+	\subsubsection{Presentation of the data}
+	
+	\subsection{Wordclouds}
+	
+	\subsubsection{Metric comparison}
+	
+	% boxplot sur leurs résultats
+	% de l'anecdote
+	
+	\section{Discussion}
+	
+	\subsection{Limitations}
+	
+	\subsection{Problems}
+	
+	\subsection{Future work}
+
+	\section{Conclusion}	
+	
+	% 3 phrases pour résumer
+	% impact potentiel applicati et fondamental
+	
+	
+	% \bibliographystyle{alpha}
+	% \bibliography{report_biblio.bib}
+	
+	\section{Annexes}
+	
+	% list of variables collected as metadata via the API
+	
+	
+\end{document}

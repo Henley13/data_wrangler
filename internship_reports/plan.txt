@@ -1,0 +1,131 @@
+
+
+
+
+
+
+
+
+
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[a4paper]{geometry}
+\geometry{hmargin=2cm, vmargin = 3cm}
+\usepackage{microtype}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{bbm}
+\usepackage[ruled]{algorithm2e}
+\usepackage{acronym}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{cleveref}
+\crefname{algocf}{alg.}{algs.}
+\Crefname{algocf}{Algorithm}{Algorithms}
+
+\newacro{TFIDF}{Term Frequency - Inverse Document Frequency}
+\newacro{LDA}{Latent Dirichlet Allocation}
+\newacro{NMF}{Non-negative Matrix Factorization}
+
+\author{Arthur Imbert}
+\title{Integration of heterogeneous datasets}
+\date{September 2017}
+
+\begin{document}
+	
+	\maketitle
+	
+	The internship took place in the Parietal team at INRIA
+	(\url{https://team.inria.fr/parietal/}). My supervisors was Ga\"el Varoquaux.
+	
+	\section{Summary}
+	
+	\section{Introduction}
+	
+	\subsection{Heterogeneous data, producers and value}
+	
+	Nowadays, the production of data has considerably grown. Each organization exploits and issues data, using its own schema. Most of the time, these files are produced for specific purpose, taking into account some internal rules or constraints. That leads to a vast amount of data available online, often sharing the same file formats, but still deeply heterogeneous by their structure. Indeed, this heterogeneity complicates the integration of different files.
+	
+	By the same time, the current enthusiasm around data science and its predictive models shows a high potential for crossing data. 
+	
+	% Difficulté : diversité des données due à une diversité des producteurs
+	% Enjeux : La valeur vient du croisement des données
+	
+	\subsection{A theoritical framework}
+	
+	\paragraph{Related problems}
+	
+	\paragraph{Our strategy}
+	
+	% neighbors graph
+	% pipeline graph
+	
+	\section{How to integrate heterogeneous open data files?}
+	
+	Blablabla
+	
+	\subsection{An open data platform}
+	
+	In order to collect a vast amount of heterogeneous data we exploit the French open data platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}.	
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width = .9\linewidth]{images/main_page_datagouv.png}
+		\caption{Main page of \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}}
+		\label{fig:main-page}
+	\end{figure}
+
+	This website hosts and indexes multiple sources
+	
+	\subsection{Reusing open data}
+	
+	
+	
+	\subsection{An academic angle}
+	
+	
+	
+	\subsection{Intership's goal}
+	
+	
+	\section{Methods}
+	
+	% an overview of the pipeline
+	% formalism when it's needed
+	
+	\section{Results and validation}
+	
+	\subsection{Metrics and experimental framework}
+	
+	\subsection{Results}
+	
+	\subsubsection{Presentation of the data}
+	
+	\subsection{Wordclouds}
+	
+	\subsubsection{Metric comparison}
+	
+	% boxplot sur leurs résultats
+	% de l'anecdote
+	
+	\section{Discussion}
+	
+	\subsection{Limitations}
+	
+	\subsection{Problems}
+	
+	\subsection{Future work}
+
+	\section{Conclusion}	
+	
+	% 3 phrases pour résumer
+	% impact potentiel applicati et fondamental
+	
+	
+	% \bibliographystyle{alpha}
+	% \bibliography{report_biblio.bib}
+	
+\end{document}
