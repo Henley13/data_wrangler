@@ -7,14 +7,13 @@ import os
 import magic
 import chardet
 import random
-import time
 import json
 import zipfile
 import xmljson
 import re
 import numpy as np
 import pandas as pd
-import tempfile
+import geopandas as gpd
 from xlrd import open_workbook
 from xlutils.copy import copy
 from pandas.io.json import json_normalize
@@ -22,108 +21,234 @@ from _csv import Error
 from csv import Sniffer
 from lxml import etree
 from collections import Counter
+from .utils import log_error, log_error_without_except, tmp_dir
 print("\n")
 
 
-def cleaner(filename, input_directory, output_directory, path_log,
-            metadata_directory, dict_param):
+def cleaner(filename, input_directory, output_directory, log_directory,
+            extradata_directory, dict_param, error_directory):
     """
-    Function to clean a file (unzipped or not)
-    :param filename: string
-    :param input_directory: string
-    :param output_directory: string
-    :param path_log: string
-    :param metadata_directory:string
-    :param dict_param: dictionary
-    :return:
+    Function to clean a file (unzipped or not).
+
+    Parameters
+    ----------
+    filename : str
+        Name of the file (most of the time its Id)
+
+    input_directory : str
+        Path of the collected data directory
+
+    output_directory : str
+        Path of the cleaned files directory
+
+    log_directory : str
+        Path of the log directory
+
+    extradata_directory : str
+        Path of the directory to save the data that is not included in the
+        cleaned matrix
+
+    dict_param : dict
+        Dictionary with several parameters stored
+
+    error_directory : str
+        Path of the error log directory
+
+    Returns
+    -------
     """
+
+    # parameters, path and file size
     path = os.path.join(input_directory, filename)
-    size_file = os.path.getsize(path)
     dict_result = dict()
     dict_result["source_file"] = filename
-    tempfile.tempdir = output_directory
 
     # test file consistency
+    try:
+        size_file = os.path.getsize(path)
+    except Exception:
+        extension = "unknown size"
+        log_error(os.path.join(error_directory, filename),
+                  [filename, filename, filename, "non-zipped file", extension])
+        return
     if size_file <= 0:
-        raise Exception("Size file is null")
-
-    # test if the file has already been cleaned
-    if os.path.isfile(os.path.join(output_directory, filename)):
+        extension = "zerobyte"
+        log_error(os.path.join(error_directory, filename),
+                  [filename, filename, filename, "non-zipped file", extension])
         return
 
-    # check if the it's a zipfile and clean it
-    extension = magic.Magic(mime=True).from_file(path)
+    # detect the MIME type
+    try:
+        extension = magic.Magic(mime=True).from_file(path)
+    except Exception:
+        extension = "unknown extension"
+        log_error(os.path.join(error_directory, filename),
+                  [filename, filename, filename, "non-zipped file", extension])
+        return
+
+    # check if the it's a zipfile
     if extension != "application/zip":
-        cleaner_file(filename=filename,
-                     input_directory=input_directory,
-                     output_directory=output_directory,
-                     path_log=path_log,
-                     metadata_directory=metadata_directory,
-                     zip_file=False,
-                     dict_param=dict_param,
-                     dict_result=dict_result)
+
+        # test if the file has already been cleaned...
+        if os.path.isfile(os.path.join(output_directory, filename)):
+            return
+
+        # ... and clean it
+        dict_result["size_file"] = size_file
+        dict_result["extension"] = extension
+        try:
+            cleaner_file(filename=filename,
+                         input_directory=input_directory,
+                         output_directory=output_directory,
+                         log_directory=log_directory,
+                         extradata_directory=extradata_directory,
+                         error_directory=error_directory,
+                         zip_file=False,
+                         dict_param=dict_param,
+                         dict_result=dict_result)
+        except Exception:
+            if extension in ["text/plain", "application/octet-stream"]:
+                x = is_json_geojson(path)
+                if x != "text":
+                    extension = x
+            log_error(os.path.join(error_directory, filename),
+                      [filename, filename, filename, "non-zipped file",
+                       extension])
+
+    # extract files from a zipfile...
     else:
-        z = zipfile.ZipFile(path)
-        with tempfile.TemporaryDirectory() as tempdir:
-            z.extractall(tempdir)
+        try:
+            z = zipfile.ZipFile(path)
+        except Exception:
+            log_error(os.path.join(error_directory, filename),
+                      [filename, filename, filename, "zip file", extension])
+            return
+
+        with tmp_dir(host_dir=output_directory) as tempdir:
+            try:
+                z.extractall(tempdir)
+            except Exception:
+                log_error(os.path.join(error_directory, filename),
+                          [filename, filename, filename, "zip file", extension])
+                return
+
             for file in z.namelist():
                 temp_path = os.path.join(tempdir, file)
-                if os.path.isfile(temp_path):
+                flatten_file = file.replace("/", "--")
+
+                # ... test their consistency...
+                if not os.path.isfile(temp_path):
+                    continue
+
+                try:
+                    size_file_temp = os.path.getsize(temp_path)
+                except Exception:
+                    extension = "unknown size"
+                    log_error(os.path.join(error_directory, flatten_file),
+                              [filename, flatten_file, flatten_file,
+                               "zipped file", extension])
+                    continue
+
+                if size_file_temp <= 0:
+                    extension = "zerobyte"
+                    log_error(os.path.join(error_directory, flatten_file),
+                              [filename, flatten_file, flatten_file,
+                               "zipped file", extension])
+                    continue
+
+                if os.path.isfile(
+                        os.path.join(output_directory, flatten_file)):
+                    continue
+
+                try:
+                    extension_temp = magic.Magic(mime=True).from_file(temp_path)
+                except Exception:
+                    extension = "unknown extension"
+                    log_error(os.path.join(error_directory, flatten_file),
+                              [filename, flatten_file, flatten_file,
+                               "zipped file", extension])
+                    continue
+
+                dict_result["size_file"] = size_file_temp
+                dict_result["extension"] = extension_temp
+
+                # ... and clean it
+                try:
                     cleaner_file(filename=file,
                                  input_directory=tempdir,
                                  output_directory=output_directory,
-                                 path_log=path_log,
-                                 metadata_directory=metadata_directory,
+                                 log_directory=log_directory,
+                                 extradata_directory=extradata_directory,
+                                 error_directory=error_directory,
                                  zip_file=True,
                                  dict_param=dict_param,
                                  dict_result=dict_result)
+                except Exception:
+                    if extension_temp in ["text/plain",
+                                          "application/octet-stream"]:
+                        x = is_json_geojson(temp_path)
+                        if x != "text":
+                            extension_temp = x
+                    log_error(os.path.join(error_directory, flatten_file),
+                              [filename, flatten_file, flatten_file,
+                               "zipped file", extension_temp])
 
     return
 
 
-def cleaner_file(filename, input_directory, output_directory, path_log,
-                 metadata_directory, zip_file, dict_param, dict_result):
+def cleaner_file(filename, input_directory, output_directory, log_directory,
+                 extradata_directory, error_directory, zip_file, dict_param,
+                 dict_result):
     """
     Function to clean unzipped files.
-    :param filename: string
-    :param input_directory: string
-    :param output_directory: string
-    :param path_log: string
-    :param metadata_directory: string
-    :param zip_file: boolean
-    :param dict_param: dictionary
-    :param dict_result: dictionary
-    :return:
+
+    Parameters
+    ----------
+    filename : str
+        Name of the file (most of the time its Id)
+
+    input_directory : str
+        Path of the collected data directory or a temporary directory
+
+    output_directory : str
+        Path of the cleaned files directory
+
+    log_directory : str
+        Path of the log directory
+
+    extradata_directory : str
+        Path of the directory to save the data that is not included in the
+        cleaned matrix
+
+    error_directory : str
+        Path of the error log directory
+
+    zip_file : bool
+        Boolean to specify if the file comes from a zipfile or not
+
+    dict_param : dict
+        Dictionary with several parameters stored
+
+    dict_result : dict
+        Dictionary with several results stored
+
+    Returns
+    -------
     """
-    path = os.path.join(input_directory, filename)
-    size_file = os.path.getsize(path)
-
-    # test file integrity
-    if size_file <= 0:
-        return
-
-    # test if the file has already been cleaned
-    if os.path.isfile(os.path.join(output_directory,
-                                   filename.replace("/", "--"))):
-        return
+    extension = dict_result["extension"]
 
     # store first results
-    dict_result["matrix_name"] = filename
-    dict_result["file_name"] = filename
+    dict_result["matrix_name"] = filename.replace("/", "--")
+    dict_result["file_name"] = filename.replace("/", "--")
     dict_result["zip_file"] = zip_file
-    dict_result["size_file"] = size_file
-
-    # get file extension and clean it
-    extension = magic.Magic(mime=True).from_file(path)
-    dict_result["extension"] = extension
 
     # clean the file
     if extension == "text/plain":
-        return plain(filename, input_directory, output_directory, path_log,
-                     metadata_directory, dict_param, dict_result)
+        return plain(filename, input_directory, output_directory, log_directory,
+                     extradata_directory, dict_param, dict_result)
     elif extension == "application/octet-stream":
         return octet_stream(filename, input_directory, output_directory,
-                            path_log, metadata_directory, dict_param,
+                            log_directory, extradata_directory, dict_param,
                             dict_result)
     elif extension == "application/x-dbf":
         pass
@@ -136,14 +261,16 @@ def cleaner_file(filename, input_directory, output_directory, path_log,
     elif extension == "text/html":
         pass
     elif extension == "text/xml":
-        return xml(filename, input_directory, output_directory, path_log,
-                   metadata_directory, dict_result)
+        return xml(filename, input_directory, output_directory, log_directory,
+                   extradata_directory, dict_result)
     elif extension == "application/vnd.ms-excel":
-        return excel(filename, input_directory, output_directory, path_log,
-                     metadata_directory, dict_param, dict_result)
+        return excel(filename, input_directory, output_directory, log_directory,
+                     extradata_directory, error_directory, dict_param,
+                     dict_result)
     elif extension == "application/CDFV2-unknown":
-        return cdfv2(filename, input_directory, output_directory, path_log,
-                     metadata_directory, dict_param, dict_result)
+        return cdfv2(filename, input_directory, output_directory, log_directory,
+                     extradata_directory, error_directory, dict_param,
+                     dict_result)
     elif extension == "application/vnd.oasis.opendocument.text":
         pass
     elif extension == "application/vnd.oasis.opendocument.spreadsheet":
@@ -151,8 +278,8 @@ def cleaner_file(filename, input_directory, output_directory, path_log,
     elif extension == "application/vnd.openxmlformats-officedocument." \
                       "spreadsheetml.sheet":
         return office_document(filename, input_directory, output_directory,
-                               metadata_directory, path_log, dict_param,
-                               dict_result)
+                               log_directory, extradata_directory,
+                               error_directory, dict_param, dict_result)
     elif extension == "application/x-dosexec":
         pass
     elif extension == "image/png":
@@ -167,46 +294,78 @@ def cleaner_file(filename, input_directory, output_directory, path_log,
     return
 
 
-def plain(filename, input_directory, output_directory, path_log,
-          metadata_directory, dict_param, dict_result):
+##############################################################################
+
+
+def plain(filename, input_directory, output_directory, log_directory,
+          extradata_directory, dict_param, dict_result):
     """
     Function to clean a file with a text/plain extension.
-    :param filename: string
-    :param input_directory: string
-    :param output_directory: string
-    :param path_log: string
-    :param metadata_directory: string
-    :param dict_param: dictionary
-    :param dict_result: dictionary
-    :return:
-    """
-    start = time.clock()
 
+    Parameters
+    ----------
+    filename : str
+        Name of the file
+
+    input_directory : str
+        Path of the collected data directory or a temporary directory
+
+    output_directory : str
+        Path of the output directory
+
+    log_directory : str
+        Path of the log directory
+
+    extradata_directory : str
+        Path of the extradata directory
+
+    dict_param : dict
+        Dictionary with several parameters stored
+
+    dict_result : dict
+        Dictionary with several results stored
+
+    Returns
+    -------
+    """
     # path of the file
     path = os.path.join(input_directory, filename)
 
-    # number of rows
-    nrow = file_len(path)
+    # test if it's ...
+    x = is_json_geojson(path)
 
-    # encoding
-    encoding = detect_encoding(path)
-
-    # sample
-    sample, full_sample, threshold_n_col = \
-        get_sample(path, encoding, nrow, dict_param["threshold_n_row"],
-                   dict_param["ratio_sample"], dict_param["max_sample"],
-                   dict_param["threshold_n_col"])
-
-    # get a matrix
-    if is_json(full_sample, dict_param["threshold_json"]):
+    # ... a json...
+    if x == "json":
         dict_result["extension"] = "json"
-        df, metadata, no_header = clean_json(path, encoding)
+        df, extradata, no_header = clean_json(path)
+
+    # ... a geojson...
+    elif x == "geojson":
+        dict_result["extension"] = "geojson"
+        df, extradata, no_header = clean_geojson(path)
+
+    # ... or a text file
     else:
-        df, metadata, no_header = clean_csv(path, encoding, sample, full_sample,
-                                            threshold_n_col,
-                                            dict_param["check_header"])
+        # number of rows
+        nrow = file_len(path)
+
+        # encoding
+        encoding = detect_encoding(path)
+
+        # sample
+        sample, full_sample, threshold_n_col = get_sample(
+            path, encoding, nrow, dict_param["threshold_n_row"],
+            dict_param["ratio_sample"], dict_param["max_sample"],
+            dict_param["threshold_n_col"])
+
+        # get a matrix
+        # TODO rentrer les lignes précédentes dans clean_csv
+        df, extradata, no_header = clean_csv(path, encoding, sample,
+                                             full_sample, threshold_n_col,
+                                             dict_param["check_header"])
+
     if df is None:
-        return
+        raise Exception("df extracted if None")
 
     # empty columns
     df = clean_empty_col(df)
@@ -214,170 +373,179 @@ def plain(filename, input_directory, output_directory, path_log,
     # statistics and distribution
     x, y, d = distribution_df(df)
     if x is None:
-        return
+        raise Exception("No row extracted")
 
     # save results
-    end = time.clock()
-    duration = round(end - start, 2)
-    dict_result["duration"] = duration
     dict_result["integer"] = d["integer"]
     dict_result["float"] = d["float"]
     dict_result["object"] = d["object"]
     dict_result["x"] = x
     dict_result["y"] = y
-    dict_result["metadata"] = metadata
+    dict_result["extradata"] = extradata
     dict_result["no_header"] = no_header
-    save_results(df, output_directory, metadata_directory, path_log,
+    save_results(df, output_directory, extradata_directory, log_directory,
                  dict_result)
 
     return
 
 
-def octet_stream(filename, input_directory, output_directory, path_log,
-                 metadata_directory, dict_param, dict_result):
-    """
-    Function to clean a file with a octet-stream extension.
-    :param filename: string
-    :param input_directory: string
-    :param output_directory: string
-    :param path_log: string
-    :param metadata_directory: string
-    :param dict_param: dictionary
-    :param dict_result: dictionary
-    :return:
-    """
-    return plain(filename, input_directory, output_directory, path_log,
-                 metadata_directory, dict_param, dict_result)
+def octet_stream(filename, input_directory, output_directory, log_directory,
+                 extradata_directory, dict_param, dict_result):
+    return plain(filename, input_directory, output_directory, log_directory,
+                 extradata_directory, dict_param, dict_result)
 
 
-def excel(filename, input_directory, output_directory, path_log,
-          metadata_directory, dict_param, dict_result):
+def excel(filename, input_directory, output_directory, log_directory,
+          extradata_directory, error_directory, dict_param, dict_result):
     """
-    Function to clean an excel file (or equivalent) in order to extract a matrix
-    :param filename: string
-    :param input_directory: string
-    :param output_directory: string
-    :param path_log: string
-    :param metadata_directory: string
-    :param dict_param: dictionary
-    :param dict_result: dictionary
-    :return:
+    Function to clean an excel file in order to extract a matrix.
+
+    Parameters
+    ----------
+    filename : str
+        Name of the file
+
+    input_directory : str
+        Path of the collected data directory or a temporary directory
+
+    output_directory : str
+        Path of the output directory
+
+    log_directory : str
+        Path of the log directory
+
+    extradata_directory : str
+        Path of the extradata directory
+
+    error_directory : str
+        Path of the error log directory
+
+    dict_param : dict
+        Dictionary with several parameters stored
+
+    dict_result : dict
+        Dictionary with several results stored
+
+    Returns
+    -------
     """
+    # path
     path = os.path.join(input_directory, filename)
+
     # read data
     rb, rb_info = read_excel(path, info=True)
+
     # edit excel
-    rb_edited = edit_excel(rb, rb_info)
+    rb_edited = edit_excel(rb, rb_info, output_directory)
     sheets = rb_edited.sheet_names()
+
     # clean sheets
-    with TemporaryDirectory() as temp_directory:
-        temp_path = os.path.join(temp_directory, filename)
+    with tmp_dir(host_dir=output_directory) as temptempdir:
+        temp_path = os.path.join(temptempdir, filename)
         wb = copy(rb_edited)
         wb.save(temp_path)
         for sheet in sheets:
-            new_filename = "__".join([filename, sheet])
-            if os.path.isfile(os.path.join(output_directory, filename)):
+            out_filename = "__".join([dict_result["matrix_name"],
+                                      sheet.replace("/", "--")])
+            if os.path.isfile(os.path.join(output_directory, out_filename)):
                 continue
-            start = time.clock()
+
             # extract matrix
-            df, metadata, no_header = \
-                clean_sheet_excel(rb_edited, sheet, temp_path,
-                                  dict_param["check_header"])
+            df, metadata, no_header = clean_sheet_excel(
+                rb_edited, sheet, temp_path, dict_param["check_header"])
             if df is None:
-                continue
+                path_error = os.path.join(error_directory, out_filename)
+                log_error_without_except(
+                    path_error,
+                    [dict_result["source_file"], filename, out_filename,
+                     "excel sheet", dict_result["extension"]],
+                    "df extracted if None")
+
             # empty columns
             df = clean_empty_col(df)
+
             # statistics and distribution
             x, y, d = distribution_df(df)
             if x is None:
-                continue
+                path_error = os.path.join(error_directory, out_filename)
+                log_error_without_except(
+                    path_error,
+                    [dict_result["source_file"], filename, out_filename,
+                     "excel sheet", dict_result["extension"]],
+                    "No row extracted")
+
             # save results
-            end = time.clock()
-            duration = round(end - start, 2)
-            dict_result["matrix_name"] = new_filename
-            dict_result["duration"] = duration
+            dict_result["matrix_name"] = out_filename
             dict_result["integer"] = d["integer"]
             dict_result["float"] = d["float"]
             dict_result["object"] = d["object"]
             dict_result["x"] = x
             dict_result["y"] = y
-            dict_result["metadata"] = metadata
+            dict_result["extradata"] = metadata
             dict_result["no_header"] = no_header
-            save_results(df, output_directory, metadata_directory, path_log,
-                         dict_result)
+            save_results(df, output_directory, extradata_directory,
+                         log_directory, dict_result)
+
     return
 
 
-def cdfv2(filename, input_directory, output_directory, path_log,
-          metadata_directory, dict_param, dict_result):
-    """
-    Function to clean an excel file (or equivalent) in order to extract a matrix
-    :param filename: string
-    :param input_directory: string
-    :param output_directory: string
-    :param path_log: string
-    :param metadata_directory: string
-    :param dict_param: dictionary
-    :param dict_result:dictionary
-    :return:
-    """
-    return excel(filename, input_directory, output_directory, path_log,
-                 metadata_directory, dict_param, dict_result)
+def cdfv2(filename, input_directory, output_directory, log_directory,
+          extradata_directory, error_directory, dict_param, dict_result):
+    return excel(filename, input_directory, output_directory, log_directory,
+                 extradata_directory, error_directory, dict_param, dict_result)
 
 
-def office_document(filename, input_directory, output_directory, path_log,
-                    metadata_directory, dict_param, dict_result):
-    """
-    Function to clean an excel file (or equivalent) in order to extract a matrix
-    :param filename: string
-    :param input_directory: string
-    :param output_directory: string
-    :param path_log: string
-    :param metadata_directory: string
-    :param dict_param: dictionary
-    :param dict_result: dictionary
-    :return:
-    """
-    return excel(filename, input_directory, output_directory, path_log,
-                 metadata_directory, dict_param, dict_result)
+def office_document(filename, input_directory, output_directory, log_directory,
+                    extradata_directory, error_directory, dict_param,
+                    dict_result):
+    return excel(filename, input_directory, output_directory, log_directory,
+                 extradata_directory, error_directory, dict_param, dict_result)
 
 
-def xml(filename, input_directory, output_directory, path_log,
-        metadata_directory, dict_result):
+def xml(filename, input_directory, output_directory, log_directory,
+        extradata_directory, dict_result):
     """
     Function to clean a file with a text/plain extension.
-    :param filename: string
-    :param input_directory: string
-    :param output_directory: string
-    :param path_log: string
-    :param metadata_directory: string
-    :param dict_result: dictionary
-    :return:
+
+    Parameters
+    ----------
+    filename
+    input_directory
+    output_directory
+    log_directory
+    extradata_directory
+    dict_result
+
+    Returns
+    -------
     """
-    start = time.clock()
     path = os.path.join(input_directory, filename)
+
     # get a matrix
-    df, metadata, no_header = explore_xml(path, deepness=20)
+    df, metadata, no_header = clean_xml(path, deepness=20)
     if df is None:
-        return
+        raise Exception("df extracted if None")
+
     # statistics and distribution
     x, y, d = distribution_df(df)
     if x is None:
-        return
+        raise Exception("No row extracted")
+
     # save results
-    end = time.clock()
-    duration = round(end - start, 2)
-    dict_result["duration"] = duration
     dict_result["integer"] = d["integer"]
     dict_result["float"] = d["float"]
     dict_result["object"] = d["object"]
     dict_result["x"] = x
     dict_result["y"] = y
-    dict_result["metadata"] = metadata
+    dict_result["extradata"] = metadata
     dict_result["no_header"] = no_header
-    save_results(df, output_directory, metadata_directory, path_log,
+    save_results(df, output_directory, extradata_directory, log_directory,
                  dict_result)
+
     return
+
+
+##############################################################################
 
 
 def detect_encoding(path):
@@ -651,45 +819,49 @@ def distribution_df(df):
     return x, y, d
 
 
-def save_results(df, output_directory, metadata_directory, path_log,
+def save_results(df, output_directory, extradata_directory, log_directory,
                  dict_result):
     """
     Function to save results (dataframe and metadata)
-    :param df: dataframe
-    :param output_directory: string
-    :param metadata_directory: string
-    :param path_log: string
-    :param dict_result: dictionary
-    :return:
     """
-    dict_result["matrix_name"] = dict_result["matrix_name"].replace("/", "--")
     path = os.path.join(output_directory, dict_result["matrix_name"])
+
     if os.path.isfile(path):
         return
+
     df.to_csv(path, sep=";", index=False, encoding="utf-8", header=True)
-    if dict_result["metadata"] != "":
-        path_metadata = os.path.join(metadata_directory,
+
+    if dict_result["extradata"] != "":
+        path_metadata = os.path.join(extradata_directory,
                                      dict_result["matrix_name"])
         with open(path_metadata, "wt", encoding="utf-8") as f:
-            f.write(dict_result["metadata"])
-        dict_result["metadata"] = True
+            f.write(dict_result["extradata"])
+        dict_result["extradata"] = True
     else:
-        dict_result["metadata"] = False
+        dict_result["extradata"] = False
+
     if not isinstance(list(df.columns)[0], str):
         dict_result["multiheader"] = True
     else:
         dict_result["multiheader"] = False
+
     l = [dict_result["matrix_name"], dict_result["file_name"],
          dict_result["source_file"], dict_result["x"], dict_result["y"],
          dict_result["integer"], dict_result["float"],
-         dict_result["object"], dict_result["metadata"],
-         dict_result["duration"], not dict_result["no_header"],
+         dict_result["object"], dict_result["extradata"],
+         not dict_result["no_header"],
          dict_result["multiheader"], list(df.columns),
          dict_result["extension"], dict_result["zip_file"]]
     l = [str(i).replace(";", ",") for i in l]
-    with open(path_log, mode="at", encoding="utf-8") as f:
-        f.write(";".join(l))
-        f.write("\n")
+
+    path_log = os.path.join(log_directory, dict_result["matrix_name"])
+    with open(path_log, mode='wt', encoding='utf-8') as f:
+        f.write("##########################################################"
+                "########### \n")
+        for i in l:
+            f.write(i)
+            f.write("\n")
+
     return
 
 
@@ -762,9 +934,19 @@ def clean_csv(path, encoding, sample, full_sample, threshold_n_col,
 
 def is_consistent_list(json):
     """
-    Function to determine if a part of the json has list of dictionaries pattern
-    :param json: json data
-    :return: boolean
+    Function to test the pattern of a json file.
+    The function determine if a part of the json can be read as a list of
+    dictionaries
+
+    Parameters
+    ----------
+    json : opened json file
+        The json file to test
+
+    Returns
+    -------
+    is_consistent : bool
+        The test result
     """
     # check if the json is a first order consistent list (list of dictionaries)
     l = []
@@ -778,88 +960,156 @@ def is_consistent_list(json):
 
 def explore_json(json):
     """
-    Function to determine the pattern of the json
-    :return: list of dictionnaries, string
+    Function to explore the pattern of a json file.
+    The function is looking for a dictionary-like pattern or a list of
+    dictionaries
+
+    Parameters
+    ----------
+    json : opened json file
+        The json file to explore
+
+    Returns
+    -------
+    contents : list
+        A part of the json file as a list of dictionaries
+
+    extradata : str
+        The rest of the json file
     """
     # first order json
     if is_consistent_list(json):
         return json, ""
+
     # second order json
     if isinstance(json, dict):
-        k = []
-        observations = None
-        metadata = []
+        contents = []
+        key_contents = None
+        extradata = []
         for key in json:
-            if is_consistent_list(json[key]) and len(json[key]) > len(k):
-                observations = key
-                k = json[key]
+            if is_consistent_list(json[key]) and len(json[key]) > len(contents):
+                extradata.append(str(contents))
+                key_contents = key
+                contents = json[key]
             else:
-                metadata.append(str(json[key]))
-        if observations is not None:
-            return json[observations], " ".join(metadata)
+                extradata.append(str(json[key]))
+        if key_contents is not None:
+            return contents, " ".join(extradata)
+
     return None, None
 
 
-def explore_json_deep(json, deepness=20):
+def explore_json_deep(json, deepness):
     """
-    Recursive function to determine the pattern of a json file
-    :param json: json data
-    :param deepness: integer
-    :return: dataframe, string
+    Function to recursively explore the pattern of a json file.
+
+    Parameters
+    ----------
+    json : opened json file
+        The json file to explore
+
+    deepness : int
+        The  number of json layers we need to test to find the proper pattern
+
+    Returns
+    -------
+    contents : list
+        A part of the json file as a list of dictionaries
+
+    extradata : str
+        The rest of the json file
     """
-    data, metadata = explore_json(json)
+    data, extradata = explore_json(json)
     if data is not None:
-        return data, metadata
+        return data, extradata
     if deepness == 0:
         return None, None
-    l_metadata = []
+    l_extradata = []
     if isinstance(json, dict):
         for key in json:
             data, metadata = explore_json_deep(json[key], deepness=deepness-1)
             if data is not None:
-                return data, metadata + " " + " ".join(l_metadata)
+                return data, extradata + " " + " ".join(l_extradata)
             else:
-                l_metadata.append(str(json[key]))
+                l_extradata.append(str(json[key]))
     return None, None
 
 
-def clean_json(path, encoding):
+def clean_json(path):
     """
-    Function to clean json
-    :param path: string
-    :param encoding: string
-    :return: dataframe, string, boolean
+    Function to extract a matrix from a json file.
+
+    Parameters
+    ----------
+    path : str
+        Path of the json file
+
+    Returns
+    -------
+    df : pandas Dataframe
+        The matrix extracted
+
+    extradata : str
+        Extradata extracted from the json file
+
+    no_header : bool
+        Boolean to specify if a header has been detected from the json file
     """
     # read file
-    with open(path, mode="r", encoding=encoding) as f:
-        json_data = json.load(f)
+    with open(path, mode="rb") as file:
+        json_data = json.load(file)
+
     # flatten the json
     data, metadata = explore_json_deep(json_data, deepness=20)
     if data is not None:
         df = json_normalize(data, record_path=None, meta=None)
+        return df, metadata, False
     else:
         return None, None, None
-    return df, metadata, False
 
 
-def explore_xml(path, deepness=20):
+def clean_geojson(path):
+    return clean_json(path)
+
+
+def clean_xml(path, deepness):
     """
-    Function to determine the pattern of a xml file and clean it
-    :param path: string
-    :param deepness: integer
-    :return: dataframe, string, boolean
+    Function to explore the pattern of a xml file and clean it.
+    The function is looking for a dictionary-like pattern or a list of
+    dictionaries from which a matrix is extracted
+
+    Parameters
+    ----------
+    path : str
+        Path of the xml file
+
+    deepness : int
+        The  number of xml layers we need to test to find the proper pattern
+
+    Returns
+    -------
+    df : pandas Dataframe
+        The matrix extracted
+
+    extradata : str
+        Extradata extracted from the xml file
+
+    no_header : bool
+        Boolean to specify if a header has been detected from the xml file
     """
     # read data
     tree = etree.iterparse(path, huge_tree=True, events=("start", "end"))
+
+    # TODO improve this function
     # extract matrix
     results = None
-    results_metadata = None
+    results_extradata = None
     max_row = 0
     max_col = 0
     for event, element in tree:
         x = xmljson.badgerfish.data(element)
         json_data = json.loads(json.dumps(x))
-        data, metadata = explore_json_deep(json_data, deepness=deepness)
+        data, extradata = explore_json_deep(json_data, deepness=deepness)
         if data is None:
             continue
         df = json_normalize(data, record_path=None, meta=None)
@@ -872,7 +1122,7 @@ def explore_xml(path, deepness=20):
         else:
             continue
         results = df
-        results_metadata = metadata
+        results_extradata = extradata
     names = []
     for i in results.columns:
         m = re.findall('{(.+?)}', i)
@@ -883,7 +1133,8 @@ def explore_xml(path, deepness=20):
             i = i[:len(i) - 1]
         names.append(i)
     results.columns = names
-    return results, results_metadata, False
+
+    return results, results_extradata, False
 
 
 def read_excel(path, info=False):
@@ -906,16 +1157,17 @@ def read_excel(path, info=False):
         return rb
 
 
-def edit_excel(read_book, info_book):
+def edit_excel(read_book, info_book, output_directory):
     """
     Function to edit and correct an excel file
     :param read_book: xlrd.book.Book object
     :param info_book: xlrd.book.Book object
+    :param output_directory: str
     :return: xlrd.book.Book object
     """
     wb = copy(read_book)
     sheets = read_book.sheet_names()
-    with TemporaryDirectory() as temp_directory:
+    with tmp_dir(host_dir=output_directory)as temp_directory:
         for sheet in sheets:
             # load sheet
             s = read_book.sheet_by_name(sheet)
@@ -1025,3 +1277,29 @@ def clean_sheet_excel(read_book, sheet_name, temporary_path, check_header):
     df, no_header = get_df(temp_sheet_path, list_content, bad_rows, "utf-8",
                            ";", check_header, s.ncols)
     return df, metadata, no_header
+
+
+def is_json_geojson(path):
+    """
+    Function to test if a text file is a json, a geojson or a casual text file.
+
+    Parameters
+    ----------
+    path : str
+        Path of the text file to test
+
+    Returns
+    -------
+    x : str
+        Either 'text', 'json' or 'geojson'
+    """
+    with open(path, mode="rb") as file:
+        try:
+            json.load(file)
+            try:
+                gpd.read_file(path)
+                return "geojson"
+            except Exception:
+                return "json"
+        except Exception:
+            return "text"

@@ -275,6 +275,7 @@ def main(result_directory, metadata_directory):
 
     return
 
+
 if __name__ == "__main__":
 
     # path

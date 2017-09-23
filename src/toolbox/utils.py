@@ -7,11 +7,22 @@ import sys
 import os
 import time
 import shutil
+import tempfile
 import numpy as np
 import scipy.sparse as sp
 from joblib.format_stack import format_exc
 from configobj import ConfigObj, ConfigObjError
 from validate import Validator
+from contextlib import contextmanager
+
+
+@contextmanager
+def tmp_dir(host_dir):
+    name = tempfile.mkdtemp(dir=host_dir)
+    try:
+        yield name
+    finally:
+        shutil.rmtree(name, ignore_errors=True)
 
 
 def check_directory(path_directory, reset):
@@ -127,6 +138,13 @@ def dict_to_list(dictionary, reversed=False):
     return sorted(dictionary, key=dictionary.get, reverse=reversed)
 
 
+def save_array(path_output, array):
+    if isinstance(array, list):
+        array = np.asarray(array)
+    np.save(path_output, array)
+    return
+
+
 def load_sparse_csr(path):
     """
     Function to load a saved sparse matrix (scipy object)
@@ -234,6 +252,51 @@ def log_error(path_error, source):
         f.write("\n")
         f.write("\n")
     return exc_type
+
+
+def log_error_without_except(path_error, source, exception):
+    with open(path_error, mode='wt', encoding='utf-8') as f:
+        f.write("##########################################################"
+                "########### \n")
+        for i in source:
+            f.write(i)
+            f.write("\n")
+        f.write(exception)
+        f.write("\n")
+        f.write("\n")
+    return
+
+
+def split_str(s):
+    """
+    Function to split a string as a list of strings.
+
+    Parameters
+    ----------
+    s : str
+        String with the format "word1 word2 word3"
+
+    Returns
+    -------
+    l : list
+        List of strings with the format ["word1", "word2", "word3"]
+    """
+    stopwords = ["passerelle_inspire", "donnees_ouvertes",
+                 "geoscientific_information", "grand_public"]
+    if isinstance(s, str):
+        s = s.split(" ")
+        for word in stopwords:
+            if word in s:
+                s.remove(word)
+        return s
+    elif isinstance(s, float) and np.isnan(s):
+        return []
+    else:
+        print("s :", type(s), s)
+        raise ValueError("wrong type : a string is expected")
+
+
+#############################################################################
 
 
 def _do_nothing():

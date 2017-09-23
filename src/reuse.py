@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" Different functions to plot """
+""" Extract metadata from reuses. """
 
 # libraries
 import os
