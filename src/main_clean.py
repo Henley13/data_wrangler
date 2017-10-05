@@ -4,11 +4,12 @@
 
 # libraries
 import os
+
 import clean_files
-import distribution_files
-import edit_metadata
 import text_extraction
+from old import edit_metadata, distribution_files
 from toolbox.utils import get_config_tag, get_config_trace
+
 print("\n")
 
 get_config_trace()

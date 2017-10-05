@@ -15,7 +15,7 @@ from wordcloud.wordcloud import WordCloud
 from sklearn.externals import joblib
 from text_extraction import get_ordered_features
 from toolbox.utils import (print_top_words, load_sparse_csr, get_config_tag,
-                           _check_graph_folders)
+                           check_graph_folders)
 from scipy.spatial.distance import cosine
 print("\n")
 
@@ -313,7 +313,7 @@ def main(result_directory, n_top_words, wordcloud_bool, kneighbors_bool,
     :param n_neighbors: integer
     :return:
     """
-    _check_graph_folders(result_directory)
+    check_graph_folders(result_directory)
     if wordcloud_bool:
         make_wordcloud(result_directory, n_top_words)
     if kneighbors_bool:

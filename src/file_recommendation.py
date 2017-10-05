@@ -224,7 +224,8 @@ def dimensionality_reduction(result_directory, w):
     return w_reduced
 
 
-def graph_neighbors(result_directory, df_log, w_reduced, indices, i_target):
+def graph_neighbors(result_directory, df_log, w_reduced, indices, i_target,
+                    radius):
     # paths
     path_png = os.path.join(result_directory, "graphs", "png")
     path_pdf = os.path.join(result_directory, "graphs", "pdf")
@@ -283,6 +284,15 @@ def graph_neighbors(result_directory, df_log, w_reduced, indices, i_target):
 
     aa = ax.scatter(w_reduced[i_target, 0], w_reduced[i_target, 1], s=50,
                     c="firebrick", marker="o")
+    circle_1 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 1]),
+                          radius / 3, color='darkorange', alpha=0.2)
+    circle_2 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 1]),
+                          radius * (2 / 3), color='darkorange', alpha=0.2)
+    circle_3 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 1]),
+                          radius, color='darkorange', alpha=0.2)
+    ax.add_patch(circle_1)
+    ax.add_patch(circle_2)
+    ax.add_patch(circle_3)
 
     ax.set_xlabel("First ACP component", fontsize=15)
     ax.set_ylabel("Second ACP component", fontsize=15)
@@ -475,12 +485,55 @@ def graph_template(result_directory, x, y, xlabel, ylabel, filename, color,
     return
 
 
+def graph_template_target(result_directory, x, y, xlabel, ylabel, filename,
+                          color, marker, x_neighbors, y_neighbors, radius=None,
+                          limits=None, i_target=None):
+    # paths
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
+
+    # plot neighborhood
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.set_facecolor('white')
+    if limits is not None:
+        ax.set_xlim(limits[0], limits[1])
+        ax.set_ylim(limits[2], limits[3])
+
+    ax.scatter(x, y, s=20, c=color, marker=marker)
+    ax.scatter(x_neighbors, y_neighbors, s=20, c="firebrick", marker="D")
+
+    if radius is not None:
+        circle_1 = plt.Circle((x[i_target], y[i_target]),
+                              radius, color='darkorange', alpha=0.3)
+        ax.add_patch(circle_1)
+
+    ax.set_xlabel(xlabel, fontsize=15)
+    ax.set_ylabel(ylabel, fontsize=15)
+
+    plt.tight_layout()
+
+    # save figures
+    path = os.path.join(path_jpeg, filename + ".jpeg")
+    plt.savefig(path)
+    path = os.path.join(path_pdf, filename + ".pdf")
+    plt.savefig(path)
+    path = os.path.join(path_png, filename + ".png")
+    plt.savefig(path)
+    path = os.path.join(path_svg, filename + ".svg")
+    plt.savefig(path)
+
+    plt.close("all")
+    return
+
+
 def graph_neighborhood(result_directory, df, w_reduced):
 
     # plot neighborhood
     graph_template(result_directory,
-                   x=w_reduced[0],
-                   y=w_reduced[1],
+                   x=w_reduced[:, 0],
+                   y=w_reduced[:, 1],
                    xlabel="First PCA component",
                    ylabel="Second PCA component",
                    filename="neighborhood",
@@ -554,6 +607,247 @@ def find_radius(precision, recall, threshold):
     return radius, i_max
 
 
+@memory.cache()
+def dimensionality_reduction_3d(result_directory, w, all_indices, radius,
+                                i_target):
+    pca = PCA(n_components=3, whiten=False, random_state=13)
+    w_reduced = pca.fit_transform(w)
+    variance_explained = pca.explained_variance_ratio_
+
+    # save topic space
+    model_directory = os.path.join(result_directory, "model_result")
+    path = os.path.join(model_directory, "best_w_reduced_3d.npy")
+    np.save(path, w_reduced)
+
+    # graphs
+    graph_template_target(result_directory,
+                          x=w_reduced[:, 0],
+                          y=w_reduced[:, 1],
+                          xlabel="1st component (%f%% variance explained)" %
+                                 round(variance_explained[0], 3),
+                          ylabel="2nd component(%f%% variance explained)" %
+                                 round(variance_explained[1], 3),
+                          filename="acp_1_2",
+                          color="steelblue",
+                          marker="x",
+                          x_neighbors=w_reduced[all_indices, 0],
+                          y_neighbors=w_reduced[all_indices, 1])
+    # graphs
+    limits = [w_reduced[i_target, 0] - 2 * radius,
+              w_reduced[i_target, 0] + 2 * radius,
+              w_reduced[i_target, 1] - 2 * radius,
+              w_reduced[i_target, 1] + 2 * radius]
+    graph_template_target(result_directory,
+                          x=w_reduced[:, 0],
+                          y=w_reduced[:, 1],
+                          xlabel="1st component (%f%% variance explained)" %
+                                 round(variance_explained[0], 3),
+                          ylabel="2nd component(%f%% variance explained)" %
+                                 round(variance_explained[1], 3),
+                          filename="acp_1_2_zoom",
+                          color="steelblue",
+                          marker="x",
+                          x_neighbors=w_reduced[all_indices, 0],
+                          y_neighbors=w_reduced[all_indices, 1],
+                          radius=radius,
+                          limits=limits,
+                          i_target=i_target)
+
+    graph_template_target(result_directory,
+                          x=w_reduced[:, 1],
+                          y=w_reduced[:, 2],
+                          xlabel="2nd component (%f%% variance explained)" %
+                                 round(variance_explained[1], 3),
+                          ylabel="3rd component(%f%% variance explained)" %
+                                 round(variance_explained[2], 3),
+                          filename="acp_2_3",
+                          color="steelblue",
+                          marker="x",
+                          x_neighbors=w_reduced[all_indices, 1],
+                          y_neighbors=w_reduced[all_indices, 2])
+
+    graph_template_target(result_directory,
+                          x=w_reduced[:, 0],
+                          y=w_reduced[:, 2],
+                          xlabel="1st component (%f%% variance explained)" %
+                                 round(variance_explained[0], 3),
+                          ylabel="3rd component(%f%% variance explained)" %
+                                 round(variance_explained[2], 3),
+                          filename="acp_1_3",
+                          color="steelblue",
+                          marker="x",
+                          x_neighbors=w_reduced[all_indices, 0],
+                          y_neighbors=w_reduced[all_indices, 2])
+
+    return w_reduced
+
+
+def graph_neighbors_3d(result_directory, df_log, w_reduced, indices, i_target,
+                       radius):
+    # paths
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
+
+    # get data
+    id_page_target = df_log.at[i_target, "id_page"]
+
+    # gather the files reused together
+    pairs = []
+    all_indices = indices + [i_target]
+    for i in range(len(all_indices) - 1):
+        indice_i = all_indices[i]
+        i_reuse = _split_str(df_log.at[indice_i, "reuse"])
+        loc_i = [w_reduced[indice_i, 0], w_reduced[indice_i, 1],
+                 w_reduced[indice_i, 2]]
+        for indice_j in all_indices[i + 1:]:
+            j_reuse = _split_str(df_log.at[indice_j, "reuse"])
+            if len(set(i_reuse).intersection(j_reuse)) > 0:
+                loc_j = [w_reduced[indice_j, 0], w_reduced[indice_j, 1],
+                         w_reduced[indice_i, 2]]
+                pairs.append([loc_i, loc_j])
+
+    # gather the neighbors by page
+    d_indices_page = defaultdict(lambda: [])
+    for indice_i in indices:
+        id_page_neighbor = df_log.at[indice_i, "id_page"]
+        d_indices_page[id_page_neighbor].append(indice_i)
+
+    # plot data
+    # fig, ax = plt.subplots(figsize=(5, 5))
+    # ax.set_facecolor('white')
+
+    # plot data
+    ax1 = plt.subplot2grid((2, 2), (0, 0))
+    ax1.set_facecolor('white')
+    ax3 = plt.subplot2grid((2, 2), (1, 0), sharex=ax1)
+    ax3.set_facecolor('white')
+    ax4 = plt.subplot2grid((2, 2), (1, 1), sharey=ax3)
+    ax4.set_facecolor('white')
+
+    # fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
+    # example_plot(ax1)
+    # example_plot(ax2)
+    # example_plot(ax3)
+    # example_plot(ax4)
+    # plt.tight_layout()
+
+    # first and third component
+
+    # draw straight lines between reused files
+    for pair in pairs:
+        loc_i, loc_j = pair[0], pair[1]
+        ax1.plot([loc_i[0], loc_j[0]], [loc_i[2], loc_j[2]], linestyle='-',
+                 linewidth=1, alpha=0.2, c="darkorange")
+
+    for cluster_page in d_indices_page:
+        indices_cluster = d_indices_page[cluster_page]
+        w_cluster_page = w_reduced[indices_cluster]
+        if cluster_page == id_page_target:
+            ax1.scatter(w_reduced[i_target, 0], w_reduced[i_target, 2],
+                        s=45, c="firebrick", marker="D")
+        else:
+            ax1.scatter(w_cluster_page[:, 0], w_cluster_page[:, 2], s=40,
+                        marker="x")
+
+    ax1.scatter(w_reduced[i_target, 0], w_reduced[i_target, 2], s=50,
+                c="firebrick", marker="o")
+    circle_1 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 2]),
+                          radius * (2 / 3), color='darkorange', alpha=0.2)
+    circle_2 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 2]),
+                          radius / 3, color='darkorange', alpha=0.2)
+    circle_3 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 2]),
+                          radius, color='darkorange', alpha=0.2)
+    ax1.add_patch(circle_1)
+    ax1.add_patch(circle_2)
+    ax1.add_patch(circle_3)
+
+    # ax1.set_xlabel("First ACP component", fontsize=15)
+    # ax1.set_ylabel("Third ACP component", fontsize=15)
+
+    # first and second component
+
+    # draw straight lines between reused files
+    for pair in pairs:
+        loc_i, loc_j = pair[0], pair[1]
+        ax1.plot([loc_i[0], loc_j[0]], [loc_i[1], loc_j[1]], linestyle='-',
+                 linewidth=1, alpha=0.2, c="darkorange")
+
+    for cluster_page in d_indices_page:
+        indices_cluster = d_indices_page[cluster_page]
+        w_cluster_page = w_reduced[indices_cluster]
+        if cluster_page == id_page_target:
+            ax3.scatter(w_reduced[i_target, 0], w_reduced[i_target, 1],
+                        s=45, c="firebrick", marker="D")
+        else:
+            ax3.scatter(w_cluster_page[:, 0], w_cluster_page[:, 1], s=40,
+                        marker="x")
+
+    ax3.scatter(w_reduced[i_target, 0], w_reduced[i_target, 1], s=50,
+                c="firebrick", marker="o")
+    circle_1 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 1]),
+                          radius * (2 / 3), color='darkorange', alpha=0.2)
+    circle_2 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 1]),
+                          radius / 3, color='darkorange', alpha=0.2)
+    circle_3 = plt.Circle((w_reduced[i_target, 0], w_reduced[i_target, 1]),
+                          radius, color='darkorange', alpha=0.2)
+    ax3.add_patch(circle_1)
+    ax3.add_patch(circle_2)
+    ax3.add_patch(circle_3)
+
+    # ax3.set_xlabel("First ACP component", fontsize=15)
+    # ax3.set_ylabel("Second ACP component", fontsize=15)
+
+    # second and third component
+
+    # draw straight lines between reused files
+    for pair in pairs:
+        loc_i, loc_j = pair[0], pair[1]
+        ax4.plot([loc_i[2], loc_j[2]], [loc_i[1], loc_j[1]], linestyle='-',
+                 linewidth=1, alpha=0.2, c="darkorange")
+
+    for cluster_page in d_indices_page:
+        indices_cluster = d_indices_page[cluster_page]
+        w_cluster_page = w_reduced[indices_cluster]
+        if cluster_page == id_page_target:
+            ax4.scatter(w_reduced[i_target, 2], w_reduced[i_target, 1],
+                        s=45, c="firebrick", marker="D")
+        else:
+            ax4.scatter(w_cluster_page[:, 2], w_cluster_page[:, 1], s=40,
+                        marker="x")
+
+    ax4.scatter(w_reduced[i_target, 2], w_reduced[i_target, 1], s=50,
+                c="firebrick", marker="o")
+    circle_1 = plt.Circle((w_reduced[i_target, 2], w_reduced[i_target, 1]),
+                          radius * (2 / 3), color='darkorange', alpha=0.2)
+    circle_2 = plt.Circle((w_reduced[i_target, 2], w_reduced[i_target, 1]),
+                          radius / 3, color='darkorange', alpha=0.2)
+    circle_3 = plt.Circle((w_reduced[i_target, 2], w_reduced[i_target, 1]),
+                          radius, color='darkorange', alpha=0.2)
+    ax4.add_patch(circle_1)
+    ax4.add_patch(circle_2)
+    ax4.add_patch(circle_3)
+
+    # ax4.set_xlabel("Third ACP component", fontsize=15)
+    # ax4.set_ylabel("Second ACP component", fontsize=15)
+
+    plt.tight_layout()
+
+    # save figures
+    path = os.path.join(path_jpeg, "kneighbors pca 3d.jpeg")
+    plt.savefig(path)
+    path = os.path.join(path_pdf, "kneighbors pca 3d.pdf")
+    plt.savefig(path)
+    path = os.path.join(path_png, "kneighbors pca 3d.png")
+    plt.savefig(path)
+    path = os.path.join(path_svg, "kneighbors pca 3d.svg")
+    plt.savefig(path)
+
+    plt.close("all")
+    return
+
+
 def main(result_directory, d_best, null_distance, i_target):
 
     # get data
@@ -566,17 +860,18 @@ def main(result_directory, d_best, null_distance, i_target):
     print("tfidf shape :", tfidf.shape, "\n")
 
     # find best topic space
-    max_auc = 0
-    best_n_topics = 0
-    for n_topics in range(5, 101, 5):
-        d_best["n_topics"] = n_topics
-        w, auc, precision, recall, threshold = compute_best_topic_space(
-            result_directory, tfidf, df_log, d_best)
-        print("--- auc :", auc, "(%i topics)" % n_topics)
-        if auc > max_auc:
-            best_n_topics = n_topics
-            max_auc = auc
+    # max_auc = 0
+    # best_n_topics = 0
+    # for n_topics in range(5, 101, 5):
+    #     d_best["n_topics"] = n_topics
+    #     w, auc, precision, recall, threshold = compute_best_topic_space(
+    #         result_directory, tfidf, df_log, d_best)
+    #     print("--- auc :", auc, "(%i topics)" % n_topics)
+    #     if auc > max_auc:
+    #         best_n_topics = n_topics
+    #         max_auc = auc
 
+    best_n_topics = 20
     # compute best topic space
     d_best["n_topics"] = best_n_topics
     w, auc, precision, recall, threshold = compute_best_topic_space(
@@ -594,7 +889,7 @@ def main(result_directory, d_best, null_distance, i_target):
     graph_precision_recall(auc, recall, precision, i_radius)
 
     # find neighbors
-    df = best_neighbors(result_directory, df_log, w, neigh)
+    # df = best_neighbors(result_directory, df_log, w, neigh)
     target = w[i_target].reshape(1, -1)
     distances, indices = find_neighbors(neigh, target)
     if not null_distance:
@@ -606,18 +901,28 @@ def main(result_directory, d_best, null_distance, i_target):
                 k.append(indices[i_distance])
         distances = l
         indices = k
+    all_indices = indices + [i_target]
     print("i_target :", i_target)
     print("number of neighbors :", len(indices), "\n")
-    information_neighbors(i_target, df_log, distances, indices)
+    # information_neighbors(i_target, df_log, distances, indices)
 
     # get a 2D plan from the topic space
     w_reduced = dimensionality_reduction(result_directory, w)
 
-    # plot neighbors
-    graph_neighbors(result_directory, df_log, w_reduced, indices, i_target)
+    # get a 3D plan as well
+    w_reduced_3d = dimensionality_reduction_3d(result_directory, w, all_indices,
+                                               radius, i_target)
+
+    # plot neighbors 2D
+    graph_neighbors(result_directory, df_log, w_reduced, indices, i_target,
+                    radius)
+
+    # plot neighbors 3D
+    graph_neighbors_3d(result_directory, df_log, w_reduced_3d, indices,
+                       i_target, radius)
 
     # plot neighborhood statistics
-    graph_neighborhood(result_directory, df, w_reduced)
+    # graph_neighborhood(result_directory, df, w_reduced)
 
     return
 
@@ -641,4 +946,4 @@ if __name__ == "__main__":
     main(result_directory=result_directory,
          d_best=d_best,
          null_distance=False,
-         i_target=13816)
+         i_target=16859)

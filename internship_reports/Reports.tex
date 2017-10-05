@@ -22,6 +22,8 @@
 \newacro{TFIDF}{Term Frequency - Inverse Document Frequency}
 \newacro{LDA}{Latent Dirichlet Allocation}
 \newacro{NMF}{Non-negative Matrix Factorization}
+\newacro{SVD}{Singular Value Decomposition}
+\newacro{LSML}{Least Square-residual Metric Learning}
 
 \author{Arthur Imbert}
 \title{Integration of heterogeneous datasets}
@@ -62,12 +64,12 @@
 	
 	\subsection{How can we reuse the data}
 	
-	\begin{figure}
-		\centering
-		\includegraphics[width = .9\linewidth]{}
-		\caption{Neighborhood examples}
-		\label{fig:neighbor-police}
-	\end{figure}
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{Neighborhood examples}
+	%	\label{fig:neighbor-police}
+	%\end{figure}
 	
 	\subsection{An academic angle}
 	
@@ -75,81 +77,240 @@
 	
 	\section{From a bunch of heterogeneous data to a recommendation system}
 	
-	\begin{figure}
-		\centering
-		\includegraphics[width = .9\linewidth]{}
-		\caption{Overview of the process}
-		\label{fig:global-pipeline}
-	\end{figure}
+	Before any analyze, we build our dataset. From the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}, we collect quantities of metadata. It generally includes an URL address where the file is stored. We then directly download as many files as possible. For each file downloaded, we try to clean it such as we can display its content in a tabular form.
+	
+	At that point, we start the analysis. Firstly by preprocessing files' textual content. The result consists in a \ac{TFIDF} matrix. It allows us to weight word occurrences within our corpus according to their importance for each file. Secondly by building a vectorial topic space to represent every files (a file embedding) and based on the \ac{TFIDF} matrix. This also includes an optimization step where we compare two topic extraction algorithms - \ac{NMF} and \ac{SVD} - along with different configurations. Thirdly by looking for closest neighbors in this "topic space", in order to interpret distances within the embedding. Using a pretext task (the prediction of a reuse between pairs of files) and a metric learning algorithm, \ac{LSML}, we also try to strengthen our file embedding and the interpretation of its clusters.
+	
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{Overview of the process}
+	%	\label{fig:global-pipeline}
+	%\end{figure}
 	
 	\subsection{Build a database}
 	
 	The first step is to store a sufficient amount of dirty data in order to keep a statistically significant volume of data throughout all our process.
 	
-	\paragraph{Collect the metadata}
+	\paragraph{Collect metadata}
 	
 	As described above, the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} offers us the opportunity to easily collect a numerous files from different French public organizations. A RESTful API exists in the website. It allows us to get, from a HTTP request, several metadata about more than 25000 pages. These include producer's identity, a description of the page's content, some related tags, the different files belonging to the page and, the most important, an URL for each file\footnote{A more detailed description of metadata is given in annexes}. 
 	
 	Some URL lead us to another website which host files, some directly launch the download of file. We only focus on the latters. It already represents around 60000 URL.
 	
-	\paragraph{Download the data}
+	\paragraph{Download data}
 	
-	We use an INRIA's server DRAGO and a parallelized process to efficiently download the maximum of data. We use DRAGOSTORAGE, another server, to store the results of our downloads. By the end it represents around 350 Gb of data for more than 55000 files.
+	We use DRAGO, an INRIA's server, and a parallelized process to efficiently download as many files as possible. We use DRAGOSTORAGE, another server, to store the results of our downloads. By the end it represents around 350 Gb of data for more than 55000 files.
 	
-	\subsection{Clean and filter the data}
+	\subsection{Clean and filter data}
 	
-	Among these files, there are several format: text, JSON, XML, spreadsheet, zip... Indeed, the second step consist in inferring the nature of file in order to filter it. The right process could then be applied in a attempt to clean the file and reshape its content in a tabular form.
+	Among these files, there are several format: text, JSON, XML, spreadsheet, zip... Indeed, the second step consists in inferring the nature of files in order to filter them. The right process could then be applied in a attempt to clean files and reshape their content in a tabular form.
 	
-	\begin{figure}
-		\centering
-		\begin{subfigure}{0.50\textwidth}
-			\centering
-			\includegraphics[width = .9\linewidth]{}
-			\caption{An example of file easy to clean}
-			\label{fig:good-table}
-		\end{subfigure}
-		\begin{subfigure}{0.50\textwidth}
-			\centering
-			\includegraphics[width = .9\linewidth]{}
-			\caption{An example of 'dirty data'}
-			\label{fig:bad-table}
-		\end{subfigure}
-		\caption{Cleaning data}
-		\label{fig:example-table}
-	\end{figure}
+	%\begin{figure}
+	%	\centering
+	%	\begin{subfigure}{0.50\textwidth}
+	%		\centering
+	%		\includegraphics[width = .9\linewidth]{}
+	%		\caption{An example of file easy to clean}
+	%		\label{fig:good-table}
+	%	\end{subfigure}
+	%	\begin{subfigure}{0.50\textwidth}
+	%		\centering
+	%		\includegraphics[width = .9\linewidth]{}
+	%		\caption{An example of 'dirty data'}
+	%		\label{fig:bad-table}
+	%	\end{subfigure}
+	%	\caption{Cleaning data}
+	%	\label{fig:example-table}
+	%\end{figure}
 	
 	\paragraph{Filter the formats}
 	
-	According to the supposed format of the file, we apply a different strategy to clean it. That supposed to avoid the empty files and detect its MIME type. If we have a zip file, we repeat the procedure for every zipped elements. We mainly focus on three type of documents:
+	According to the supposed format of the file, we apply a different strategy to clean it. That involves to avoid the empty files and detect its MIME type (using \emph{magic} library). If we meet a zip file, we repeat the procedure for every zipped items. We mainly focus on three types of documents:
 	\begin{itemize}
-		\item
-		
+		\item Text files, from which we try to detect a potential tabular form like in a CSV file.
+		\item Spreadsheets, generally with an obvious tabular form that could make the inference of irregularities more difficult. 
+		\item Semi-structured files, generally containing geographical data like in a GEOJSON, easy to read, but difficult to flatten within a table.
 	\end{itemize}
 	
 	\paragraph{CSV files}
 	
+	For every file detected as text file, the very first operation executed is a test to determine if it could be a semi-structured file (JSON or GEOJSON). This test simply consists in reading the file, using the loaders from \emph{json} and \emph{geopandas} libraries. If an error occurs, the test fails and we process the file as a proper text file and a potential CSV or TSV file.
+	
+	Several operations are executed in order to extract some data in a tabular form. Using \emph{chardet} library, the encoding is inferred. If the latter is still undetermined, we read the file by default with an "utf-8" encoding. If the file is long enough, a sample of rows is randomly extracted to speed up the next steps. Using \emph{Sniffer} class from \emph{csv} library, we try to detect a column delimiter. For example, in a CSV file, it's a comma. This is a character which should occur the same number of times on each row. \emph{Sniffer} doesn't use a "all or nothing" approach and then allows some irregularities in the data. Once we have a delimiter, the number of columns can be easily computed. In order to avoid rows with commentary or titles, we only keep those with the right number of columns (or delimiter occurrences). The last step, and the more difficult, before saving data within a \emph{pandas} Dataframe, consists in inferring a pertinent header row. We test the consistency of data types for each row, excepted the targeted one (which should be a string). If every columns nearly keep the same data type along file, we consider the targeted row as a potential header. The operation is repeated for the first rows until a proper header row is found. If nothing return, values by default are assigned as column names. 
+	
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{CSV example}
+	%	\label{fig:csv-example}
+	%\end{figure}
+	
 	\paragraph{Excel files}
 	
-	\paragraph{JSON and GEOJSON files}
+	When a file is detected as a spreadsheet, it is read and edited using \emph{xlrd} and \emph{xlutils} libraries, respectively. The main difficulty is to skip the wrong rows (title, commentaries) and clearly delimited the pertinent data. Contrary to the previous cases, we can't infer this information based on a wrong number of delimiter: in a spreadsheet, the tabular format is already given. Rows have the same number of columns. But sometimes a row has too many empty cells or the latter are merged. So, before parsing the data through a dataframe and looking for the header, we need to preprocess the cells.
 	
-	\paragraph{Errors and metadata}
+	Cell by cell, we first replace characters that could mistake us while reading the document as a text file (for example "\textbackslash{n}" and "\textbackslash{r}"). Then, we fill merged cells by simply duplicating the information. We collect the potential name of its different sheets. For each sheet, we avoid the rows with an unexpected number of empty cells. The sheet is then parsed within a \emph{pandas} Dataframe and saved as a text file. That allows us to apply the same operation executed with the CSV files in order to infer a header row. By the end, a single spreadsheet should return one cleaned table per sheet.
+	
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{Excel example}
+	%	\label{fig:excel-example}
+	%\end{figure}
+	
+	\paragraph{JSON, GEOJSON and XML files}
+	
+	When a text file is detected, as previously explained, we try to read it as a JSON, then as a GEOJSON. The same process is then applied for both of them. Concerning the XML files, we just load it as a JSON file before, using the \emph{xmljson} library. 
+	
+	All these files can be read as a tree. The idea is to recursively explore the tree structure of the file in order to find a pertinent branch to flatten in a dataframe. The pattern we are looking for is a list of dictionaries, where each item of the list is an observation and the dictionaries' keys are features. For performance reasons we just explore the first layers of the tree. By the end, we flatten the part of the tree with the largest number of items and a consistent number of features. This involves \emph{json\_normalize} function from \emph{pandas} library. Generally, the header automatically inferred is pertinent.
+	
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{JSON example}
+	%	\label{fig:json-example}
+	%\end{figure}
+	
+	\paragraph{Errors and extradata}
+	
+	Through our cleaning process, numerous files are skipped because of their detected MIME type (PDF, images, etc.) or due to an error. For those which return a cleaned table, we also collect extradata. This are parts of the original file we don't include in the final table. While cleaning the text and Excel files, we still save separately rows with the wrong number of columns. It often represents a commentary, a source or the title. With the semi-structured files, we keep the part of the tree we don't flatten as extradata.
 	
 	\subsection{Build a file embedding}
 	
+	Once we have enough tables, with extradata for some of them, the third step consist in building a file embedding. That means we want to represent our files within a vectorial space in order to easily compute distances between files, and group them by cluster. We define a pretext task, predict a reuse between two files, to validate our process and determine if our embedding represent our corpus efficiently: two files reused together should be close in our space. 
+	
 	\paragraph{Text data preprocessing}
 	
-	\paragraph{Topic extraction}
+	As we mainly base our file embedding on textual content, a preprocessing step is decisive. As every cleaned table is saved as a text file, the goal is to adequately count and weight words occurrences.
+	
+	We distinguish three parts for a cleaned file: the content of table, its header row and some extradata (in a separate file). Thus, the first time-consuming task includes creating three different $N_{files} \times N_{words}$ occurrence count matrices with $N_{files}$ the number of files and $N_{words}$ the number of different words. This tokenization process is executed with \emph{CountVectorizer} function of \emph{sklearn} library. For each matrix, we normalize its rows, so that the sum of each row returns the same value. This penalizes large files with a lot of textual content. Normalizing the three matrices separately also emphasizes header and extradata, two parts with generally a lower but nonetheless quite pertinent textual content. Ultimately we mix the three matrices such that,
+	
+	\begin{equation}
+		D = 0.5 * Content + 0.25 * Header + 0.25 * Extradata		
+	\end{equation}
+	
+	The next task is a stemming algorithm from \emph{nltk} library. During this process, we reduce inflected words to their root form (or stem). For example, such cuts could happen,
+	
+	\[
+		different \rightarrow differ
+	\]
+	\[
+		differ \rightarrow differ
+	\]
+	\[
+		differently \rightarrow differ
+	\]
+
+	That makes our occurrence count matrix $D$ more consistent with spelling mistakes, grammatical changes and conjugation. During the stemming process we keep an history of changes in order to determine, for each stem, the most frequent inflected word. We can then substitute the stem by its most frequent origin in order to have a list of existing words as a result. In the previous example, our matrix $D$ could have a columns $different$ instead of $differ$. This is called a lemmatization process.
+	
+	For the last preprocessing task we compute a \ac{TFIDF} matrix from $D$. On the one hand, some words are frequent in every file (for example "the", "a", "is"). They usually appear to be less informative. Some of these words could even be regarded as noise and directly removed from the matrix $D$, using a predefined \emph{stop words} list. On the other hand, rarer terms may often be more interesting and would deserve a bigger weight. In order to emphasize them, we use \emph{TfidfTransformer} function from \emph{sklearn} library. This transformation weights each word frequency by its inverse document frequency. We have
+	
+	\begin{equation}
+		TFIDF(t, d) = TF(t, d) \times IDF(t)
+	\end{equation}
+	
+	with 
+	
+	\begin{equation}
+		IDF(t) = log(\frac{N_{files}}{1 + DF(t)})
+	\end{equation}
+	
+	where term-frequency $TF(t, d)$ is the number of occurrences of term $t$ in document $d$ and document-frequency $DF(t)$ is the number of documents that contain term $t$. Each row is then normalize with a $L_{2}$ norm. Ultimately, the most discriminant words for a specific file (or row) have a higher floating score. 
+	
+	\paragraph{Topic modeling}
+	
+	At that point, with \ac{TFIDF} matrix we already have a representation of files within a very high-dimensional vectorial space. Topic modeling can be defined as a dimensionality reduction technique. We use it to reveal a hidden semantic structure in our corpus. We then expect that the topics produced are clusters of similar words. After dimensionality reduction, a file should be interpreted as a mixture of topics. Our aim is to compute a $N_{files} \times N_{topics}$ matrix $W$, with $N_{topics}$ the number of topics (in our case, an integer to choose between 5 and 100). During the internship we used two different topic modeling algorithms: \ac{NMF} and \ac{SVD}. They basically factorize the \ac{TFIDF} matrix into the product of $W$, which represents files within topic space, and a $N_{topics} \times N_{words}$ matrix $H$, which represents topics within word space.
+	
+	\paragraph{\acf{NMF}}
+		
+	\ac{NMF} can be used if data matrix doesn't contain negative values. Indeed, it perfectly fit with textual data and more precisely occurrence count. It's also widely used in document clustering, recommender systems or computer vision. 
+	
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{NMF}
+	%	\label{fig:nmf}
+	%\end{figure}
+
+	Let $V$ be our \ac{TFIDF} matrix. The algorithm minimizing a distance between $V$ and the matrix product $W.H$, with $W$ and $H$ containing non-negative elements. We use \emph{sklearn}'s implementation where the distance minimized is a squared Frobenius norm, such as
+	
+	\begin{equation}
+		d_{\mathrm{Fro}}(A, B) = \frac{1}{2} ||A - B||_{\mathrm{Fro}}^2 = \frac{1}{2} \sum_{i,j} (A_{ij} - {B}_{ij})^2
+	\end{equation}
+		
+	The objective function to minimize is
+	
+	\begin{equation}
+	\frac{1}{2} ||V - WH||_{\mathrm{Fro}}^2 + \alpha\lambda||W||_{1} + \alpha\lambda||H||_{1} + \frac{1}{2}\alpha(1 - \lambda)||W||_{\mathrm{Fro}}^2 + \frac{1}{2}\alpha(1 - \lambda)||H||_{\mathrm{Fro}}^2
+	\end{equation}
+	
+	with $\alpha$ a constant that multiplies the regularization terms, and so controls the sparsity of $W$ and $H$, and $\lambda$ a constant to balance $L_{1}$ and $L_{2}$ elementwise penalizations. Ultimately, we have
+	
+	\begin{equation}
+		V \approx W.H
+	\end{equation}
+	
+	under the constraints $W \succeq 0$ and $H \succeq 0$.
+	
+	\paragraph{\acf{SVD}}
+	
+	It approaches a spectral decomposition. We use \emph{sklearn}'s implementation which is a truncated version (called Truncated \ac{SVD}). We approximate V such as
+	
+	\begin{equation}
+		V \approx V_k = U_k \Sigma_k P_k^\top
+	\end{equation}
+	
+	The diagonal entries $\sigma_{i}$ of $\Sigma$ are $M$'s singular values. The columns of $U$ and $V$ are called the left-singular vectors and right-singular vectors of $M$, respectively. This implementation is called "truncated" because we only compute the $k$ column vectors of $U$ and row vectors of $P$ corresponding to the $k$ largest singular values $\Sigma$. The topic space is defined by $U_k \Sigma_k^\top$, with $k$ features (or topics). In relation with our framework, we have
+	
+	\[
+		k = N_{topics}
+	\]
+	
+	\[
+		W = U_k.\Sigma_k
+	\]
+	
+	\[
+		H = P_k^\top
+	\]
+	
+	Finally, as this algorithm doesn't center the data before computing the singular value decomposition, it's still efficient with sparse matrix from \emph{scipy} library. That perfectly fits with our \ac{TFIDF} matrix.
 	
 	\paragraph{Metric learning}
 	
+	In practice, the previous step is enough to build an efficient file embedding.
+
+	\begin{equation}
+		M = L^{T}.L
+	\end{equation}
+	
+	under the constraints $M \succeq 0$.
+	
+	\paragraph{\acf{LSML}}
+	
+	In clustering problems, these pairwise constraints are often translated into Must-Link (a and b are in the same cluster) and Cannot-Link (c and d are in different clusters) constraints. Here, we consider the problem of learning a distance metric from constraints in the form of relative comparisons: “the distance between two objects are greater (or smaller) than the distance between another two objects
+	
+	\begin{equation}
+		\mathcal{C} = \{(x_{a}, x_{b}, x_{c}, x_{d}):d(x_{a}, x_{b}) < d(x_{c}, x_{d})\}
+	\end{equation}
+	
+	\begin{equation}
+		d_{M}(x_{i}, x_{j}) = \sqrt{(x_{i} - x_{j})^{T}M(x_{i} - x_{j})}
+	\end{equation}
+	
+	\begin{equation}
+		L(d(x_{a}, x_{b}) < d(x_{c}, x_{d})) = H(d_{M}(x_{a}, x_{b}) - d_{M}(x_{c}, x_{d}))
+	\end{equation}
+	
+	\begin{equation}
+		H(x) = \begin{cases}
+				0 & \mbox{if } x \leq 0 \\
+				x^{2} & \mbox{if } x > 0
+			   \end{cases}
+	\end{equation}
+	
 	\subsection{Find neighborhood}
-	
-	
-	
-	
-	
-	
-	
 	
 	\section{Results and validation}
 	
@@ -159,9 +320,11 @@
 	
 	\subsubsection{Presentation of the data}
 	
-	\subsection{Wordclouds}
-	
 	\subsubsection{Metric comparison}
+	
+	\subsubsection{Topics and Wordclouds}
+	
+	\subsubsection{Reuse prediction}
 	
 	% boxplot sur leurs résultats
 	% de l'anecdote
@@ -169,6 +332,8 @@
 	\section{Discussion}
 	
 	\subsection{Limitations}
+	
+	% NMF uniqueness
 	
 	\subsection{Problems}
 	
@@ -182,6 +347,13 @@
 	
 	% \bibliographystyle{alpha}
 	% \bibliography{report_biblio.bib}
+	
+	
+	
+	
+	% Lee, Daniel D and Seung, H Sebastian (1999). "Learning the parts of objects by non-negative matrix factorization" (PDF). Nature. 401: 788–791. doi:10.1038/44565.
+	
+	% http://web.cs.ucla.edu/~weiwang/paper/ICDM12.pdf
 	
 	\section{Annexes}
 	

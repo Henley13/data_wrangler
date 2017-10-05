@@ -2,13 +2,11 @@
 
 """ Detect the file extension and clean it. """
 
-import magic
 import os
 import shutil
 from joblib import Parallel, delayed
-from toolbox.utils import (log_error, get_config_tag, get_config_trace,
-                           check_directory)
-from toolbox.clean import cleaner, file_is_json
+from toolbox.utils import (get_config_tag, get_config_trace, check_directory)
+from toolbox.clean import cleaner
 print("\n")
 
 

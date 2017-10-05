@@ -56,9 +56,9 @@ def _text_content_extraction(log, result_directory):
     return full_text
 
 
-def _text_metadata_extraction(log, result_directory):
+def _text_extradata_extraction(log, result_directory):
     """
-    Function to extract the textual content from the metadata files
+    Function to extract the textual content from the extradata files
     :param log: dataframe pandas
     :param result_directory: string
     :return: list of strings
@@ -66,9 +66,10 @@ def _text_metadata_extraction(log, result_directory):
     # collect text
     full_text = []
     for i in tqdm(range(log.shape[0])):
-        if log.at[i, "metadata"]:
+        if log.at[i, "extradata"]:
             filename = log.at[i, "matrix_name"]
-            path = os.path.join(result_directory, "metadata_cleaning", filename)
+            path = os.path.join(result_directory, "extradata_cleaning",
+                                filename)
             with open(path, mode='rt', encoding='utf-8') as f:
                 full_text.append(f.read())
         else:
@@ -88,7 +89,7 @@ def _text_header_extraction(log):
 
 def _text_content_header_extraction(log, result_directory):
     """
-    Function to extract the textual content from the metadata files
+    Function to extract the textual content from the files
     :param log: dataframe pandas
     :param result_directory: string
     :return: list of strings
@@ -119,10 +120,10 @@ def _text_full_extraction(log, result_directory):
         path = os.path.join(result_directory, "data_fitted", filename)
         with open(path, mode="rt", encoding="utf-8") as f:
             text.append(f.read())
-        if log.at[i, "metadata"]:
-            path_metadata = os.path.join(result_directory, "metadata_cleaning",
-                                         filename)
-            with open(path_metadata, mode='rt', encoding='utf-8') as f:
+        if log.at[i, "extradata"]:
+            path_extradata = os.path.join(result_directory,
+                                          "extradata_cleaning", filename)
+            with open(path_extradata, mode='rt', encoding='utf-8') as f:
                 text.append(f.read())
         else:
             text.append("")
@@ -132,40 +133,40 @@ def _text_full_extraction(log, result_directory):
 
 
 def _text_extraction(path_log, result_directory, content_bool, header_bool,
-                     metadata_bool):
+                     extradata_bool):
     """
     Function to select which textual part we need to extract from the files
     :param path_log: string
     :param result_directory: string
     :param content_bool: boolean
     :param header_bool: boolean
-    :param metadata_bool: boolean
+    :param extradata_bool: boolean
     :return: list of strings
     """
     df_log = pd.read_csv(path_log, sep=";", encoding="utf-8", index_col=False)
     print("number of files: ", df_log.shape[0])
-    if content_bool and header_bool and metadata_bool:
+    if content_bool and header_bool and extradata_bool:
         return _text_full_extraction(df_log, result_directory)
-    elif content_bool and not header_bool and not metadata_bool:
+    elif content_bool and not header_bool and not extradata_bool:
         return _text_content_extraction(df_log, result_directory)
-    elif not content_bool and header_bool and not metadata_bool:
+    elif not content_bool and header_bool and not extradata_bool:
         return _text_header_extraction(df_log)
-    elif not content_bool and not header_bool and metadata_bool:
-        return _text_metadata_extraction(df_log, result_directory)
-    elif content_bool and header_bool and not metadata_bool:
+    elif not content_bool and not header_bool and extradata_bool:
+        return _text_extradata_extraction(df_log, result_directory)
+    elif content_bool and header_bool and not extradata_bool:
         return _text_content_header_extraction(df_log, result_directory)
-    elif not content_bool and header_bool and metadata_bool:
-        raise ValueError("Extraction of header and metadata only has to be "
+    elif not content_bool and header_bool and extradata_bool:
+        raise ValueError("Extraction of header and extradata only has to be "
                          "implemented")
-    elif content_bool and not header_bool and metadata_bool:
-        raise ValueError(" Extraction of content and metadata only has to be "
+    elif content_bool and not header_bool and extradata_bool:
+        raise ValueError("Extraction of content and extradata only has to be "
                          "implemented")
     else:
         raise ValueError("No text extracted")
 
 
 def count_computation(path_log, result_directory, content_bool, header_bool,
-                      metadata_bool, stop_words, path_count, path_vocabulary,
+                      extradata_bool, stop_words, path_count, path_vocabulary,
                       max_df, min_df):
     """
     Function to count words
@@ -173,7 +174,7 @@ def count_computation(path_log, result_directory, content_bool, header_bool,
     :param result_directory: string
     :param content_bool: boolean
     :param header_bool: boolean
-    :param metadata_bool: boolean
+    :param extradata_bool: boolean
     :param stop_words: list of strings
     :param path_count: string
     :param path_vocabulary: string
@@ -202,7 +203,7 @@ def count_computation(path_log, result_directory, content_bool, header_bool,
                                  result_directory,
                                  content_bool,
                                  header_bool,
-                                 metadata_bool)
+                                 extradata_bool)
     print("counting process...")
     count_matrix = count_vect.fit_transform(full_text)
     count_matrix = sp.csr_matrix(count_matrix)
@@ -236,6 +237,7 @@ def normalize_matrix(matrix, result_directory, title):
     :return: sparse csr matrix [n_samples, n_features],
              numpy array [n_samples, 1]
     """
+    # TODO improve this function
     sum = np.zeros((matrix.shape[0], 1))
     weight = np.zeros((matrix.shape[0], 1))
     for i in range(matrix.shape[0]):
@@ -262,6 +264,7 @@ def mix_matrices(matrices, weights, vocabularies):
     :param vocabularies: list of lists of strings
     :return: sparse csr matrix [n_samples, n_features], list of strings
     """
+    # TODO improve this function
     l = []
     n_row = None
     n_matrices = len(matrices)
@@ -296,6 +299,7 @@ def stemming_matrix(matrix, features):
     :return: sparse csr matrix [n_samples, n_stem_words], list of string
     """
     # TODO fix unstemming
+    # TODO improve this function
     stemmer = SnowballStemmer("french")
     d_stem = defaultdict(lambda: [])
     d_index = defaultdict(lambda: [])
@@ -343,14 +347,14 @@ def stemming_matrix(matrix, features):
 
 
 def extract_features(path_log, result_directory, content_bool, header_bool,
-                     metadata_bool, french_stopwords):
+                     extradata_bool, french_stopwords):
     """
     Function to extract, combine and save textual features
     :param path_log: string
     :param result_directory: string
     :param content_bool: boolean
     :param header_bool: boolean
-    :param metadata_bool: boolean
+    :param extradata_bool: boolean
     :param french_stopwords: list of strings
     :return: sparse row matrix [n_samples, n_words], dictionary,
              sparse row matrix [n_samples, n_words],
@@ -371,7 +375,7 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               result_directory=result_directory,
                               content_bool=True,
                               header_bool=False,
-                              metadata_bool=False,
+                              extradata_bool=False,
                               stop_words=french_stopwords,
                               path_count=path_count,
                               path_vocabulary=path_vocabulary,
@@ -397,7 +401,7 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               result_directory=result_directory,
                               content_bool=False,
                               header_bool=True,
-                              metadata_bool=False,
+                              extradata_bool=False,
                               stop_words=french_stopwords,
                               path_count=path_count,
                               path_vocabulary=path_vocabulary,
@@ -413,17 +417,17 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
         weights.append(0.25)
         vocabularies.append(features)
         weighting_list.append(weighting)
-    if metadata_bool:
-        print("--- extracting metadata ---")
-        path_count = os.path.join(result_directory, "count_metadata.npz")
+    if extradata_bool:
+        print("--- extracting extradata ---")
+        path_count = os.path.join(result_directory, "count_extradata.npz")
         path_vocabulary = os.path.join(result_directory,
-                                       "token_vocabulary_metadata")
+                                       "token_vocabulary_extradata")
         count_matrix, vocab = \
             count_computation(path_log=path_log,
                               result_directory=result_directory,
                               content_bool=False,
                               header_bool=False,
-                              metadata_bool=True,
+                              extradata_bool=True,
                               stop_words=french_stopwords,
                               path_count=path_count,
                               path_vocabulary=path_vocabulary,
@@ -431,7 +435,7 @@ def extract_features(path_log, result_directory, content_bool, header_bool,
                               min_df=2)
         print("normalization...")
         matrix, weighting = normalize_matrix(count_matrix, result_directory,
-                                             "count_metadata_normalized")
+                                             "count_extradata_normalized")
         print("count shape :", matrix.shape)
         features = get_ordered_features(path_vocabulary)
         print("number of unique word :", len(features), "\n")
@@ -527,13 +531,13 @@ def compute_knn(matrix, result_directory):
     return knn
 
 
-def main(content_bool, header_bool, metadata_bool, n_topics, n_top_words,
+def main(content_bool, header_bool, extradata_bool, n_topics, n_top_words,
          nltk_path, result_directory, path_log):
     """
     Function to run all the script
     :param content_bool: boolean
     :param header_bool: boolean
-    :param metadata_bool: boolean
+    :param extradata_bool: boolean
     :param n_topics: integer
     :param n_top_words: integer
     :param nltk_path: string
@@ -564,38 +568,39 @@ def main(content_bool, header_bool, metadata_bool, n_topics, n_top_words,
                          result_directory,
                          content_bool,
                          header_bool,
-                         metadata_bool,
+                         extradata_bool,
                          french_stopwords)
     features = dict_to_list(d_features)
 
     # fit models
-    nmf, w = compute_nmf(tfidf,
-                         n_topics,
-                         features,
-                         n_top_words,
-                         result_directory)
-    knn = compute_knn(w, result_directory)
-    return count_matrix, d_features, tfidf, weighting_list, nmf, w, knn
+    # nmf, w = compute_nmf(tfidf,
+    #                      n_topics,
+    #                      features,
+    #                      n_top_words,
+    #                      result_directory)
+    # knn = compute_knn(w, result_directory)
+
+    return count_matrix, d_features, tfidf, weighting_list
 
 if __name__ == "__main__":
 
     # parameters
     content_bool = get_config_tag("content", "text_extraction")
     header_bool = get_config_tag("header", "text_extraction")
-    metadata_bool = get_config_tag("metadata", "text_extraction")
+    extradata_bool = get_config_tag("extradata", "text_extraction")
     n_topics = get_config_tag("n_topics", "text_extraction")
     n_top_words = get_config_tag("n_top_words", "text_extraction")
 
     # paths
     nltk_path = get_config_tag("nltk", "text_extraction")
     result_directory = get_config_tag("result", "cleaning")
-    path_log = os.path.join(result_directory, "log_final")
+    path_log = os.path.join(result_directory, "log_final_reduced")
 
     # run code
-    count_matrix, d_features, tfidf, weighting_list, nmf, w, knn = \
+    count_matrix, d_features, tfidf, weighting_list = \
         main(content_bool=content_bool,
              header_bool=header_bool,
-             metadata_bool=metadata_bool,
+             extradata_bool=extradata_bool,
              n_topics=n_topics,
              n_top_words=n_top_words,
              nltk_path=nltk_path,
@@ -605,4 +610,4 @@ if __name__ == "__main__":
     print("count_matrix shape", count_matrix.shape)
     print("tfidf shape", tfidf.shape)
     print("d_features length", len(d_features))
-    print("w shape", w.shape)
+    # print("w shape", w.shape)

@@ -4,10 +4,12 @@
 
 # libraries
 import os
+import pandas as pd
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+import seaborn as sns
 print("\n")
 
 
@@ -35,6 +37,12 @@ def load_array(l_auc, l_auc_up, l_auc_low, filename, model_directory,
         l_auc_low.append(low)
 
     return l_auc, l_auc_up, l_auc_low
+
+
+def load_array_boxplot(filename, model_directory):
+    path_auc = os.path.join(model_directory, filename)
+    l = np.load(path_auc)
+    return list(l)
 
 
 def plot_axe(ax, x, y, color, linestyle, up, low, marker):
@@ -178,6 +186,177 @@ def graph_auc(result_directory, page, norm, percentile_low, percentile_up, std):
     path = os.path.join(path_png, "auc summary (%s %s).png" % (page, norm))
     plt.savefig(path)
     path = os.path.join(path_svg, "auc summary (%s %s).svg" % (page, norm))
+    plt.savefig(path)
+
+    plt.close("all")
+
+    return
+
+
+def graph_boxplot(result_directory, n_topic, page, norm):
+    # TODO improve this function
+    # paths
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
+    model_directory = os.path.join(result_directory, "model_result")
+
+    # auc nmf
+    filename = "auc_%s_%i_%s_%s_%s_%s.npy" % ("nmf", n_topic, page, "noml",
+                                              norm, "False")
+    l_auc_nmf = load_array_boxplot(filename, model_directory)
+
+    # auc learned nmf
+    filename = "auc_%s_%i_%s_%s_%s_%s.npy" % ("nmf", n_topic, page, "ml",
+                                              norm, "False")
+    l_auc_learned_nmf = load_array_boxplot(filename, model_directory)
+
+    # auc svd
+    filename = "auc_%s_%i_%s_%s_%s_%s.npy" % ("svd", n_topic, page, "noml",
+                                              norm, "False")
+    l_auc_svd = load_array_boxplot(filename, model_directory)
+
+    # auc learned svd
+    filename = "auc_%s_%i_%s_%s_%s_%s.npy" % ("svd", n_topic, page, "ml",
+                                              norm, "False")
+    l_auc_learned_svd = load_array_boxplot(filename, model_directory)
+
+    # plot with violinplot
+    data = pd.DataFrame()
+    auc = []
+    model = []
+    values = [l_auc_nmf, l_auc_learned_nmf, l_auc_svd, l_auc_learned_svd]
+    names = ["NMF", "NMF metric learning", "SVD", "SVD metric learning"]
+    for i in range(len(values)):
+        auc += values[i]
+        l = [names[i]] * len(values[i])
+        model += l
+    data["auc"] = auc
+    data["model"] = model
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.set_facecolor('white')
+    ax.axvline(x=0, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.2, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.4, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.6, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.8, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=1, color='grey', linestyle='--', linewidth=0.8)
+    ax.set_xlim(left=-0.1, right=1.1)
+    sns.set_context("paper")
+    sns.violinplot(x="auc",
+                   y="model",
+                   hue=None,
+                   data=data,
+                   order=reversed(names),
+                   hue_order=None,
+                   bw='scott',
+                   cut=0,
+                   scale='width',
+                   scale_hue=True,
+                   gridsize=100,
+                   width=0.8,
+                   inner=None,
+                   split=False,
+                   orient="h",
+                   linewidth=None,
+                   color=None,
+                   palette=None,
+                   saturation=0.8,
+                   ax=ax)
+    ax.set_xlabel("AUC", fontsize=15)
+    ax.yaxis.label.set_visible(False)
+    plt.text(0, 3.9, "bad reuse \nprediction", fontsize=9,
+             multialignment='center')
+    plt.text(0.825, 3.9, "good reuse \nprediction", fontsize=9,
+             multialignment='center')
+    plt.axvline(x=0.3, linewidth=2, color="red")
+    plt.tight_layout()
+
+    # save figures
+    path = os.path.join(path_jpeg, "boxplot auc (%s %s %i).jpeg" % (page, norm,
+                                                                    n_topic))
+    plt.savefig(path)
+    path = os.path.join(path_pdf, "boxplot auc (%s %s %i).pdf" % (page, norm,
+                                                                  n_topic))
+    plt.savefig(path)
+    path = os.path.join(path_png, "boxplot auc (%s %s %i).png" % (page, norm,
+                                                                  n_topic))
+    plt.savefig(path)
+    path = os.path.join(path_svg, "boxplot auc (%s %s %i).svg" % (page, norm,
+                                                                  n_topic))
+    plt.savefig(path)
+
+    # compare n_topics
+    values = []
+    names = []
+    for n_topic in [5, 10, 15, 20, 25, 30, 40, 50]:
+        # get data
+        filename = "auc_%s_%i_%s_%s_%s_%s.npy" % ("svd", n_topic, page, "ml",
+                                                  norm, "False")
+        values.append(load_array_boxplot(filename, model_directory))
+        names.append("%i topics" % n_topic)
+    data = pd.DataFrame()
+    auc = []
+    model = []
+    for i in range(len(values)):
+        auc += values[i]
+        l = [names[i]] * len(values[i])
+        model += l
+    data["auc"] = auc
+    data["model"] = model
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.set_facecolor('white')
+    ax.axvline(x=0, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.2, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.4, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.6, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=0.8, color='grey', linestyle='--', linewidth=0.8)
+    ax.axvline(x=1, color='grey', linestyle='--', linewidth=0.8)
+    ax.set_xlim(left=-0.1, right=1.1)
+    sns.set_context("paper")
+    sns.violinplot(x="auc",
+                   y="model",
+                   hue=None,
+                   data=data,
+                   order=reversed(names),
+                   hue_order=None,
+                   bw='scott',
+                   cut=0,
+                   scale='width',
+                   scale_hue=True,
+                   gridsize=100,
+                   width=0.8,
+                   inner=None,
+                   split=False,
+                   orient="h",
+                   linewidth=None,
+                   color=None,
+                   palette=None,
+                   saturation=0.8,
+                   ax=ax)
+    ax.set_xlabel("AUC", fontsize=15)
+    ax.yaxis.label.set_visible(False)
+    plt.text(0, 8.3, "bad reuse \nprediction", fontsize=9,
+             multialignment='center')
+    plt.text(0.825, 8.3, "good reuse \nprediction", fontsize=9,
+             multialignment='center')
+    plt.axvline(x=0.3, linewidth=2, color="red")
+    plt.tight_layout()
+
+    # save figures
+    path = os.path.join(path_jpeg, "boxplot auc topics(%s %s SVD).jpeg" % (
+        page, norm))
+    plt.savefig(path)
+    path = os.path.join(path_pdf, "boxplot auc topics(%s %s SVD).pdf" % (
+        page, norm))
+    plt.savefig(path)
+    path = os.path.join(path_png, "boxplot auc topics(%s %s SVD).png" % (
+        page, norm))
+    plt.savefig(path)
+    path = os.path.join(path_svg, "boxplot auc topics(%s %s SVD).svg" % (
+        page, norm))
     plt.savefig(path)
 
     plt.close("all")
@@ -491,6 +670,9 @@ def main(result_directory, up, low, std):
     for model in ["nmf", "svd"]:
         for page in ["page", "nopage"]:
             graph_auc_norm(result_directory, model, page, low, up, std)
+
+    # boxplot graph
+    graph_boxplot(result_directory, 20, "nopage", "l2")
 
     return
 

@@ -4,10 +4,59 @@
 
 # libraries
 import os
+import shutil
 import pandas as pd
 from collections import defaultdict
 from toolbox.utils import get_config_tag
 print("\n")
+
+
+def remove_temporary(directory):
+    """
+    Function to remove the temporary directories from the file directory.
+
+    Parameters
+    ----------
+    directory: str
+        Path of the file directory
+
+    Returns
+    -------
+    """
+    print("closed temporary directories", "\n")
+
+    for file in os.listdir(directory):
+        path = os.path.join(directory, file)
+        if os.path.isfile(path):
+            pass
+        else:
+            if file[0:3] == "tmp":
+                shutil.rmtree(path)
+    return
+
+
+def refactor_extension(row):
+    """
+    Function to rename extension values
+    :param row: row from a pandas Dataframe
+    :return: string
+    """
+    if row["extension"] == "text/plain":
+        return "csv"
+    elif row["extension"] == "application/CDFV2-unknown":
+        return "cdfv2"
+    elif row["extension"] == "application/octet-stream":
+        return "other"
+    elif row["extension"] in ["application/vnd.ms-excel",
+                              "application/vnd.openxmlformats-officedocument."
+                              "spreadsheetml.sheet"]:
+        return "excel"
+    elif row["extension"] == "text/xml":
+        return "xml"
+    elif row["extension"] == "application/zip":
+        return "zipfile"
+    else:
+        return row["extension"]
 
 
 def collect_cleaning_metadata(log_directory):
@@ -114,6 +163,7 @@ def merge_metadata_cleaned(df_log, df_log_download, path_log, path_log_reduced):
              'nb_uniq_visitors_page', 'nb_visits_page', 'nb_hits_page',
              'reuses_page', 'reuses', 'n_reuses']
     df = df[names]
+    df["extension"] = df.apply(func=refactor_extension, axis=1)
 
     # we shape a reduced dataframe
     names_reduced = ['matrix_name', 'file_name', 'source_file',
@@ -235,8 +285,8 @@ def merge_metadata_error(df_log_download, df_error, path_error):
              'nb_visits_page', 'nb_hits_page', 'reuses_page', 'reuses',
              'n_reuses',
              'size_file']
-
     df = df[names]
+    df["extension"] = df.apply(func=refactor_extension, axis=1)
 
     df.to_csv(path_error, sep=";", encoding="utf-8", index=False, header=True)
 
@@ -248,8 +298,20 @@ def merge_metadata_error(df_log_download, df_error, path_error):
 def main(general_directory, result_directory):
 
     # paths
+    cleaned_data_directory = os.path.join(result_directory, "data_fitted")
     error_log_directory = os.path.join(result_directory, "error_cleaning")
     log_directory = os.path.join(result_directory, "log_cleaning")
+    extradata_directory = os.path.join(result_directory, "extradata_cleaning")
+
+    # remove the temporary directories
+    remove_temporary(cleaned_data_directory)
+    print("total number of files cleaned (excel sheets included) :",
+          len(os.listdir(cleaned_data_directory)))
+    print("total number of files saved in the log :",
+          len(os.listdir(log_directory)))
+    print("total number of extra data :", len(os.listdir(extradata_directory)))
+    print("total number of failures :", len(os.listdir(error_log_directory)),
+          "\n")
 
     # we collect the metadata from the cleaning process
     df_log = collect_cleaning_metadata(log_directory)
@@ -262,7 +324,6 @@ def main(general_directory, result_directory):
     # merge the metadata for the cleaned files
     path_log = os.path.join(result_directory, "log_final")
     path_log_reduced = os.path.join(result_directory, "log_final_reduced")
-
     df, df_reduced = merge_metadata_cleaned(df_log, df_log_download, path_log,
                                             path_log_reduced)
 

@@ -351,6 +351,8 @@ def plain(filename, input_directory, output_directory, log_directory,
 
         # encoding
         encoding = detect_encoding(path)
+        if encoding is None:
+            encoding = "utf-8"
 
         # sample
         sample, full_sample, threshold_n_col = get_sample(
@@ -445,7 +447,7 @@ def excel(filename, input_directory, output_directory, log_directory,
         wb = copy(rb_edited)
         wb.save(temp_path)
         for sheet in sheets:
-            out_filename = "__".join([dict_result["matrix_name"],
+            out_filename = "__".join([filename,
                                       sheet.replace("/", "--")])
             if os.path.isfile(os.path.join(output_directory, out_filename)):
                 continue
@@ -824,6 +826,9 @@ def save_results(df, output_directory, extradata_directory, log_directory,
     """
     Function to save results (dataframe and metadata)
     """
+    dict_result["matrix_name"] = dict_result["matrix_name"].replace(" ", "_")
+    dict_result["file_name"] = dict_result["file_name"].replace(" ", "_")
+
     path = os.path.join(output_directory, dict_result["matrix_name"])
 
     if os.path.isfile(path):
@@ -996,7 +1001,7 @@ def explore_json(json):
         if key_contents is not None:
             return contents, " ".join(extradata)
 
-    return None, None
+    return None, ""
 
 
 def explore_json_deep(json, deepness):
@@ -1032,7 +1037,8 @@ def explore_json_deep(json, deepness):
                 return data, extradata + " " + " ".join(l_extradata)
             else:
                 l_extradata.append(str(json[key]))
-    return None, None
+
+    return None, ""
 
 
 def clean_json(path):

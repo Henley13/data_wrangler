@@ -1,0 +1,199 @@
+Integration of heterogeneous datasets
+=====================================
+
+
+Introduction (1 page)
+---------------------
+
+Describe the context of the study. There are as many different ways to store and structure data as there are producers. However crossing data could potentially provide a high value.
+
+(Example?)
+
+A brief description of the related formal problem with some citations:
+- record linkage
+- foreign key discovery
+- semantic analysis and topic extraction 
+
+A brief description of our strategy:
+- build a file embedding and compute the distances between the tables
+- Relations with word embedding/topic modelling and metric learning models
+
+
+An application to Open Data (3 pages)
+-------------------------------------
+
+Explain what is an open data, describe data.gouv.fr and the notion of reuse. Then present our final results
+
+         |---------------------|
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |---------------------|
+
+         fig : neighborhood example x 3
+
+What is at stake in terms of statistical modelization?
+- the topic modeling
+- to learn a pertinent distance/metric
+
+We choose to predict the reuses in order to shape the problem as a supervised one. Why is it pertinent? It allows us to compare different methods/problems.
+
+
+The pipeline (10 pages)
+-----------------------
+
+         |---------------------|
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |---------------------|
+
+         fig : global pipeline
+
+Collect the metadata
+
+Download the data
+
+Clean the data
+- csv files (example)
+- excel files (example)
+- json and geojson files (example)
+
+(Show some python function / pseudo algorithm)
+
+Merge metadata about files and reuses
+
+Extract textual content and preprocess it
+
+(Explain the stemmization, the lemmization and the TFIDF matrix)
+
+Extract topics
+
+(Explain the NMF and SVD algorithm)
+
+Learn metric
+
+(Explain the mahalanobis matrix and the LSML algorithm)
+
+Neighbors recommendation
+
+(Explain the KNN)
+
+
+The results (10 pages)
+----------------------
+
+Explain the attempt to validate the results (cross validation, AUC) and the optimization of the parameters. 
+
+         |---------------------|
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |---------------------|
+
+         fig : second part of the pipeline
+
+Give a definition of the AUC and the precision recall curve. Explain the 
+
+         |---------------------|
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |---------------------|
+
+         fig : precision recall curve
+
+Describe the cleaned files extracted and the word clouds built. Show a comparison of efficiency between the different metrics/configurations.
+
+         |---------------------|
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |---------------------|
+
+         fig : dsitribution of the cleaned files
+
+         |---------------------|
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |---------------------|
+
+         fig : wordclouds
+
+         |---------------------|
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |---------------------|
+
+         fig : gridsearch
+
+Present the best configuration and explain what the three first examples tell us about the efficiency and the limits of our method.
+
+         |---------------------|
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |                     |
+         |---------------------|
+
+         fig : neighbors x 3
+
+(An anecdote)
+
+
+Discussion (3 pages)
+--------------------
+
+Discuss the limitations due to the employed method and the data itself. 
+- a limited cleaning process
+- a questionable notion of reuse
+- a small number of reuses gathering files from different pages
+- too many reuses gathering the file from the same page (at least many reuses with too much important weight in the process)
+- a cross validation including the reuses would be better
+
+Present the future work:
+- exploit the geographical data (geojson)
+- foreign key mining and record linkage over the closest files
+- integrate the pipeline to a UI (data.gouv.fr?)
+
+
+Conclusion (1/2 page)
+---------------------
+
+Sum up the work in few sentences.
+What could be the potential impact? (give Trifacta as an example)
+
+
+Bibliography
+------------
+
+
+Annexes
+-------
+
+Code and graphs
