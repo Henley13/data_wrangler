@@ -16,6 +16,7 @@
 \usepackage{cleveref}
 \crefname{algocf}{alg.}{algs.}
 \Crefname{algocf}{Algorithm}{Algorithms}
+\usepackage{amsmath}
 
 %\setlength{\parindent}{0pt}
 
@@ -178,11 +179,11 @@
 	
 	\subsection{Build a file embedding}
 	
-	Once we have enough tables, with extradata for some of them, the third step consist in building a file embedding. That means we want to represent our files within a vectorial space in order to easily compute distances between files, and group them by cluster. We define a pretext task, predict a reuse between two files, to validate our process and determine if our embedding represent our corpus efficiently: two files reused together should be close in our space. 
+	Once we have enough tables, with extradata for some of them, the third step consist in building a file embedding. That means we want to represent our files within a vectorial space in order to easily compute distances between files, and group them by cluster. We define a pretext task, predict a reuse between two files, to validate our process and determine if our embedding represent the corpus efficiently: two files reused together should be close in our space. 
 	
 	\paragraph{Text data preprocessing}
 	
-	As we mainly base our file embedding on textual content, a preprocessing step is decisive. As every cleaned table is saved as a text file, the goal is to adequately count and weight words occurrences.
+	We mainly use the textual content of the files to determine if it worths to reused them together or not. Thus a preprocessing step is decisive. As every cleaned table is saved as a text file, the goal is to adequately count and weight words occurrences. 
 	
 	We distinguish three parts for a cleaned file: the content of table, its header row and some extradata (in a separate file). Thus, the first time-consuming task includes creating three different $N_{files} \times N_{words}$ occurrence count matrices with $N_{files}$ the number of files and $N_{words}$ the number of different words. This tokenization process is executed with \emph{CountVectorizer} function of \emph{sklearn} library. For each matrix, we normalize its rows, so that the sum of each row returns the same value. This penalizes large files with a lot of textual content. Normalizing the three matrices separately also emphasizes header and extradata, two parts with generally a lower but nonetheless quite pertinent textual content. Ultimately we mix the three matrices such that,
 	
@@ -279,29 +280,71 @@
 	
 	\paragraph{Metric learning}
 	
-	In practice, the previous step is enough to build an efficient file embedding.
-
-	\begin{equation}
-		M = L^{T}.L
-	\end{equation}
+	In practice, the previous unsupervised step is enough to build an efficient file embedding. For a certain $N_{topics}$, words clusters could form homogeneous topics which are even interpretable. Any Euclidean distance between two files would be synonymous of similarity. Two files close in $W$ would have the same semantic structure, the same textual content. This is a first step toward reuse prediction. Indeed, it's pertinent to reuse similar files in order to increase data volume. Our goal is to go further in the analysis, to see if metric learning could yet improve the way we interpret distances. We want to base reuse prediction on more than just similarity. With a supervised metric learning algorithm, the idea is to learn from the existing reuses the potential of crossing two files weighted in two strictly different, but yet complementary, topics.
 	
-	under the constraints $M \succeq 0$.
+	Let's consider two files represented in a topic space by two vectors $x$ and $y$. A distance can be computed between them, using for example the quadratic norm
+	
+	\begin{align}
+	\begin{split}
+	||x - y||^2_2 &= \sum_{i=1}^{N_{topics}}(x_i - y_i)^2\\ 
+				  &= (x - y)^T(x - y)
+	\end{split}
+	\end{align}
+	
+	However, we can assign a different weight for each dimension, such that
+	
+	\begin{align}
+	\begin{split}
+	||x - y||^2_w &= \sum_{i=1}^{N_{topics}}w_i\times(x_i - y_i)^2, \quad w_i \geq 0 \: \forall i\\
+			 	  &= (x - y)^Tdiag(w)(x - y)
+	\end{split}
+	\end{align}
+	
+	With a more generally form we have
+	
+	\begin{align}
+	\begin{split}
+	||x - y||^2 = (x - y)^TM(x - y), \quad M \succeq 0
+	\end{split}
+	\end{align}
+	
+	For $z = x - y$ and we define $\tilde{z} = M^{\frac{1}{2}}z$, so
+	
+	\begin{align}
+	\begin{split}
+	||\tilde{z}||^2_2 &= z^T(M^{\frac{1}{2}})^TM^{\frac{1}{2}}z\\
+					  &= z^TMz\\
+					  &= ||z||^2
+	\end{split}
+	\end{align}
+	
+	The matrix $M$ is called Mahalanobis matrix, such that $M = L^TL$ with $L = M^{\frac{1}{2}}$. The aim of a metric learning algorithm is to compute $M$ and its factor $L$. Thus we can apply the latter as a transformation matrix to convert any multidimensional difference between two files $(x - y)$. Standard Euclidean distances can then be easily computed from the new transformed vector $L(x - y)$. It amounts to weight each feature (or dimension) and combination of features.
+	
+	One big advantage of this method is the possibility to use a supervised framework. Thus, the Mahalanobis matrix is computed such that the transformation matrix $L$ moves reused files closer within our learned metric space. To do that, we use a \ac{LSML} algorithm from the \emph{metric\_learn} library.
 	
 	\paragraph{\acf{LSML}}
+
+	This algorithm uses pairs' label to learned the Mahalanobis matrix $M$ from constraints. The latters are defined as relative comparisons. For example, the distance between two reused files A and B is supposed to be smaller than the distance between two non reused files C and D. Contrary to a usual classification problem, we don't want to class a pair as reusable or not, as this objective seems meaningless. The results we are looking for are only relative.
 	
-	In clustering problems, these pairwise constraints are often translated into Must-Link (a and b are in the same cluster) and Cannot-Link (c and d are in different clusters) constraints. Here, we consider the problem of learning a distance metric from constraints in the form of relative comparisons: “the distance between two objects are greater (or smaller) than the distance between another two objects
+	Let $x_i \in \mathcal{R}^{N_{topics}}$, $\forall i$, we define a set of relative comparison as
 	
 	\begin{equation}
 		\mathcal{C} = \{(x_{a}, x_{b}, x_{c}, x_{d}):d(x_{a}, x_{b}) < d(x_{c}, x_{d})\}
 	\end{equation}
 	
+	and the distance function as a $M$-transformed quadratic norm
+	
 	\begin{equation}
 		d_{M}(x_{i}, x_{j}) = \sqrt{(x_{i} - x_{j})^{T}M(x_{i} - x_{j})}
 	\end{equation}
 	
+	with $M$ the Mahalanobis matrix we want to learn. We also define a Hinge loss
+	
 	\begin{equation}
 		L(d(x_{a}, x_{b}) < d(x_{c}, x_{d})) = H(d_{M}(x_{a}, x_{b}) - d_{M}(x_{c}, x_{d}))
 	\end{equation}
+	
+	where a Hinge function is defined as
 	
 	\begin{equation}
 		H(x) = \begin{cases}
@@ -310,7 +353,15 @@
 			   \end{cases}
 	\end{equation}
 	
+	The loss function is zero when the constraint $\mathcal{C}$ is satisfied, otherwise it's the difference of the new learned distance (the Euclidean distance in the $L$-transformed space). This loss penalizes any learned metric which moves reused pairs away within the vectorial space (and breaks the relative constraint). We also note that the shape of the Hinge function doesn't penalize the matrix $M$ for moving reused pairs too close. Thus the closeness between reused files may be excessive sometimes.
+	
+	Once a proper Mahalanobis matrix is learned from a set of pairs file (reused and not reused), we can directly transform the file embedding $W$ with the transformation matrix $L$. It modifies the weigh of each file through the topics and so its vectorial representation within the topic space.
+	
 	\subsection{Find neighborhood}
+	
+	Once we have a file embedding where distances can be interpreted as a similarity score between files and potential reuse, the fourth step consists in implementing neighbor searches. We look for pertinent groups of files in order to validate the distances between actual reused files. Yet, it would allow us to find files which belong to a cluster of reused files, but no one reused yet.
+	
+	We use the \emph{NearestNeighbors} function from the \emph{sklearn} library to implement neighbor searches. We don't specify the number of neighbors we want. It relies on the local density of points. It's a radius-based neighborhood. Every file within a fixed radius from the targeted file is counted as neighbor. We choose a basic L2 distance, since we already transform our topic space with our transformation matrix $L$. The critical parameter of this step is the radius. Too small, very few neighbors would be assigned to our target. Too big, the algorithm would class noisy files as neighbors. The choice of a pertinent radius is detailed in the next section, along with the optimization of several other parameters.
 	
 	\section{Results and validation}
 	

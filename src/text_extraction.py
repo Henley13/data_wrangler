@@ -298,7 +298,7 @@ def stemming_matrix(matrix, features):
     :param features: list of string (ordered with the right index)
     :return: sparse csr matrix [n_samples, n_stem_words], list of string
     """
-    # TODO fix unstemming
+    # TODO fix unstemming (see sandbox.py)
     # TODO improve this function
     stemmer = SnowballStemmer("french")
     d_stem = defaultdict(lambda: [])

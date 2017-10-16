@@ -47,7 +47,7 @@
 
     content = boolean
     header = boolean
-    metadata = boolean
+    extradata = boolean
     n_topics = integer
     n_top_words = integer
     nltk = string

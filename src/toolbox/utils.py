@@ -70,10 +70,11 @@ def get_path_cachedir(directory):
     return path_cache
 
 
-def check_graph_folders(result_directory):
+def check_graph_folders(result_directory, reset=False):
     """
     Function to check if the folders exist
     :param result_directory: string
+    :param reset: boolean
     :return:
     """
     # paths
@@ -89,6 +90,11 @@ def check_graph_folders(result_directory):
     for path in [path_pdf, path_svg, path_png, path_jpeg]:
         if not os.path.isdir(path):
             os.mkdir(path)
+        elif reset:
+            shutil.rmtree(path)
+            os.mkdir(path)
+        else:
+            pass
 
     return
 
