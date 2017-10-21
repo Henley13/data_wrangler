@@ -899,7 +899,8 @@ def make_wordcloud_vocabulary(result_directory, model_fitted, n_top_words):
     print("wordcloud...", "\n")
 
     # paths
-    path_vocabulary = os.path.join(result_directory, "token_vocabulary_unstem")
+    path_vocabulary = os.path.join(result_directory,
+                                   "token_vocabulary_unstem_bis")
     path_png = os.path.join(result_directory, "graphs", "png")
     path_pdf = os.path.join(result_directory, "graphs", "pdf")
     path_jpeg = os.path.join(result_directory, "graphs", "jpeg")

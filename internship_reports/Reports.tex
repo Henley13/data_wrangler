@@ -17,6 +17,9 @@
 \crefname{algocf}{alg.}{algs.}
 \Crefname{algocf}{Algorithm}{Algorithms}
 \usepackage{amsmath}
+\usepackage{floatrow}
+\usepackage[font=bf]{caption}
+\usepackage{wrapfig}
 
 %\setlength{\parindent}{0pt}
 
@@ -25,6 +28,7 @@
 \newacro{NMF}{Non-negative Matrix Factorization}
 \newacro{SVD}{Singular Value Decomposition}
 \newacro{LSML}{Least Square-residual Metric Learning}
+\newacro{AUC}{Area Under Curve}
 
 \author{Arthur Imbert}
 \title{Integration of heterogeneous datasets}
@@ -365,17 +369,134 @@
 	
 	\section{Results and validation}
 	
-	\subsection{Metrics and experimental framework}
+	We first present here the dataset built at the end of downloading and cleaning steps. Then, we explain how several actions can influence our final results and our file embedding. Our pipeline includes different parameters we need to set up. From the \ac{TFIDF} matrix, a topic extraction model and the number of topics extracted have to be specified to perform a dimensionality reduction. The metric learning process has to be evaluated too, along with the way we compute an affinity score between two files. Hence, we define a cross-validation framework to test different settings and evaluate their pertinence regarding our objective: predict potential reuses. Once we find our optimal parametrization, the best embedding is computed and its related results can be displayed and interpreted.
 	
-	\subsection{Results}
+	\subsection{Downloaded and cleaned files}
 	
-	\subsubsection{Presentation of the data}
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{JSON example}
+	%	\label{fig:json-example}
+	%\end{figure}
 	
-	\subsubsection{Metric comparison}
+	\subsection{Metrics and cross-validation framework}
+	
+	The cross-validation framework starts once we compute the \ac{TFIDF} matrix. It allows us to validate the settings of both the topic extraction and the metric learning processes.
+	
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{JSON example}
+	%	\label{fig:json-example}
+	%\end{figure}
+	
+	For each setting we define a random permutation cross-validation to generate 50 independent train/test datasets. We randomly permute our list of pages before splitting it in two equal parts (a train and a test datasets). Therefore, to be consistent with our reuse information (we collected at the page level), we don't have the same page present both in train and test datasets. Performing it 50 times per setting allows us get a better understanding of the setting consistency through samples variations and randomness.\\
+	
+	We start with a \ac{TFIDF} matrix. In order to optimize our file embedding, we first test the parameters relative to dimensionality reduction: the model for topic extraction (\ac{NMF} or \ac{SVD} algorithm) and the number of topics (20 different levels from 5 to 100). From the random permutation cross-validation result, we split the \ac{TFIDF} matrix in two. We use the train matrix to fit a topic extraction model. We obtain a topic space $W_{train}$, with a lower dimension, and a fitted dictionary we can apply to any other \ac{TFIDF} matrix to reduce its dimension. This is what we do on the \ac{TFIDF} test matrix to get a topic space $W_{test}$. 
+	
+	The second step consists in building X and y vectors from both topic spaces. We don't want to train a supervised classifier model, but only compute an \ac{AUC} with the Precision Recall Curve. This is achieved using \emph{$precision\_recall\_curve$} and \emph{$average\_precision\_score$} functions from \emph{sklearn} library. Considering two files, we need to feed the functions with a probability to reuse them together (X) and a 0-1 label reporting if they have actually been reused together or not (y). From the topic space, we randomly choose pairs of files and compute the multidimensional difference of their vectors. Finally, we use a specific norm (among L1, L2 and infinite norms) to get our score. Usually, a probability close to one predicts a label 1 (in our case the reuse), so to be consistent we take the opposite score. Two distant files in the topic space give a vector with large differences and thus a large score. Considering two distant files, the opposite score allows us to associate a very low (and negative) score to a probable label 0 and conversely. A negative score fits with \emph{sklearn} functions and can replace the probability in this case. We just need it to be increasing. To build $X_{train}$, $y_{train}$, $X_{test}$ and $y_{test}$, we randomly select pairs of files among train and test datasets. We control the ratio of reused pairs and arbitrarily fix it to 30\%. We also set a maximum vector length to $90,000$ pairs in order to save computation time. 
+	
+	Those vectors are used to compare settings to each other by computing an \ac{AUC}. Even if we don't specifically train a model on our pairs, because of our framework, we can validate our settings and compare our association score-label in the same way we would do in a classic binary classification task.
+	The Precision-Recall curve shows precision-recall pairs for different probability thresholds, supposedly returned from a fitted classifier. In our case we replaced the probability by an increasing score. So it's equivalent to decide if two files have been reused based on their affinity score. If it is greater than the threshold, as with a simple binary classifier we \textit{predict} a reuse, otherwise no. By varying the decision threshold, several precision-recall pairs can be estimated such that
+	
+	\[
+	precision = \frac{TP}{TP + FP}
+	\]
+	\[
+	recall = \frac{TP}{TP + FN}
+	\]
+	
+	with $TP$ the number of True Positives (reused pairs correctly predicted), $FP$ the number of False Positives (non reused pairs predicted as reused) and $FN$ the number of False Negatives (reused pairs badly predicted). In our case, the precision describes the ability of a supposed simple binary classifier not to falsely label as reused a pair that haven't been reused together. On the other hand, the recall intuitively measures the ability of this supposed classifier to correctly predict all the reused pairs. Thus, the Precision-recall curve shows a trade-off between our propensity to predict relevant pairs as reused and our capacity to return all the truly reused pairs. Simply said, if the setting of our file embedding returns high recall but low precision, it doesn't discriminate enough the non reused files and tends to makes too many files close. On the opposite, if it returns high precision but low recall, it makes very few files close, but most of them are actually reused. The \emph{$average\_precision\_score$} then compute the \ac{AUC}, between 0 and 1. A high \ac{AUC} means a simultaneous high precision and recall: our file embedding presents many clusters which actually gathers reused files. By shuffling the labels we can even simulate random predictions. In this case, the \ac{AUC} is supposed to return the fraction of reused pairs, namely 0.3 (as we previously fixed it while building X).\\
+		
+	With such a framework, we can already test both topic extraction models for different number of topics. We can even switch the norm used to compute the affinity score from X and compare the different \ac{AUC} returned. A last parameter need to be tested: the choice to learn a new metric or not. We use the multidimensional differences from $X_{train}$ (before we compute a one-dimensional score with it) and $y_{train}$ in order to train a \ac{LSML} model. It returns a transformation matrix L we can directly apply to $W_{test}$ or $X_{test}$ before computing the affinity score to get $X_{test}^{ML}$.\\
+	
+	In practice, we parallelize this cross-validation framework at the topic extraction level to speed up the computation. We define 40 unique settings (20 different number of topics tested with \ac{NMF} and \ac{SVD} models). For each setting, a worker computes 50 times the full cross-validation pipeline. Each run returns 9 different \ac{AUC}. For the three possible norms (L1, L2 and infinite), the worker compute an regular \ac{AUC}, one based on random prediction and one with $X_{test}^{ML}$. With the parametrization related to topic extraction, we finally test 360 different settings using a cross-validation framework. For each of them, we collect 50 \ac{AUC} value in order to analyze its distribution and evaluate its efficiency.
+	
+	\subsection{Results}	
+	
+	After comparing 360 different settings, we can compare them and choose an optimal parametrization to build our file embedding from the full \ac{TFIDF} matrix. Some results are then presented, in relation to the topics themselves, the topic space and its ability to form pertinent clusters or associations between files.
+	
+	\subsubsection{Optimal parametrization}
+	
+	%\begin{wrapfigure}[nombre de lignes]{placement}{largeur de l'image en cm}
+	%	\includegraphics[width=largeur en cm]{votre image}	
+	%\end{wrapfigure}
+	%Votre paragraphe, sans saut de ligne entre \end et le paragraphe
+	
+	%tableau~\ref{fig:topics-comparison}
+	
+	A first information is that almost all settings are performing better than a random prediction. Their lowest percentiles are generally above 0.3, the chance level (confirmed empirically, see annexe). As we can see in the annexe, it seems that the best results in term of \ac{AUC} value are found for 20 topics or more. We fix the number of topics to 25 at first, in order to compare the models and the norms used. Then we search the optimal number of topics considering the best model and norm.\\
+	
+	\begin{figure}[]
+		\minipage{0.48\textwidth}
+		\includegraphics[width=\linewidth]{images/"boxplot auc models (nopage l2 25)".pdf}
+		\label{fig:gridsearch-models}
+		\subcaption{Models comparison}
+		\endminipage\hfill
+		\minipage{0.48\textwidth}
+		\includegraphics[width=\linewidth]{images/"boxplot auc norms (nopage 25)".pdf}
+		\label{fig:gridsearch-norms}
+		\subcaption{Norms comparison}
+		\endminipage
+		\caption{AUC computed for norms and models comparison}
+		\floatfoot{Note: Both figures are computed with 25 topics. On the left, figure a used a L2 norm. On the right, figure b shows result with a metric learned.}
+		\label{fig:gridsearch}
+		\ref{fig:gridsearch}
+	\end{figure}
+
+	According to the figure~\ref{fig:gridsearch} every norm seems to have approximatively the same median \ac{AUC} around 0.45. This parameter does not impact so much our result. However, L1 and L2 norms clearly have higher minimum values for the \ac{AUC} around 0.32. We choose to use L2 norm for the rest of the study. Firstly, it presents a higher minimum \ac{AUC} than L1 norm when it's combined with a \ac{NMF} model. Secondly, it's consistent with the theoretical presentation of the Mahalanobis matrix section 4 and contrary to infinite and L1 norm, it's a smoother function. We can notice that every \ac{AUC} computed with the three norms perform at least just above the random prediction level.
+	
+	Concerning the best topic extraction model to choose, we set a \ac{NMF} model which present a slightly better $25^{th}$ percentile than \ac{SVD} model when then are combined with a learned metric. In this precise configuration, both models don't really differ from each other. However without metric learning, \ac{NMF} model can even present results worse than the chance. According to the overall distribution of the returned \ac{AUC}, we can notice the small but clear impact of metric learning as it improves the reuse recognition.
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width = .5\linewidth, height = .5\linewidth]{images/"boxplot auc topics(nopage l2 NMF)".pdf}
+		\caption{AUC computed for different number of topics}
+		\floatfoot{Note: The L2 norm is used, along with NMF model and a learned metric.}
+		\ref{fig:topics-comparison}
+		\label{fig:topics-comparison}
+	\end{figure}	
+	
+	Setting the L2 norm, the use of a \ac{NMF} model to build a first topic space and then its transformation by a Mahalanobis matrix, we compare the \ac{AUC} computed for different dimensionality reduction amplitudes. According to the figure~\ref{fig:topics-comparison} results start being interesting from 20 topics. With a smaller number of topics, we loose too much information to do better than chance. The best precision-recall pairs seems to be obtained with 25 topics. It return a median \ac{AUC} of 0.45 and a $75^{th}$ percentile just below 0.5. More topics still gives correct results until 100, but with no serious improvement. Moreover, a large number of topics reduces the interest of a dimensionality reduction. Our matrix $W$ is returned so sparse than some topics are quasi null. That is why we keep 25 topics to ensure the simplest, but yet efficient settings to build our file embedding.
 	
 	\subsubsection{Topics and Wordclouds}
 	
+	We now compute our file embedding with 25 topics through a \ac{NMF} algorithm. We also trained a Mahalanobis matrix to learn a metric and transform the topic space. 
+	
+	\begin{figure}[]
+		\minipage{0.48\textwidth}
+		\includegraphics[width=\linewidth]{images/"precision recall curve (nmf nopage l2 ml 25)".pdf}
+		\label{fig:prc-gridsearch}
+		\subcaption{50 curves from the cross-validation step}
+		\endminipage\hfill
+		\minipage{0.48\textwidth}
+		\includegraphics[width=\linewidth]{images/"precision recall curve".pdf}
+		\label{fig:prc-best}
+		\subcaption{Best file embedding}
+		\endminipage
+		\caption{Precision-recall curve}
+		\floatfoot{Note: The red dot cross represents the balance chosen between precision and recall.}
+		\label{fig:prc}
+		\ref{fig:prc}
+	\end{figure}
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width = .5\linewidth, height = .5\linewidth]{images/"distance distribution violin plot".pdf}
+		\caption{Cosine distance distribution in the best file embedding}
+		\ref{fig:distance-distribution}
+		\label{fig:distance-distribution}
+	\end{figure}
+	
 	\subsubsection{Reuse prediction}
+	
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{}
+	%	\caption{JSON example}
+	%	\label{fig:json-example}
+	%\end{figure}
 	
 	% boxplot sur leurs résultats
 	% de l'anecdote
@@ -385,6 +506,10 @@
 	\subsection{Limitations}
 	
 	% NMF uniqueness
+	% NMF non convex
+	% dataset
+	% reuse volume
+	% reuse - similarity
 	
 	\subsection{Problems}
 	
@@ -393,7 +518,7 @@
 	\section{Conclusion}	
 	
 	% 3 phrases pour résumer
-	% impact potentiel applicati et fondamental
+	% impact potentiel application et fondamental
 	
 	
 	% \bibliographystyle{alpha}
@@ -406,9 +531,20 @@
 	
 	% http://web.cs.ucla.edu/~weiwang/paper/ICDM12.pdf
 	
+	
+	
 	\section{Annexes}
 	
 	% list of variables collected as metadata via the API
+	% pseudo algorithm
+	% gridsearch plot
+	% wordcloud plot
 	
+	%\begin{figure}
+	%	\centering
+	%	\includegraphics[width = .9\linewidth]{images/"auc summary (nopage l2)".pdf}
+	%	\caption{JSON example}
+	%	\label{fig:json-example}
+	%\end{figure}
 	
 \end{document}
