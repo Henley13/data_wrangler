@@ -770,8 +770,15 @@ def plot_prc(result_directory, model, page, norm, learn, n_topic):
     average_auc = np.nanmean(l_auc)
 
     # plot
+    with plt.style.context("seaborn-white"):
+        plt.rcParams["axes.edgecolor"] = "0.15"
+        fig, ax = plt.subplots(figsize=(5, 5))
     fig, ax = plt.subplots(figsize=(5, 5))
     ax.set_facecolor('white')
+    ax.spines['bottom'].set_color('black')
+    ax.spines['top'].set_color('black')
+    ax.spines['left'].set_color('black')
+    ax.spines['right'].set_color('black')
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
 
@@ -784,7 +791,8 @@ def plot_prc(result_directory, model, page, norm, learn, n_topic):
         (precision, recall, threshold) = (prc["precision"], prc["recall"],
                                           prc["threshold"])
         try:
-            ax.step(recall, precision, color='steelblue', alpha=0.2, where='post')
+            ax.step(recall, precision, color='steelblue', alpha=0.2,
+                    where='post')
             ax.fill_between(recall, precision, step='post', alpha=0.05,
                             color='lightblue')
         except TypeError:
@@ -793,6 +801,7 @@ def plot_prc(result_directory, model, page, norm, learn, n_topic):
     ax.set_ylabel("Precision", fontsize=15)
     ax.set_title("Precision-Recall curve: average AUC={0:0.2f}".format(
         average_auc), fontsize=15)
+
     plt.tight_layout()
 
     # save figures

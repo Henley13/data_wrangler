@@ -292,7 +292,7 @@ def plot_distribution_distance(result_directory, df_log, w):
                    scale_hue=True,
                    gridsize=100,
                    width=0.8,
-                   inner=None,
+                   inner="quartile",
                    split=False,
                    orient="h",
                    linewidth=None,

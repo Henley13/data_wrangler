@@ -1,0 +1,91 @@
+i_target : 14360
+number of neighbors : 8
+#################################
+target : 7c0f4da7-37ee-479e-85fe-6d9438f78cb1
+--- source file : 7c0f4da7-37ee-479e-85fe-6d9438f78cb1
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2014)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+#################################
+
+neighbors : 48b2dd82-caae-401c-8dbc-da46ad8b68b8
+--- source file : 48b2dd82-caae-401c-8dbc-da46ad8b68b8
+--- distance : 0.0410623051053
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2015)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+--- common reuse : False
+------------------------------------------
+
+neighbors : dbf0b7b3-0326-407c-8947-750b3ec7d8a4
+--- source file : dbf0b7b3-0326-407c-8947-750b3ec7d8a4
+--- distance : 0.0346554943487
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2015)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+--- common reuse : False
+------------------------------------------
+
+neighbors : d2601d3a-aaa9-4b73-a0db-a15097d3fc04
+--- source file : d2601d3a-aaa9-4b73-a0db-a15097d3fc04
+--- distance : 0.0343848481504
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2015)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+--- common reuse : False
+------------------------------------------
+
+neighbors : ec3c63c5-5f8c-4719-891b-d9f339c33976
+--- source file : ec3c63c5-5f8c-4719-891b-d9f339c33976
+--- distance : 0.0381197589938
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2015)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+--- common reuse : False
+------------------------------------------
+
+neighbors : 439e7921-0b62-445e-b567-0b8834fc0572
+--- source file : 439e7921-0b62-445e-b567-0b8834fc0572
+--- distance : 0.03527993985
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2015)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+--- common reuse : False
+------------------------------------------
+
+neighbors : 0cbce83e-fda6-43c4-882d-fc1da6c36702
+--- source file : 0cbce83e-fda6-43c4-882d-fc1da6c36702
+--- distance : 0.0311457598086
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2015)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+--- common reuse : False
+------------------------------------------
+
+neighbors : ef9fbba9-96bd-497c-bcea-2abd169f136d
+--- source file : ef9fbba9-96bd-497c-bcea-2abd169f136d
+--- distance : 0.0538332024406
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2014)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+--- common reuse : False
+------------------------------------------
+
+neighbors : c8df5866-be8a-4a57-b56a-d8886eb3b688
+--- source file : c8df5866-be8a-4a57-b56a-d8886eb3b688
+--- distance : 0.0567849809436
+--- page : Rapport d'observations définitives des chambres régionales et territoriales des comptes (2014)
+--- producer : Cour des comptes
+--- extension : xml
+--- tags : collectivites_locales collectivites_territoriales juridiction juridictions_financieres observations_definitives rod texte_integral
+--- common reuse : False
+------------------------------------------
+

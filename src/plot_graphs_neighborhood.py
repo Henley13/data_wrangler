@@ -7,6 +7,7 @@ import os
 import pandas as pd
 import numpy as np
 import joblib
+import shutil
 from tqdm import tqdm
 from collections import defaultdict
 from sklearn.neighbors import NearestNeighbors
@@ -274,7 +275,7 @@ def all_neighbors(result_directory, df_log, w, neigh):
     return df
 
 
-def information_neighbors(i_target, df_log, distances, indices):
+def information_neighbors(i_target, df_log, distances, indices, paths):
     # target information
     print("#################################")
     print("target :", df_log.at[i_target, "matrix_name"])
@@ -304,10 +305,62 @@ def information_neighbors(i_target, df_log, distances, indices):
                 print("--- common reuse :", False)
             print("-----------------------------------------------", "\n")
 
+    for path in paths:
+        filename = os.path.join(path, "log %s" % str(i_target))
+        with open(filename, mode="at", encoding="utf-8") as f:
+            f.write("#################################" + "\n")
+            f.write("target : " +
+                    str(df_log.at[i_target, "matrix_name"]) + "\n")
+            f.write("--- source file : " +
+                    str(df_log.at[i_target, "source_file"]) + "\n")
+            f.write("--- page : " +
+                    str(df_log.at[i_target, "title_page"]) + "\n")
+            f.write("--- producer : " +
+                    str(df_log.at[i_target, "title_producer"]) + "\n")
+            f.write("--- extension : " +
+                    str(df_log.at[i_target, "extension"]) + "\n")
+            f.write("--- tags : " +
+                    str(df_log.at[i_target, "tags_page"]) + "\n")
+            f.write("#################################" + "\n")
+            f.write("\n")
+            for i in range(len(indices)):
+                indice = indices[i]
+                if indice != i_target:
+                    f.write("neighbors : " +
+                            str(df_log.at[indice, "matrix_name"]) + "\n")
+                    f.write("--- source file : " +
+                            str(df_log.at[indice, "source_file"]) + "\n")
+                    f.write("--- distance : " +
+                            str(distances[i]) + "\n")
+                    f.write("--- page : " +
+                            str(df_log.at[indice, "title_page"]) + "\n")
+                    f.write("--- producer : " +
+                            str(df_log.at[indice, "title_producer"]) + "\n")
+                    f.write("--- extension : " +
+                            str(df_log.at[indice, "extension"]) + "\n")
+                    f.write("--- tags : " +
+                            str(df_log.at[indice, "tags_page"]) + "\n")
+                    neighbors_reuse = split_str(df_log.at[indice, "reuses"])
+                    if len(set(target_reuse).intersection(neighbors_reuse)) > 0:
+                        f.write("--- common reuse : True" + "\n")
+                    else:
+                        f.write("--- common reuse : False" + "\n")
+                    f.write("------------------------------------------" + "\n")
+                    f.write("\n")
+
     return
 
 
-def describe_one_file(df_log, w, neigh, i_target, null_distance):
+def describe_one_file(result_directory, df_log, w, neigh, i_target,
+                      null_distance):
+    # paths
+    path_png = os.path.join(result_directory, "graphs", "png", "plot_neighbors")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf", "plot_neighbors")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg",
+                             "plot_neighbors")
+    path_svg = os.path.join(result_directory, "graphs", "svg", "plot_neighbors")
+    paths = [path_png, path_pdf, path_jpeg, path_svg]
+
     # get information for a specific file
     target = w[i_target].reshape(1, -1)
     distances, indices = find_neighbors(neigh, target)
@@ -321,9 +374,19 @@ def describe_one_file(df_log, w, neigh, i_target, null_distance):
         distances = l
         indices = k
     all_indices = indices + [i_target]
+
+    # log file
+    for path in paths:
+        filename = os.path.join(path, "log %s" % str(i_target))
+        with open(filename, mode="wt", encoding="utf-8") as f:
+            f.write("i_target : " + str(i_target))
+            f.write("\n")
+            f.write("number of neighbors : " + str(len(indices)))
+            f.write("\n")
+
     print("i_target :", i_target)
     print("number of neighbors :", len(indices), "\n")
-    information_neighbors(i_target, df_log, distances, indices)
+    information_neighbors(i_target, df_log, distances, indices, paths)
     print()
     print("############################################################")
     print("############################################################", "\n")
@@ -381,8 +444,8 @@ def plot_template_target(result_directory, x, y, xlabel, ylabel, filename,
                               radius, color='darkorange', alpha=0.3)
         ax.add_patch(circle_1)
 
-    ax.set_xlabel(xlabel, fontsize=15)
-    ax.set_ylabel(ylabel, fontsize=15)
+    ax.set_xlabel(xlabel, fontsize=10)
+    ax.set_ylabel(ylabel, fontsize=10)
 
     plt.tight_layout()
 
@@ -406,10 +469,10 @@ def plot_topic_space_reduced(result_directory, w_3d, variance_3d):
     plot_template_target(result_directory,
                          x=w_3d[:, 0],
                          y=w_3d[:, 1],
-                         xlabel="1st component (%f%% variance explained)" %
-                                round(variance_3d[0], 3),
-                         ylabel="2nd component(%f%% variance explained)" %
-                                round(variance_3d[1], 3),
+                         xlabel="1st component (%s%% variance explained)" %
+                                str(round(variance_3d[0] * 100, 3)),
+                         ylabel="2nd component(%s%% variance explained)" %
+                                str(round(variance_3d[1] * 100, 3)),
                          filename="acp_1_2",
                          color="steelblue",
                          marker="x")
@@ -418,10 +481,10 @@ def plot_topic_space_reduced(result_directory, w_3d, variance_3d):
     plot_template_target(result_directory,
                          x=w_3d[:, 1],
                          y=w_3d[:, 2],
-                         xlabel="2nd component (%f%% variance explained)" %
-                                round(variance_3d[1], 3),
-                         ylabel="3rd component(%f%% variance explained)" %
-                                round(variance_3d[2], 3),
+                         xlabel="2nd component (%s%% variance explained)" %
+                                str(round(variance_3d[1] * 100, 3)),
+                         ylabel="3rd component(%s%% variance explained)" %
+                                str(round(variance_3d[2] * 100, 3)),
                          filename="acp_2_3",
                          color="steelblue",
                          marker="x")
@@ -430,10 +493,10 @@ def plot_topic_space_reduced(result_directory, w_3d, variance_3d):
     plot_template_target(result_directory,
                          x=w_3d[:, 0],
                          y=w_3d[:, 2],
-                         xlabel="1st component (%f%% variance explained)" %
-                                round(variance_3d[0], 3),
-                         ylabel="3rd component(%f%% variance explained)" %
-                                round(variance_3d[2], 3),
+                         xlabel="1st component (%s%% variance explained)" %
+                                str(round(variance_3d[0] * 100, 3)),
+                         ylabel="3rd component(%s%% variance explained)" %
+                                str(round(variance_3d[2] * 100, 3)),
                          filename="acp_1_3",
                          color="steelblue",
                          marker="x")
@@ -448,20 +511,20 @@ def plot_pca_neighborhood(w_reduced, reused_pairs, dict_page, indices, i_target,
     for pair in reused_pairs:
         loc_i, loc_j = pair[0], pair[1]
         ax.plot([loc_i[x], loc_j[x]], [loc_i[y], loc_j[y]], linestyle='-',
-                linewidth=1, alpha=0.1, c="darkorange")
+                linewidth=1, alpha=1, c="darkorange")
 
     for cluster_page in dict_page:
         indices_cluster = dict_page[cluster_page]
         w_cluster_page = w_reduced[indices_cluster]
         if cluster_page == id_page_target:
-            ax.scatter(w_cluster_page[:, x], w_cluster_page[:, y],
-                       s=45, c="firebrick", marker="D")
+            ax.scatter(w_cluster_page[:, x], w_cluster_page[:, y], s=60,
+                       c="firebrick", marker="D")
         else:
-            ax.scatter(w_cluster_page[:, x], w_cluster_page[:, y], s=40,
+            ax.scatter(w_cluster_page[:, x], w_cluster_page[:, y], s=50,
                        marker="x")
 
     i_w_target = len(all_indices) - 1
-    ax.scatter(w_reduced[i_w_target, x], w_reduced[i_w_target, y], s=50,
+    ax.scatter(w_reduced[i_w_target, x], w_reduced[i_w_target, y], s=70,
                c="firebrick", marker="o")
     circle_1 = plt.Circle((w_reduced[i_w_target, x],
                            w_reduced[i_w_target, y]),
@@ -484,6 +547,23 @@ def plot_pca_neighborhood(w_reduced, reused_pairs, dict_page, indices, i_target,
     return
 
 
+def create_specific_neighbors_directory(result_directory):
+    # paths
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
+
+    # create a distinct directory
+    for path in [path_png, path_pdf, path_jpeg, path_svg]:
+        new_path = os.path.join(path, "plot_neighbors")
+        if os.path.exists(new_path):
+            shutil.rmtree(new_path)
+        os.mkdir(new_path)
+
+    return
+
+
 def graph_neighbors_3d_local(result_directory, df_log, w, indices,
                              i_target, radius, filename):
     # paths
@@ -494,6 +574,7 @@ def graph_neighbors_3d_local(result_directory, df_log, w, indices,
 
     # get data
     id_page_target = df_log.at[i_target, "id_page"]
+    title_page_target = df_log.at[i_target, "title_page"]
     all_indices = indices + [i_target]
 
     # apply local pca in three dimensions
@@ -518,7 +599,7 @@ def graph_neighbors_3d_local(result_directory, df_log, w, indices,
 
     # gather the neighbors by page
     d_indices_page = defaultdict(lambda: [])
-    for i_w in range(indices):
+    for i_w in range(len(indices)):
         indice_i = indices[i_w]
         id_page_neighbor = df_log.at[indice_i, "id_page"]
         d_indices_page[id_page_neighbor].append(i_w)
@@ -527,6 +608,8 @@ def graph_neighbors_3d_local(result_directory, df_log, w, indices,
     fig = plt.figure(figsize=(10, 10))
     ax1 = plt.subplot2grid((2, 2), (0, 0))
     ax1.set_facecolor('white')
+    ax2 = plt.subplot2grid((2, 2), (0, 1))
+    ax2.set_facecolor('white')
     ax3 = plt.subplot2grid((2, 2), (1, 0), sharex=ax1)
     ax3.set_facecolor('white')
     ax4 = plt.subplot2grid((2, 2), (1, 1), sharey=ax3)
@@ -541,8 +624,8 @@ def graph_neighbors_3d_local(result_directory, df_log, w, indices,
                           radius=radius,
                           id_page_target=id_page_target,
                           ax=ax1,
-                          xlabel=None,
-                          ylabel=None,
+                          xlabel="Component 1",
+                          ylabel="Component 3",
                           x=0,
                           y=2)
 
@@ -555,8 +638,8 @@ def graph_neighbors_3d_local(result_directory, df_log, w, indices,
                           radius=radius,
                           id_page_target=id_page_target,
                           ax=ax3,
-                          xlabel=None,
-                          ylabel=None,
+                          xlabel="Component 1",
+                          ylabel="Component 2",
                           x=0,
                           y=1)
 
@@ -569,21 +652,43 @@ def graph_neighbors_3d_local(result_directory, df_log, w, indices,
                           radius=radius,
                           id_page_target=id_page_target,
                           ax=ax4,
-                          xlabel=None,
-                          ylabel=None,
+                          xlabel="Component 3",
+                          ylabel="Component 2",
                           x=2,
                           y=1)
 
+    a = ax2.scatter(0, 0, s=60, c="firebrick", marker="D",
+                    label="target page")
+    b = ax2.scatter(0, 0, s=70, c="firebrick", marker="o",
+                    label="target file")
+    c = ax2.scatter(0, 0, s=50, marker="x", c="black", label="other neighbors")
+    title = title_page_target.split(" ")
+    n = 0
+    for i in range(len(title)):
+        if i % 4 == 0 and i != 0:
+            title.insert(i + n, "\n")
+    title = " ".join(title)
+    ax2.legend(loc="center", borderpad=2, fontsize=15).set_title(
+        title, prop={'size': 'large'})
+    for obj in [a, b, c]:
+        obj.set_visible(False)
+    ax2.axes.get_xaxis().set_visible(False)
+    ax2.axes.get_yaxis().set_visible(False)
+    ax2.axis('off')
     plt.tight_layout()
 
     # save figures
-    path = os.path.join(path_jpeg, "kneighbors pca 3d %s.jpeg" % filename)
+    path = os.path.join(path_jpeg, "plot_neighbors", "kneighbors pca 3d %s.jpeg"
+                        % filename)
     plt.savefig(path)
-    path = os.path.join(path_pdf, "kneighbors pca 3d %s.pdf" % filename)
+    path = os.path.join(path_pdf, "plot_neighbors", "kneighbors pca 3d %s.pdf"
+                        % filename)
     plt.savefig(path)
-    path = os.path.join(path_png, "kneighbors pca 3d %s.png" % filename)
+    path = os.path.join(path_png, "plot_neighbors", "kneighbors pca 3d %s.png"
+                        % filename)
     plt.savefig(path)
-    path = os.path.join(path_svg, "kneighbors pca 3d %s.svg" % filename)
+    path = os.path.join(path_svg, "plot_neighbors", "kneighbors pca 3d %s.svg"
+                        % filename)
     plt.savefig(path)
 
     plt.close("all")
@@ -632,7 +737,7 @@ def main(result_directory, d_best, min_precision, targeted_files,
     graph_precision_recall(auc, recall, precision, i_radius)
 
     # find all neighborhoods
-    all_neighbors(result_directory, df_log, w, neigh)
+    # all_neighbors(result_directory, df_log, w, neigh)
 
     # get a 2D plan from the topic space
     (w_reduced_2d, variance_explained_2d, w_reduced_3d,
@@ -642,10 +747,13 @@ def main(result_directory, d_best, min_precision, targeted_files,
     plot_topic_space_reduced(result_directory, w_reduced_3d,
                              variance_explained_3d)
 
+    # reset new directories for neighbors plots
+    create_specific_neighbors_directory(result_directory)
+
     # get information for a specific file
     for i_target in targeted_files:
-        indices, distances = describe_one_file(df_log, w, neigh, i_target,
-                                               null_distance)
+        indices, distances = describe_one_file(result_directory, df_log, w,
+                                               neigh, i_target, null_distance)
 
         # plot neighbors 3D
         graph_neighbors_3d_local(result_directory, df_log, w, indices,
@@ -668,7 +776,9 @@ if __name__ == "__main__":
     d_best["norm"] = "l2"
     d_best["n_topics"] = 25
     min_precision = 0.5
-    i_target = [1000]
+    i_target = [3855, 3874, 18351, 18344, 18350, 20032, 5309, 20283, 20223,
+                20182, 19074, 19090, 19091, 19075, 7901, 22566, 15356, 15005,
+                14360, 5556]
     null_distance = False
 
     # run

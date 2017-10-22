@@ -29,6 +29,7 @@
 \newacro{SVD}{Singular Value Decomposition}
 \newacro{LSML}{Least Square-residual Metric Learning}
 \newacro{AUC}{Area Under Curve}
+\newacro{PCA}{Principal Component Analysis}
 
 \author{Arthur Imbert}
 \title{Integration of heterogeneous datasets}
@@ -84,7 +85,7 @@
 	
 	Before any analyze, we build our dataset. From the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}, we collect quantities of metadata. It generally includes an URL address where the file is stored. We then directly download as many files as possible. For each file downloaded, we try to clean it such as we can display its content in a tabular form.
 	
-	At that point, we start the analysis. Firstly by preprocessing files' textual content. The result consists in a \ac{TFIDF} matrix. It allows us to weight word occurrences within our corpus according to their importance for each file. Secondly by building a vectorial topic space to represent every files (a file embedding) and based on the \ac{TFIDF} matrix. This also includes an optimization step where we compare two topic extraction algorithms - \ac{NMF} and \ac{SVD} - along with different configurations. Thirdly by looking for closest neighbors in this "topic space", in order to interpret distances within the embedding. Using a pretext task (the prediction of a reuse between pairs of files) and a metric learning algorithm, \ac{LSML}, we also try to strengthen our file embedding and the interpretation of its clusters.
+	At that point, we start the analysis. Firstly by preprocessing files' textual content. The result consists in a \ac{TFIDF} matrix. It allows us to weight word occurrences within our corpus according to their importance for each file. Secondly by building a vectorial topic space to represent every files (a file embedding) and based on the \ac{TFIDF} matrix. This also includes an optimization step where we compare two topic extraction algorithms - \ac{NMF} and \ac{SVD} - along with different configurations. Thirdly by looking for closest neighbors in this "topic space", in order to interpret distances within the embedding. Using a pretext task (the suggestion of a reuse between pairs of files) and a metric learning algorithm, \ac{LSML}, we also try to strengthen our file embedding and the interpretation of its clusters.
 	
 	%\begin{figure}
 	%	\centering
@@ -101,7 +102,7 @@
 	
 	As described above, the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} offers us the opportunity to easily collect a numerous files from different French public organizations. A RESTful API exists in the website. It allows us to get, from a HTTP request, several metadata about more than 25000 pages. These include producer's identity, a description of the page's content, some related tags, the different files belonging to the page and, the most important, an URL for each file\footnote{A more detailed description of metadata is given in annexes}. 
 	
-	Some URL lead us to another website which host files, some directly launch the download of file. We only focus on the latters. It already represents around 60000 URL.
+	Some URL lead us to another website which host files, some directly launch the download of file. We only focus on the latters. It already represents around 70000 URL.
 	
 	\paragraph{Download data}
 	
@@ -225,7 +226,7 @@
 	
 	\paragraph{Topic modeling}
 	
-	At that point, with \ac{TFIDF} matrix we already have a representation of files within a very high-dimensional vectorial space. Topic modeling can be defined as a dimensionality reduction technique. We use it to reveal a hidden semantic structure in our corpus. We then expect that the topics produced are clusters of similar words. After dimensionality reduction, a file should be interpreted as a mixture of topics. Our aim is to compute a $N_{files} \times N_{topics}$ matrix $W$, with $N_{topics}$ the number of topics (in our case, an integer to choose between 5 and 100). During the internship we used two different topic modeling algorithms: \ac{NMF} and \ac{SVD}. They basically factorize the \ac{TFIDF} matrix into the product of $W$, which represents files within topic space, and a $N_{topics} \times N_{words}$ matrix $H$, which represents topics within word space.
+	At that point, with \ac{TFIDF} matrix we already have a representation of files within a very high-dimensional vectorial space. Topic modeling can be defined as a dimensionality reduction technique. We use it to reveal a hidden semantic structure in our corpus. We then expect that the topics produced are clusters of similar words. After dimensionality reduction, a file should be interpreted as a mixture of topics. Our aim is to compute a $N_{files} \times N_{topics}$ matrix $W$, with $N_{topics}$ the number of topics (in our case, an integer to choose between 5 and 100). During the internship we used two different topic modeling algorithms: \ac{NMF} and \ac{SVD}. They basically factorize the \ac{TFIDF} matrix into the product of $W$, which represents files within topic space, and a $N_{topics} \times N_{words}$ matrix $H$, which represents topics within words space.
 	
 	\paragraph{\acf{NMF}}
 		
@@ -369,16 +370,43 @@
 	
 	\section{Results and validation}
 	
-	We first present here the dataset built at the end of downloading and cleaning steps. Then, we explain how several actions can influence our final results and our file embedding. Our pipeline includes different parameters we need to set up. From the \ac{TFIDF} matrix, a topic extraction model and the number of topics extracted have to be specified to perform a dimensionality reduction. The metric learning process has to be evaluated too, along with the way we compute an affinity score between two files. Hence, we define a cross-validation framework to test different settings and evaluate their pertinence regarding our objective: predict potential reuses. Once we find our optimal parametrization, the best embedding is computed and its related results can be displayed and interpreted.
+	We first present here the dataset built at the end of downloading and cleaning steps. Then, we explain how several actions can influence our final results and our file embedding. The pipeline includes different parameters we need to set up. From the \ac{TFIDF} matrix, a topic extraction model and the number of topics extracted have to be specified in order to perform a dimensionality reduction. The metric learning process has to be evaluated too, along with the way we compute an affinity score between two files. Hence, we define a cross-validation framework to test different settings and evaluate their pertinence regarding our objective: suggest potential reuses. Once we find our optimal parametrization, the best embedding is computed and its related results can be displayed and interpreted.
 	
 	\subsection{Downloaded and cleaned files}
+
+	\paragraph{Metadata}
 	
-	%\begin{figure}
-	%	\centering
-	%	\includegraphics[width = .9\linewidth]{}
-	%	\caption{JSON example}
-	%	\label{fig:json-example}
-	%\end{figure}
+	From the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} we collect the metadata of 26856 different pages. Each page comes from an unique producer and deals with a specific topic. Usually, one page hosts several files. Relevant metadata can be collected at the page level, such that associated tags, localization of the data and the most important, the potential reuses of this page. We do not know precisely what are the files from the page that have been reused. So, by definition, every files from the same page present the same information about reuses.
+	
+	\paragraph{Downloaded files}
+	
+	We try to collect as many files as possible. There are 96629 different URL, one per file. However, an URL can lead to a different website (the producer's one) and it requires its own API or scraping algorithm to be downloaded. That is why, we focus on the files we can directly download from \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}, with a request on the URL. There are potentially 71368 available files. During the downloading process, we manage to load 55138 files and store 348GB in INRIA's server named DRAGOSTORAGE. It represents 17798 different pages. The main extensions downloaded are ZIP files (30345) and text files (19096). Other extensions type represent a thousand of occurrences or less (spreadsheets, PDF, XML, HTML, Powerpoint, images, etc.). Almost 99\% of the 16230 failures are \emph{HTTPError}. The main errors are \emph{Error 404: Not Found}, \emph{Error 500: Erreur Interne de Servlet}, \emph{Error 504: Gateway Time-out} or \emph{Error 410: Gone}. Most of the time, as we fail to download the file for external reasons, we can hardly improve our rate of success. Usually, it concerns shapefile (6344), JSON files (5975) or ZIP files (3698).
+	
+	\paragraph{Cleaned files}
+	
+	\begin{figure}[]
+		\minipage{0.48\textwidth}
+		\includegraphics[width=\linewidth]{images/"extension".pdf}
+		\label{fig:Original extension}
+		\subcaption{Extensions}
+		\endminipage\hfill
+		\minipage{0.48\textwidth}
+		\includegraphics[width=\linewidth]{images/"size".pdf}
+		\label{fig:size}
+		\subcaption{Number of rows and columns}
+		\endminipage
+		\caption{Clean files statistics}
+		\label{fig:clean}
+		\ref{fig:clean}
+	\end{figure}
+	
+	The next operation is a cleaning step in order to get matrices (or dataframes) from the downloaded files. We manage to clean 14640 of the 55138 downloaded files (around 27\%). Some of them returned multiple subfiles like the ZIP files. Moreover, concerning the spreadsheets, we store one dataframe per sheet. In total, we get 23112 cleaned dataframes (for 72GB) coming from 9092 different pages. For the rest of the paper, when we refer to cleaned files, we mean these 23112 files. 
+	
+	Figure~\ref{fig:clean} allows us to visualize some statistics about this dataset. We notice that we clean a majority of GEOJSON and XML files: two semi-structured formats. \emph{Other} means the MIME type our algorithm detect is \emph{application/octet-stream}, a generic binary file without precise extension specified. Among the 651 we store, 382 come from an original ZIP file and 252 from an original shapefile. Most of them are For a matter of visualization, as with the left figure, we use a log scale. Most of them are produced by the departmental authorities named \emph{Direction Départementale des Territoires}. The right figure shows a scatter plot with the number of row and columns for each file. The original extension of files appears to have a influence on the result returned. Indeed, files with more rows are mostly originated from a CSV file (green stars). On the contrary, those with more columns are more often originated from spreadsheets (CDFV2 as blue triangles and Excel files as red crosses). However we observe that the two files with the more than 1000 columns come from CSV files. Some files appear to have only one column or one row. It is a imperfect result from the cleaning process. There are 1987 files with only one row, 1358 of them come from a GEOJSON files and 439 from an unidentified binary file (other). The files with only one column are 470 and 458 of them come from an unidentified binary file too. Again, both categories of files are mostly produced by departmental authorities \emph{Direction Départementale des Territoires} as the \emph{other} extension is prominent here.
+	
+	Among the 23112 clean files, 17147 (74\%) have not been reused, 898 (4\%) have been reused once and 4511 (20\%) twice. In \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} 1711 reuses are listed, but only 38\% are concerned with our dataset (646 reuses).	
+	
+	Taking into account all the zipped files and potential subfiles from spreadsheets, we failed to clean 97703 elements. For 51744 of them (53\%), we can't even determine a specific extension and it return a generic binary MIME type (\emph{application/octet-stream} or \emph{other} in our study). The second largest proportion, 41551 files (43\%), is originally detected as a CSV file (or at least as a text file). Most of the errors are due to a failure while we try to extract a proper dataframe from the file (57495 failures), the rest is mostly due to the limits of \emph{chardet} library concerning the encoding inference ()\emph{UnicodeDecodeError}) or an impossibility to read a ZIP file (\emph{BadZipFile}). It is interesting to notice that two kind of producer are overrepresented in the failures: the city of Lyon (\emph{Métropole de Lyon}) with 7411 errors and the well known departmental authorities \emph{Direction Départementale des Territoires}.
 	
 	\subsection{Metrics and cross-validation framework}
 	
@@ -391,13 +419,17 @@
 	%	\label{fig:json-example}
 	%\end{figure}
 	
+	\paragraph{Cross-validation}
+	
 	For each setting we define a random permutation cross-validation to generate 50 independent train/test datasets. We randomly permute our list of pages before splitting it in two equal parts (a train and a test datasets). Therefore, to be consistent with our reuse information (we collected at the page level), we don't have the same page present both in train and test datasets. Performing it 50 times per setting allows us get a better understanding of the setting consistency through samples variations and randomness.\\
 	
 	We start with a \ac{TFIDF} matrix. In order to optimize our file embedding, we first test the parameters relative to dimensionality reduction: the model for topic extraction (\ac{NMF} or \ac{SVD} algorithm) and the number of topics (20 different levels from 5 to 100). From the random permutation cross-validation result, we split the \ac{TFIDF} matrix in two. We use the train matrix to fit a topic extraction model. We obtain a topic space $W_{train}$, with a lower dimension, and a fitted dictionary we can apply to any other \ac{TFIDF} matrix to reduce its dimension. This is what we do on the \ac{TFIDF} test matrix to get a topic space $W_{test}$. 
 	
-	The second step consists in building X and y vectors from both topic spaces. We don't want to train a supervised classifier model, but only compute an \ac{AUC} with the Precision Recall Curve. This is achieved using \emph{$precision\_recall\_curve$} and \emph{$average\_precision\_score$} functions from \emph{sklearn} library. Considering two files, we need to feed the functions with a probability to reuse them together (X) and a 0-1 label reporting if they have actually been reused together or not (y). From the topic space, we randomly choose pairs of files and compute the multidimensional difference of their vectors. Finally, we use a specific norm (among L1, L2 and infinite norms) to get our score. Usually, a probability close to one predicts a label 1 (in our case the reuse), so to be consistent we take the opposite score. Two distant files in the topic space give a vector with large differences and thus a large score. Considering two distant files, the opposite score allows us to associate a very low (and negative) score to a probable label 0 and conversely. A negative score fits with \emph{sklearn} functions and can replace the probability in this case. We just need it to be increasing. To build $X_{train}$, $y_{train}$, $X_{test}$ and $y_{test}$, we randomly select pairs of files among train and test datasets. We control the ratio of reused pairs and arbitrarily fix it to 30\%. We also set a maximum vector length to $90,000$ pairs in order to save computation time. 
+	The second step consists in building X and y vectors from both topic spaces. We don't want to train a supervised classifier model, but only compute an \ac{AUC} with the Precision Recall Curve. This is achieved using \emph{$precision\_recall\_curve$} and \emph{$average\_precision\_score$} functions from \emph{sklearn} library. Considering two files, we need to feed the functions with a probability to reuse them together (X) and a 0-1 label reporting if they have actually been reused together or not (y). From the topic space, we randomly choose pairs of files and compute the multidimensional difference of their vectors. Finally, we use a specific norm (among L1, L2 and infinite norms) to get our score. Usually, a probability close to one predicts a label 1 (in our case the reuse), so to be consistent we take the opposite score. Two distant files in the topic space give a vector with large differences and thus a large score. Considering two distant files, the opposite score allows us to associate a very low (and negative) score to a probable label 0 and conversely. A negative score fits with \emph{sklearn} functions and can replace the probability in this case. We just need it to be increasing. To build $X_{train}$, $y_{train}$, $X_{test}$ and $y_{test}$, we randomly select pairs of files among train and test datasets. We control the ratio of reused pairs and arbitrarily set it to 30\%. We also set a maximum vector length to $90,000$ pairs in order to save computation time. 
 	
-	Those vectors are used to compare settings to each other by computing an \ac{AUC}. Even if we don't specifically train a model on our pairs, because of our framework, we can validate our settings and compare our association score-label in the same way we would do in a classic binary classification task.
+	\paragraph{Precision Recall curve and AUC}
+	
+	The X and y vectors are used to compare settings to each other by computing an \ac{AUC}. Even if we don't specifically train a model on our pairs, because of our framework, we can validate our settings and compare our association score-label in the same way we would do in a classic binary classification task.
 	The Precision-Recall curve shows precision-recall pairs for different probability thresholds, supposedly returned from a fitted classifier. In our case we replaced the probability by an increasing score. So it's equivalent to decide if two files have been reused based on their affinity score. If it is greater than the threshold, as with a simple binary classifier we \textit{predict} a reuse, otherwise no. By varying the decision threshold, several precision-recall pairs can be estimated such that
 	
 	\[
@@ -407,7 +439,7 @@
 	recall = \frac{TP}{TP + FN}
 	\]
 	
-	with $TP$ the number of True Positives (reused pairs correctly predicted), $FP$ the number of False Positives (non reused pairs predicted as reused) and $FN$ the number of False Negatives (reused pairs badly predicted). In our case, the precision describes the ability of a supposed simple binary classifier not to falsely label as reused a pair that haven't been reused together. On the other hand, the recall intuitively measures the ability of this supposed classifier to correctly predict all the reused pairs. Thus, the Precision-recall curve shows a trade-off between our propensity to predict relevant pairs as reused and our capacity to return all the truly reused pairs. Simply said, if the setting of our file embedding returns high recall but low precision, it doesn't discriminate enough the non reused files and tends to makes too many files close. On the opposite, if it returns high precision but low recall, it makes very few files close, but most of them are actually reused. The \emph{$average\_precision\_score$} then compute the \ac{AUC}, between 0 and 1. A high \ac{AUC} means a simultaneous high precision and recall: our file embedding presents many clusters which actually gathers reused files. By shuffling the labels we can even simulate random predictions. In this case, the \ac{AUC} is supposed to return the fraction of reused pairs, namely 0.3 (as we previously fixed it while building X).\\
+	with $TP$ the number of True Positives (reused pairs correctly predicted), $FP$ the number of False Positives (non reused pairs predicted as reused) and $FN$ the number of False Negatives (reused pairs badly predicted). In our case, the precision describes the ability of a supposed simple binary classifier not to falsely label as reused files that have not been reused together. On the other hand, the recall intuitively measures the ability of this supposed classifier to correctly predict all the reused pairs. Thus, the Precision-recall curve shows a trade-off between our propensity to predict relevant pairs as reused and our capacity to return all the truly reused pairs. Simply said, if the setting of our file embedding returns high recall but low precision, it doesn't discriminate enough the non reused files and tends to makes too many files close. On the opposite, if it returns high precision but low recall, it makes very few files close, but most of them are actually reused. The \emph{$average\_precision\_score$} then compute the \ac{AUC}, between 0 and 1. A high \ac{AUC} means a simultaneous high precision and recall: our file embedding presents many clusters which actually gathers reused files. By shuffling the labels we can even simulate random predictions. In this case, the \ac{AUC} is supposed to return the fraction of reused pairs, namely 0.3 (as we previously fixed it while building X).\\
 		
 	With such a framework, we can already test both topic extraction models for different number of topics. We can even switch the norm used to compute the affinity score from X and compare the different \ac{AUC} returned. A last parameter need to be tested: the choice to learn a new metric or not. We use the multidimensional differences from $X_{train}$ (before we compute a one-dimensional score with it) and $y_{train}$ in order to train a \ac{LSML} model. It returns a transformation matrix L we can directly apply to $W_{test}$ or $X_{test}$ before computing the affinity score to get $X_{test}^{ML}$.\\
 	
@@ -418,13 +450,6 @@
 	After comparing 360 different settings, we can compare them and choose an optimal parametrization to build our file embedding from the full \ac{TFIDF} matrix. Some results are then presented, in relation to the topics themselves, the topic space and its ability to form pertinent clusters or associations between files.
 	
 	\subsubsection{Optimal parametrization}
-	
-	%\begin{wrapfigure}[nombre de lignes]{placement}{largeur de l'image en cm}
-	%	\includegraphics[width=largeur en cm]{votre image}	
-	%\end{wrapfigure}
-	%Votre paragraphe, sans saut de ligne entre \end et le paragraphe
-	
-	%tableau~\ref{fig:topics-comparison}
 	
 	A first information is that almost all settings are performing better than a random prediction. Their lowest percentiles are generally above 0.3, the chance level (confirmed empirically, see annexe). As we can see in the annexe, it seems that the best results in term of \ac{AUC} value are found for 20 topics or more. We fix the number of topics to 25 at first, in order to compare the models and the norms used. Then we search the optimal number of topics considering the best model and norm.\\
 	
@@ -445,7 +470,7 @@
 		\ref{fig:gridsearch}
 	\end{figure}
 
-	According to the figure~\ref{fig:gridsearch} every norm seems to have approximatively the same median \ac{AUC} around 0.45. This parameter does not impact so much our result. However, L1 and L2 norms clearly have higher minimum values for the \ac{AUC} around 0.32. We choose to use L2 norm for the rest of the study. Firstly, it presents a higher minimum \ac{AUC} than L1 norm when it's combined with a \ac{NMF} model. Secondly, it's consistent with the theoretical presentation of the Mahalanobis matrix section 4 and contrary to infinite and L1 norm, it's a smoother function. We can notice that every \ac{AUC} computed with the three norms perform at least just above the random prediction level.
+	According to figure~\ref{fig:gridsearch} every norm seems to have approximatively the same median \ac{AUC} around 0.45. This parameter does not impact so much our result. However, L1 and L2 norms clearly have higher minimum values for the \ac{AUC} around 0.32. We choose to use L2 norm for the rest of the study. Firstly, it presents a higher minimum \ac{AUC} than L1 norm when it's combined with a \ac{NMF} model. Secondly, it's consistent with the theoretical presentation of the Mahalanobis matrix section 4 and contrary to infinite and L1 norm, it's a smoother function. We can notice that every \ac{AUC} computed with the three norms perform at least just above the random prediction level.
 	
 	Concerning the best topic extraction model to choose, we set a \ac{NMF} model which present a slightly better $25^{th}$ percentile than \ac{SVD} model when then are combined with a learned metric. In this precise configuration, both models don't really differ from each other. However without metric learning, \ac{NMF} model can even present results worse than the chance. According to the overall distribution of the returned \ac{AUC}, we can notice the small but clear impact of metric learning as it improves the reuse recognition.
 	
@@ -462,7 +487,90 @@
 	
 	\subsubsection{Topics and Wordclouds}
 	
-	We now compute our file embedding with 25 topics through a \ac{NMF} algorithm. We also trained a Mahalanobis matrix to learn a metric and transform the topic space. 
+	All our dataset is now used with the full \ac{TFIDF} matrix. We compute our file embedding with 25 topics through a \ac{NMF} algorithm. We also trained a Mahalanobis matrix to learn a metric and transform the topic space.
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width = .5\linewidth, height = .5\linewidth]{images/"distance distribution violin plot".pdf}
+		\caption{Cosine distance distribution in the best file embedding}
+		\ref{fig:distance-distribution}
+		\label{fig:distance-distribution}
+	\end{figure}
+	
+	\paragraph{Topic space}
+	
+	In the figure~\ref{fig:distance-distribution}, we plot the distribution of distances within our file embedding. Contrary to the X affinity score and \ac{AUC} computation, use a cosine distance. We use the distance implemented in the \emph{scipy} library. The Cosine distance between two vectors u and v is defined by
+	
+	\[
+	Cosine \: distance = 1 - \frac{u.v}{||u||_2||v||_2}
+	\]
+	
+	where $u.v$ is the dot product between u and v. It measures the distance between two non-zero vectors, from $-1$ to $1$. If two vectors have the same direction, whatever magnitude they have, their cosine distance will be 0. The distance is 1 for two orthogonal vectors, a case illustrated for example by two files which do not share any topics. As the distance is independent of the magnitude of the vectors, it is definitely an orientation measure. Cosine distance perfectly fits our (25-dimensional) positive space returned from \ac{NMF} algorithm (and returns distance between 0 and 1). Thus, we interpret it as a measure of how much the subjects the two documents deal with are likely to be close. As it only considers the non-zero dimensions, this distance is still consistent with our sparse date. 
+	
+	The distribution of Cosine distance first shows that files from same extension do not appear to be closer in the embedding. It validates a part of our cleaning process where we return homogeneous dataframes from heterogeneous files with various format. In addition, we specify a list of stop words during in our text processing step to filter some repetitive and non informative words occurring only with specific extensions. For example this is the case with \textit{"featurecollection"}, \textit{"polygon"} or \textit{"geometry"} present in almost every GEOJSON files. Finally we build an embedding consistent with the different extension. Distance between two files seems to be independent of their extension. According to \emph{all} and \emph{other} groups, we can also say that in average files seem quite distant from each other. At least their vectorial representations have different directions within the topic space. An other feature with almost no impact on the distances between files is the share of one or many tags. These are key words provided by the metadata of \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}.
+	
+	On the contrary, for significant proportion of files which come from the same pages or from the same producer we observe closer distances. The amplitude is larger with files sharing the same page. Finally, we the figure~\ref{fig:distance-distribution} shows a higher variance for distances between files reused together. Most of these pairs still present a relative closer distance than what we observe in the rest of the topic space.
+	
+	\paragraph{Wordclouds}
+	
+	An other way to analyze our topic space is to plot wordclouds using \emph{WordCloud} library. Considering our matrix factorization step $TFIDF = W.H$, this time we exploit the matrix $H$ which represents topics within words space. We transposed it and then for each columns (in other words, the topics) we sort the values. We keep the larger ones with their related word and plot one wordcloud per topic. The weight of every word in a topic determines its size in the plot. This is a graphical way to quickly determine which topics show a homogeneous and consistent meaning. Some of them could even be manually labeled. Moreover, we notice that this representation is independent of the metric learning step, as the matrix $H$ is not transformed by the Mahalanobis matrix. Lastly, our previous lemmatization process applied on our textual data, and more specifically in our stems, allows us to plot consistent wordclouds without root forms or redundancies.
+	
+	\begin{figure}[]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 5".pdf}
+		\label{fig:wc-region}
+		\subcaption{Region topic}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 22".pdf}
+		\label{fig:wc-police}
+		\subcaption{Police and criminality topic}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 17".pdf}
+		\label{fig:wc-budget}
+		\subcaption{Budget topic}
+		\endminipage
+		\caption{Three wordcloud topics}
+		\label{fig:wc}
+		\ref{fig:wc}
+	\end{figure}
+
+	We present three examples of homogeneous topics in the figure~\ref{fig:wc}. The left one gathers quasi exclusively geographical words indicating a well known location or a French region. The second one probably comes from a group of police reports. It mostly includes vocabulary about crimes, thefts or burglaries. It is noteworthy that this is one of the most homogeneous and recurrent topics we get, even by reducing dimension to 20 or 30 topics. The third example, on the right, shows a mixed vocabulary with concepts related to budget (\textit{"budget"}, \textit{"gestion"} or \textit{"finance"}) and bureaucracy (\textit{"mission"} or \textit{"dgfip"} for \textit{Direction Générale des Finances publiques}) concepts.
+
+	\begin{figure}[]
+		\includegraphics[width=.5\linewidth]{images/"topic 21".pdf}
+		\caption{Hydrography topic}
+		\label{fig:wc water}
+		\ref{fig:wc water}
+	\end{figure}
+
+	\begin{figure}[]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 21 (extension)".pdf}
+		\label{fig:wc-extension}
+		\subcaption{Extensions weights}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 21 (producer)".pdf}
+		\label{fig:wc-producer}
+		\subcaption{Producers weights}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 21 (tag)".pdf}
+		\label{fig:wc-tag}
+		\subcaption{Tags weights}
+		\endminipage
+		\caption{Sources of the water topic}
+		\label{fig:wc water 2}
+		\ref{fig:wc water 2}
+	\end{figure}
+
+	Most of the wordclouds illustrate a lexical field related to geographical information (land register, high risk area or urban planning). This is mainly due to the prominence of GEOJSON files in our dataset. The next example, from figure~\ref{fig:wc water}, is a topic dealing with hydrography terms (\textit{"etang"}, \textit{"calcaire"} or \textit{"ravine"}). To understand where do the topics come from, we plot additional wordclouds with extension, producer and tags information. We count these information for each file, then we weight this count by the value assigned to the file in matrix $W$ for each topic. It allows us to compute three matrices representing the weights of all extensions, producers and tags within the topics. Figure~\ref{fig:wc water 2} shows the three wordclouds returned for our hydrography topic. As we can observe on the left figure, most of the semantic information comes from GEOJSON files. We also learn that the main producer is \textit{Système d'information sur l'eau}. It is a public service which collects, stores and communicates data about water quality and its uses. So, it is not surprising to see the prominence of some tags like \textit{"environment"}, \textit{$"eaux\_de\_transition\_estuaires"$} or \textit{$"directive\_cadre\_eau"$}.
+	
+	\subsubsection{Reuse prediction}
+	
+	As we can see in appendix, when we plot a \ac{PCA}, some pertinent information seem to be captured along the axes, at least for the three first components. To analyze what kind of files are clustered together in our file embedding we first need to determine such clusters. To define a neighborhood, we do not specify a maximum number of neighbors to identify, but a radius. Every files within the specified range is a neighbor of our target file. If we want to build a recommendation system to suggest potential documents to integrate with our target file, this neighborhood could be returned.
 	
 	\begin{figure}[]
 		\minipage{0.48\textwidth}
@@ -481,29 +589,75 @@
 		\ref{fig:prc}
 	\end{figure}
 	
-	\begin{figure}
-		\centering
-		\includegraphics[width = .5\linewidth, height = .5\linewidth]{images/"distance distribution violin plot".pdf}
-		\caption{Cosine distance distribution in the best file embedding}
-		\ref{fig:distance-distribution}
-		\label{fig:distance-distribution}
+	\paragraph{Precision, recall and radius}
+	
+	If the radius is too small, the neighborhood will be too tight. The rare neighbors would be quasi similar to the target file. If the radius is too large, our neighborhood will capture a lot of noise. To optimize the radius, we use again the Precision-Recall curve. Plotted with all our data and the best setting (see figure~\ref{fig:prc}), we notice our embedding return an \ac{AUC} of 0.46 which is fair knowing that chance level is 0.3. This is exactly the median \ac{AUC} value we got from our 50 folds during the cross-validation step, using the exact same setting. Each precision-recall pair is related to a threshold. The latter discriminates between pairs of files potentially reusable or not, based on their distance in the embedding. As we compute our affinity score X between $-\infty$ and 0 (two closed files have a score equal to zero), thresholds have the same range. To compute a radius (real positive), we just take the opposite. In our case, a loose threshold means a low one and so a very large radius. This defines a huge neighborhood. If it is large enough, it includes all the actual reused files (so recall is 1) and precision tends to the actual ratio of reused files (0.3, according to the way we build X). In figure~\ref{fig:prc} we observe such results on the right of the curve. On the contrary, with a threshold and a radius close to zero, very few neighbors would be kept. In our figure, at the beginning of the curve, it shows a precision of 0.6 and a quasi null recall. We missed almost every potential reuses, but those we find are more often validated (neighbors are just next to our target file in the embedding). We want to be as close as possible of the top right corner to maximize our precision and our recall. The red cross represents our trade-off. With a precision of 0.5, half of the reuse we would predict with a simple binary classifier would be verified. Finally we get a recall greater than 0.6. In average, for every file we target, our algorithm can suggest a neighborhood including at least 60\% of files it has been reused with.
+	
+	\begin{figure}[]
+		\includegraphics[width=.5\linewidth]{images/"boxplot neighbors".pdf}
+		\caption{Neighbors distribution}
+		\floatfoot{Note: Only the file with at least one neighbor are considered for this distribution.}
+		\label{fig:neighbors}
+		\ref{fig:neighbors}
+	\end{figure}
+
+	\paragraph{Neighborhood}
+	
+	Once we choose our best radius, we can fit a \emph{NearestNeighbors} model from \emph{sklearn}. The function \emph{radius\_neighbors} returns indices and distances of every files that lie within a ball of size radius around the targeted file. When we analyze the neighborhoods created, we notice than 7663 of the 23112 files have at least one neighbor. If we plot their distribution (see figure~\ref{fig:neighbors}), we observe a unbalanced shape. Most of the files with a neighborhood have less than 250 neighbors. On the top of the distribution, a group of files seems to share more than 2000 neighbors. Most of them are GEOJSON files. If we only consider the files with at least one neighbor, each neighborhood contains, in average, 143 neighbors and 69 reused pairs. For further analysis, we select some files with an interesting number of neighbors and reuses between these neighbors. 
+
+	\begin{figure}[]
+		\includegraphics[width=.8\linewidth]{images/"kneighbors pca 3d 20032".pdf}
+		\caption{Potential files to reuse together}
+		\floatfoot{Note: A 3-component PCA is applied on the neighborhood define around a file reporting births of horses. Orange relations represent an actual reuse. The orange area is the radius.}
+		\label{fig:pca horse}
+		\ref{fig:pca horse}
 	\end{figure}
 	
-	\subsubsection{Reuse prediction}
+	The first example illustrates the case where the algorithm can suggest potential new reuses. Figure~\ref{fig:pca horse} represents a 3-components PCA performed on the neighborhood of the file \emph{Nombre de naissances d'équidés en France}. Components 1 and 3 are the most interesting. We observe six neighbors, two from the same page than our target file (red diamonds), three from the page \emph{Nombre de juments saillies en France} (blue crosses) and one from the page \emph{Périmètres des pays} (orange crosses). Both pages dealing with horse-riding data (red and blue points) come from the same producer, the French institute of horses and horse-riding. A reuse already exists with our target page about births of horses. However, this neighborhood also suggests us reusing this target page with data about mare mating. Such reuse seems relevant. 
 	
-	%\begin{figure}
-	%	\centering
-	%	\includegraphics[width = .9\linewidth]{}
-	%	\caption{JSON example}
-	%	\label{fig:json-example}
-	%\end{figure}
+	\begin{figure}[]
+		\includegraphics[width=.8\linewidth]{images/"kneighbors pca 3d 20223".pdf}
+		\caption{An already reused neighborhood}
+		\floatfoot{Note: A 3-component PCA is applied on the neighborhood define around a French presidential election report.}
+		\label{fig:pca election}
+		\ref{fig:pca election}
+	\end{figure}
 	
-	% boxplot sur leurs résultats
-	% de l'anecdote
+	The second example illustrates the case where our neighborhood completely fits existing reuses. Figure~\ref{fig:pca election} shows a 3-components PCA on the neighborhood of the file \emph{Elections présidentielles 1965-2012}. We observe 54 neighbors with numerous reuses. Here again, the components 1 and 3 are the more relevant (the second component is even non-informative). The number of reuses if inflated by the fact that the original target page contains several files about French presidential election from 1965 to 2012. However, some reuses includes pages about French legislative election (for the same period). This neighborhood also suggest potential new reuses with data about 1992 referendum for example. Lastly, it includes what we could consider as less relevant: files dealing with driving licenses or emigration.
+
+	\begin{figure}[]
+		\includegraphics[width=.8\linewidth]{images/"kneighbors pca 3d 14360".pdf}
+		\caption{A potential case of data augmentation}
+		\floatfoot{Note: A 3-component PCA is applied on the neighborhood define around a \emph{Cours des Comptes} report.}
+		\label{fig:pca compte}
+		\ref{fig:pca compte}
+	\end{figure}
+
+	The third example illustrates the case where files come from the same producer and deal with the exact same topic. Figure~\ref{fig:pca compte} shows files from \emph{La cours des comptes}, a French administration which issues report about public finance. The target page is named \emph{Rapport d'observations définitives des chambres régionales et territoriales des comptes (2014)}, a budgetary report about regional administrations in 2014. The other reused cluster in the neighborhood is the same report, but for the year 2015. This neighborhood suggests us aggregating the same kind of data, but for different temporal periods. For a potential reuse, it could be a great opportunity to increase the number of sample. 
 	
 	\section{Discussion}
 	
+	Discuss the limitations due to the employed method and the data itself. 
+	- a limited cleaning process
+	- a questionable notion of reuse
+	- a small number of reuses gathering files from different pages
+	- too many reuses gathering the file from the same page (at least many reuses with too much important weight in the process)
+	- a cross validation including the reuses would be better
+	
+	Present the future work:
+	- exploit the geographical data (geojson)
+	- foreign key mining and record linkage over the closest files
+	- integrate the pipeline to a UI (data.gouv.fr?)
+	
 	\subsection{Limitations}
+	
+	\begin{figure}[]
+		\includegraphics[width=.8\linewidth]{images/"kneighbors pca 3d 22566".pdf}
+		\caption{A limit of reuse prediction}
+		\floatfoot{Note: A 3-component PCA is applied on the neighborhood define around the file \emph{Zone d'aide à Finalité Régionale.}}
+		\label{fig:pca aide}
+		\ref{fig:pca aide}
+	\end{figure}
 	
 	% NMF uniqueness
 	% NMF non convex
@@ -511,7 +665,10 @@
 	% reuse volume
 	% reuse - similarity
 	
+	
 	\subsection{Problems}
+	
+	% unsupervised framework => how can we validate
 	
 	\subsection{Future work}
 
@@ -520,18 +677,12 @@
 	% 3 phrases pour résumer
 	% impact potentiel application et fondamental
 	
-	
 	% \bibliographystyle{alpha}
 	% \bibliography{report_biblio.bib}
-	
-	
-	
 	
 	% Lee, Daniel D and Seung, H Sebastian (1999). "Learning the parts of objects by non-negative matrix factorization" (PDF). Nature. 401: 788–791. doi:10.1038/44565.
 	
 	% http://web.cs.ucla.edu/~weiwang/paper/ICDM12.pdf
-	
-	
 	
 	\section{Annexes}
 	
@@ -539,12 +690,13 @@
 	% pseudo algorithm
 	% gridsearch plot
 	% wordcloud plot
+	% acp general plot
 	
 	%\begin{figure}
 	%	\centering
-	%	\includegraphics[width = .9\linewidth]{images/"auc summary (nopage l2)".pdf}
-	%	\caption{JSON example}
-	%	\label{fig:json-example}
+	%	\includegraphics[width = .9\linewidth]{images/"acp_1_2".pdf}
+	%	\caption{PCA component 1 & 2}
+	%	\label{fig:acp12}
 	%\end{figure}
 	
 \end{document}
