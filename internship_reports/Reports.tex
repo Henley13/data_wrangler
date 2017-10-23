@@ -33,14 +33,13 @@
 
 \author{Arthur Imbert}
 \title{Integration of heterogeneous datasets}
-\date{September 2017}
+\date{October 2017}
 
 \begin{document}
 	
 	\maketitle
 	
-	The internship took place in the Parietal team at INRIA
-	(\url{https://team.inria.fr/parietal/}). My supervisors was Ga\"el Varoquaux.
+	The internship took place in the \href{https://team.inria.fr/parietal/}{Parietal} team at INRIA. My supervisors was Ga\"el Varoquaux.
 	
 	\section{Summary}
 	
@@ -100,7 +99,7 @@
 	
 	\paragraph{Collect metadata}
 	
-	As described above, the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} offers us the opportunity to easily collect a numerous files from different French public organizations. A RESTful API exists in the website. It allows us to get, from a HTTP request, several metadata about more than 25000 pages. These include producer's identity, a description of the page's content, some related tags, the different files belonging to the page and, the most important, an URL for each file\footnote{A more detailed description of metadata is given in annexes}. 
+	As described above, the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} offers us the opportunity to easily collect a numerous files from different French public organizations. A RESTful API exists in the website. It allows us to get, from a HTTP request, several metadata about more than 25000 pages. These include producer's identity, a description of the page's content, some related tags, the different files belonging to the page and, the most important, an URL for each file. 
 	
 	Some URL lead us to another website which host files, some directly launch the download of file. We only focus on the latters. It already represents around 70000 URL.
 	
@@ -380,7 +379,7 @@
 	
 	\paragraph{Downloaded files}
 	
-	We try to collect as many files as possible. There are 96629 different URL, one per file. However, an URL can lead to a different website (the producer's one) and it requires its own API or scraping algorithm to be downloaded. That is why, we focus on the files we can directly download from \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}, with a request on the URL. There are potentially 71368 available files. During the downloading process, we manage to load 55138 files and store 348GB in INRIA's server named DRAGOSTORAGE. It represents 17798 different pages. The main extensions downloaded are ZIP files (30345) and text files (19096). Other extensions type represent a thousand of occurrences or less (spreadsheets, PDF, XML, HTML, Powerpoint, images, etc.). Almost 99\% of the 16230 failures are \emph{HTTPError}. The main errors are \emph{Error 404: Not Found}, \emph{Error 500: Erreur Interne de Servlet}, \emph{Error 504: Gateway Time-out} or \emph{Error 410: Gone}. Most of the time, as we fail to download the file for external reasons, we can hardly improve our rate of success. Usually, it concerns shapefile (6344), JSON files (5975) or ZIP files (3698).
+	We try to collect as many files as possible. There are 96629 different URL, one per file. However, an URL can lead to a different website (the producer's one) and it requires its own API or scraping algorithm to be downloaded. That is why, we focus on the files we can directly download from \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}, with a request on the URL. There are potentially 71368 available files. During the downloading process, we manage to load 55138 files and store 348GB in INRIA's server named DRAGOSTORAGE. It represents 17798 different pages. The main extensions downloaded are ZIP files (30345) and text files (19096). Other extensions type represent a thousand of occurrences or less (spreadsheets, PDF, XML, HTML, Powerpoint, images, etc.). Almost 99\% of the 16230 failures are \emph{HTTPError}. The main errors are \emph{Error 404: Not Found}, \emph{Error 500: Erreur Interne de Servlet}, \emph{Error 504: Gateway Time-out} or \emph{Error 410: Gone}. The vast majority concerns shapefile (6344), JSON files (5975) or ZIP files (3698). Most of the time, as we fail to download the file because of external reasons, we can hardly improve our rate of success. Usually, 
 	
 	\paragraph{Cleaned files}
 	
@@ -406,7 +405,7 @@
 	
 	Among the 23112 clean files, 17147 (74\%) have not been reused, 898 (4\%) have been reused once and 4511 (20\%) twice. In \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} 1711 reuses are listed, but only 38\% are concerned with our dataset (646 reuses).	
 	
-	Taking into account all the zipped files and potential subfiles from spreadsheets, we failed to clean 97703 elements. For 51744 of them (53\%), we can't even determine a specific extension and it return a generic binary MIME type (\emph{application/octet-stream} or \emph{other} in our study). The second largest proportion, 41551 files (43\%), is originally detected as a CSV file (or at least as a text file). Most of the errors are due to a failure while we try to extract a proper dataframe from the file (57495 failures), the rest is mostly due to the limits of \emph{chardet} library concerning the encoding inference ()\emph{UnicodeDecodeError}) or an impossibility to read a ZIP file (\emph{BadZipFile}). It is interesting to notice that two kind of producer are overrepresented in the failures: the city of Lyon (\emph{Métropole de Lyon}) with 7411 errors and the well known departmental authorities \emph{Direction Départementale des Territoires}.
+	Taking into account all the zipped files and potential subfiles from spreadsheets, we failed to clean 97703 elements. For 51744 of them (53\%), we can't even determine a specific extension and it return a generic binary MIME type (\emph{application/octet-stream} or \emph{other} in our study). The second largest proportion, 41551 files (43\%), is originally detected as a CSV file (or at least as a text file). Most of the errors are due to a failure while we try to extract a proper dataframe from the file (57495 failures), the rest is mostly due to the limits of \emph{chardet} library concerning the encoding inference ()\emph{UnicodeDecodeError}) or an impossibility to read a ZIP file (\emph{BadZipFile}). It is interesting to notice that two kinds of producer are overrepresented in the failures: the city of Lyon (\emph{Métropole de Lyon}) with 7411 errors and the well known departmental authorities \emph{Direction Départementale des Territoires}.
 	
 	\subsection{Metrics and cross-validation framework}
 	
@@ -451,7 +450,7 @@
 	
 	\subsubsection{Optimal parametrization}
 	
-	A first information is that almost all settings are performing better than a random prediction. Their lowest percentiles are generally above 0.3, the chance level (confirmed empirically, see annexe). As we can see in the annexe, it seems that the best results in term of \ac{AUC} value are found for 20 topics or more. We fix the number of topics to 25 at first, in order to compare the models and the norms used. Then we search the optimal number of topics considering the best model and norm.\\
+	A first information is that almost all settings are performing better than a random prediction. Their lowest percentiles are generally above 0.3, the chance level. As we can see in appendix~\ref{fig:auc summary}, it seems that the best results in term of \ac{AUC} value are found for 20 topics or more. We fix the number of topics to 25 at first, in order to compare the models and the norms used. Then we search the optimal number of topics considering the best model and norm.\\
 	
 	\begin{figure}[]
 		\minipage{0.48\textwidth}
@@ -536,7 +535,7 @@
 		\ref{fig:wc}
 	\end{figure}
 
-	We present three examples of homogeneous topics in the figure~\ref{fig:wc}. The left one gathers quasi exclusively geographical words indicating a well known location or a French region. The second one probably comes from a group of police reports. It mostly includes vocabulary about crimes, thefts or burglaries. It is noteworthy that this is one of the most homogeneous and recurrent topics we get, even by reducing dimension to 20 or 30 topics. The third example, on the right, shows a mixed vocabulary with concepts related to budget (\textit{"budget"}, \textit{"gestion"} or \textit{"finance"}) and bureaucracy (\textit{"mission"} or \textit{"dgfip"} for \textit{Direction Générale des Finances publiques}) concepts.
+	We present three examples of homogeneous topics in the figure~\ref{fig:wc} \footnote{See appendix for the other topics}. The left one gathers quasi exclusively geographical words indicating a well known location or a French region. The second one probably comes from a group of police reports. It mostly includes vocabulary about crimes, thefts or burglaries. It is noteworthy that this is one of the most homogeneous and recurrent topics we get, even by reducing dimension to 20 or 30 topics. The third example, on the right, shows a mixed vocabulary with concepts related to budget (\textit{"budget"}, \textit{"gestion"} or \textit{"finance"}) and bureaucracy (\textit{"mission"} or \textit{"dgfip"} for \textit{Direction Générale des Finances publiques}) concepts.
 
 	\begin{figure}[]
 		\includegraphics[width=.5\linewidth]{images/"topic 21".pdf}
@@ -570,7 +569,7 @@
 	
 	\subsubsection{Reuse prediction}
 	
-	As we can see in appendix, when we plot a \ac{PCA}, some pertinent information seem to be captured along the axes, at least for the three first components. To analyze what kind of files are clustered together in our file embedding we first need to determine such clusters. To define a neighborhood, we do not specify a maximum number of neighbors to identify, but a radius. Every files within the specified range is a neighbor of our target file. If we want to build a recommendation system to suggest potential documents to integrate with our target file, this neighborhood could be returned.
+	As we can see in appendices~\ref{fig:pca12}~\ref{fig:pca13} and~\ref{fig:pca23}, when we plot a \ac{PCA}, some pertinent information seem to be captured along the axes, at least for the three first components. To analyze what kind of files are clustered together in our file embedding we first need to determine such clusters. To define a neighborhood, we do not specify a maximum number of neighbors to identify, but a radius. Every files within the specified range is a neighbor of our target file. If we want to build a recommendation system to suggest potential documents to integrate with our target file, this neighborhood could be returned.
 	
 	\begin{figure}[]
 		\minipage{0.48\textwidth}
@@ -633,70 +632,184 @@
 		\ref{fig:pca compte}
 	\end{figure}
 
-	The third example illustrates the case where files come from the same producer and deal with the exact same topic. Figure~\ref{fig:pca compte} shows files from \emph{La cours des comptes}, a French administration which issues report about public finance. The target page is named \emph{Rapport d'observations définitives des chambres régionales et territoriales des comptes (2014)}, a budgetary report about regional administrations in 2014. The other reused cluster in the neighborhood is the same report, but for the year 2015. This neighborhood suggests us aggregating the same kind of data, but for different temporal periods. For a potential reuse, it could be a great opportunity to increase the number of sample. 
+	The third example illustrates the case where files come from the same producer and deal with the exact same topic. Figure~\ref{fig:pca compte} shows files from \emph{La Cours des Comptes}, a French administration which issues report about public finance. The target page is named \emph{Rapport d'observations définitives des chambres régionales et territoriales des comptes (2014)}, a budgetary report about regional administrations in 2014. The other reused cluster in the neighborhood is the same report, but for the year 2015. This neighborhood suggests us aggregating the same kind of data, but for different temporal periods. For a potential reuse, it could be a great opportunity to increase the number of sample. 
 	
 	\section{Discussion}
 	
-	Discuss the limitations due to the employed method and the data itself. 
-	- a limited cleaning process
-	- a questionable notion of reuse
-	- a small number of reuses gathering files from different pages
-	- too many reuses gathering the file from the same page (at least many reuses with too much important weight in the process)
-	- a cross validation including the reuses would be better
+	This study is need to be read with a critical distance as it involves complex data, unusual methods and laborious problematic. But even so, it makes possible multiple improvements in different area.
 	
-	Present the future work:
-	- exploit the geographical data (geojson)
-	- foreign key mining and record linkage over the closest files
-	- integrate the pipeline to a UI (data.gouv.fr?)
+	\subsection{Limitations and potential improvements}
 	
-	\subsection{Limitations}
+	\paragraph{Data}
 	
-	\begin{figure}[]
-		\includegraphics[width=.8\linewidth]{images/"kneighbors pca 3d 22566".pdf}
-		\caption{A limit of reuse prediction}
-		\floatfoot{Note: A 3-component PCA is applied on the neighborhood define around the file \emph{Zone d'aide à Finalité Régionale.}}
-		\label{fig:pca aide}
-		\ref{fig:pca aide}
-	\end{figure}
+	According to the previous description of the pipeline used to build our dataset, from metadata collection to files cleaning, different kind of failures happened. We do not manage to download and clean all the data listed in \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. Our goal is simply to gather enough data to infer the most relevant statistical results. However, our current dataset presents some limitations. 
 	
-	% NMF uniqueness
-	% NMF non convex
-	% dataset
-	% reuse volume
-	% reuse - similarity
+	Even if we can't correct the wrong URL during the downloading step, some solutions exist to store more data. It might be worth downloading some remote files. For example, the biggest platforms (as the National Institute for Statistics and Economic Studies) would deserve a specific code to collect their data. More generally, additional sources of open data could diversify and enlarge our dataset. This could be done with the World Bank or Eurostat. The latters would provide cleaned files with relevant socio-economic data. Lastly, two prominent and interesting sources of open data are the British and American version of \emph{data.gouv}.
 	
+	Concerning the cleaning step, it might be worth to focus on data produced by the city of Lyon and the recurrent departmental authorities \emph{Direction Départementale des Territoires}. Firstly they are the source of a majority of our cleaning errors. Secondly, even when it does not raise an exception, some of their files are badly cleaned with only one column or on row. Still, it will be difficult to get pass some limits as our cleaning capacity is mainly based on external library such that \emph{chardet} or \emph{magic}. If they fail to detect the encoding or the MIME type, our pipeline become inefficient.
 	
-	\subsection{Problems}
+	Besides limitations and potential improvements of our pipeline, some weaknesses are directly related to the data hosted by \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. Indeed, very few reuses are listed. There are 1711 reuses listed in the platform, but 1390 of them (81\%) concern only one page of data. This makes reuses less relevant to learn how to cross files from different origins.
 	
-	% unsupervised framework => how can we validate
+	\paragraph{Methods}
+	
+	The use of \ac{NMF} algorithm to factorize matrix suffers from a interpretational drawback. According to Donoho and Stodden (2004), the decomposition returned by the algorithm may not be unique. Thus, the result would depend on the initialization and the starting values. If the \ac{TFIDF} evolves too much (by adding new files for example), the topics returned might loose their consistency. 
+	
+	Concerning the metric learning model, a limit can be defined too. As most of the supervised models, it suffers from unbalanced labels. This is clearly our situation as a very low proportion of pairs are actually reused (around 0.01\%). That is why, we make sure to keep 30\% of reused pairs when we build the vectors X and y. This is equivalent to perform an undersampling technique over non reused pairs. Such a method makes features appear with a higher variance than they do.
+	
+	Finally, we notice a potential improvement for the cross-validation framework. Besides the split at the page level to create train and test datasets, one could ensure that a reuse can't be present in both datasets. Formally, it would make the size control of each dataset more difficult. 
+		
+	\paragraph{Problematic}
+	
+	As we said, it might be worth having more reuses. With a majority of reuses concerning only one page fo data, the correlation between reuses and similarity increases. Our embedding learns that a reuse associates most of the time quasi identical files. It's relevant. However, this denies an interesting dimension of the reuse: crossing two files from completely different, but nonetheless complementary topics. More generally, define what could be a true reuse is subtle. For now, our embedding strongly depends on what has been actually done in \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} in term of reuse. This is also our only way to validate if the suggestions returned by our algorithm are relevant or not. Therefore, we certainly miss some reuse opportunities. If a topic has never been reused we could not recognize the potential of related files.
 	
 	\subsection{Future work}
+	
+	With its results and its limits, this study gives us several prospects. Firstly, we can focus on the geographical data and especially on the GEOJSON extension. Using \emph{geopandas} library, we could efficiently parse and manipulate these files. As numerous geographical files are close from each other in huge cluster, being able to infer the geographical area concerned by their data would help us to discriminate them. Secondly, we could perform foreign key mining and record linkage over the closest files in the embedding. Ideally,It would be possible to automatically merge several files once we recognized a common id columns between them. Lastly, the relations and the limits described in this paper could help the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. The pipeline and the suggestions of files returned could even be integrated to an user interface. 
 
 	\section{Conclusion}	
 	
-	% 3 phrases pour résumer
-	% impact potentiel application et fondamental
+	Integrate heterogeneous datasets can bring us to different paths. We choose to approach the problem with a statistical point of view and machine learning tools. 
 	
-	% \bibliographystyle{alpha}
-	% \bibliography{report_biblio.bib}
+	The first task is the building of a relevant dataset, big enough to ensure statistical results. It gives us the opportunity to develop algorithms in order to parse, clean and reshape numerous files on a large scale. The second task is the building of a file embedding, in order to easily compute distances between files and infer relevant relations. This involved unsupervised and supervised technique as matrix factorization or metric learning. A cross-validation pipeline with distinct train and test datasets allows us to control the results and validate any improvement. To fit with learning framework, we define a pretext task: the suggestion of reuses between files. 
 	
-	% Lee, Daniel D and Seung, H Sebastian (1999). "Learning the parts of objects by non-negative matrix factorization" (PDF). Nature. 401: 788–791. doi:10.1038/44565.
+	Finally, we present a study with multiple dimensions. Beyond reuse prediction, it is our capacity to infer relevant information about a file or a group of files that matters. Considering its successes and limits, this work illustrates the growing interest for data wrangling. Some results or problems raised could definitely interest future papers, as volume and diversity of data increase. 
 	
-	% http://web.cs.ucla.edu/~weiwang/paper/ICDM12.pdf
+	\bibliographystyle{abbrv}
+	\bibliography{report_biblio}
 	
-	\section{Annexes}
+	\section{Appendix}
 	
-	% list of variables collected as metadata via the API
-	% pseudo algorithm
-	% gridsearch plot
-	% wordcloud plot
-	% acp general plot
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width = .6\linewidth]{images/"auc summary (nopage l2)".pdf}
+		\caption{Cross-validation results}
+		\label{fig:auc summary}
+	\end{figure}
+
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width = .5\linewidth]{images/"acp_1_2".pdf}
+		\caption{PCA - component 1 and 2}
+		\label{fig:pca12}
+	\end{figure}
 	
-	%\begin{figure}
-	%	\centering
-	%	\includegraphics[width = .9\linewidth]{images/"acp_1_2".pdf}
-	%	\caption{PCA component 1 & 2}
-	%	\label{fig:acp12}
-	%\end{figure}
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width = .5\linewidth]{images/"acp_1_3".pdf}
+		\caption{PCA - component 1 and 3}
+		\label{fig:pca13}
+	\end{figure}
+	
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width = .5\linewidth]{images/"acp_2_3".pdf}
+		\caption{PCA - component 2 and 3}
+		\label{fig:pca23}
+	\end{figure}
+	
+	\begin{figure}[h]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 0".pdf}
+		\subcaption{Topic 0}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 1".pdf}
+		\subcaption{Topic 1}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 2".pdf}
+		\subcaption{Topic 2}
+		\endminipage
+	\end{figure}
+
+	\begin{figure}[h]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 3".pdf}
+		\subcaption{Topic 3}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 4".pdf}
+		\subcaption{Topic 4}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 6".pdf}
+		\subcaption{Topic 6}
+		\endminipage
+	\end{figure}
+
+	\begin{figure}[h]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 7".pdf}
+		\subcaption{Topic 7}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 8".pdf}
+		\subcaption{Topic 8}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 9".pdf}
+		\subcaption{Topic 9}
+		\endminipage
+	\end{figure}
+
+	\begin{figure}[h]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 10".pdf}
+		\subcaption{Topic 10}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 11".pdf}
+		\subcaption{Topic 11}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 12".pdf}
+		\subcaption{Topic 12}
+		\endminipage
+	\end{figure}
+
+	\begin{figure}[h]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 13".pdf}
+		\subcaption{Topic 13}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 14".pdf}
+		\subcaption{Topic 14}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 15".pdf}
+		\subcaption{Topic 15}
+		\endminipage
+	\end{figure}
+
+	\begin{figure}[h]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 16".pdf}
+		\subcaption{Topic 16}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 18".pdf}
+		\subcaption{Topic 18}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 19".pdf}
+		\subcaption{Topic 19}
+		\endminipage
+	\end{figure}
+
+	\begin{figure}[h]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 20".pdf}
+		\subcaption{Topic 20}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 23".pdf}
+		\subcaption{Topic 23}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 24".pdf}
+		\subcaption{Topic 24}
+		\endminipage
+	\end{figure}
 	
 \end{document}

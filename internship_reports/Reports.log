@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016/Debian) (preloaded format=pdflatex 2017.10.21)  22 OCT 2017 19:46
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016/Debian) (preloaded format=pdflatex 2017.10.21)  23 OCT 2017 04:37
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -933,110 +933,106 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-Package microtype Info: Loading generic settings for font family
-(microtype)             `cmtt' (encoding: OT1).
-(microtype)             For optimal results, create family-specific settings.
-(microtype)             See the microtype manual for details.
 Package acronym Info: Label `acro:TFIDF' newly defined as it shall be overridde
 n
-although it is yet undefined on input line 88.
+although it is yet undefined on input line 87.
 Package acronym Info: Label `acro:NMF' newly defined as it shall be overridden
-although it is yet undefined on input line 88.
+although it is yet undefined on input line 87.
 Package acronym Info: Label `acro:SVD' newly defined as it shall be overridden
-although it is yet undefined on input line 88.
+although it is yet undefined on input line 87.
 Package acronym Info: Label `acro:LSML' newly defined as it shall be overridden
 
-although it is yet undefined on input line 88.
+although it is yet undefined on input line 87.
  [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 137.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 136.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 137.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 136.
  [2] [3] [4] [5]
 [6]
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 387.
+               Default added (so using `tbp') on input line 386.
 
-<images/"extension".pdf, id=197, 361.35pt x 361.35pt>
+<images/"extension".pdf, id=188, 361.35pt x 361.35pt>
 File: images/"extension".pdf Graphic file (type pdf)
 
 <use images/"extension".pdf>
-Package pdftex.def Info: images/"extension".pdf used on input line 389.
+Package pdftex.def Info: images/"extension".pdf used on input line 388.
 (pdftex.def)             Requested size: 232.17242pt x 232.17297pt.
- <images/"size".pdf, id=198, 361.35pt x 361.35pt>
+ <images/"size".pdf, id=189, 361.35pt x 361.35pt>
 File: images/"size".pdf Graphic file (type pdf)
 
 <use images/"size".pdf>
-Package pdftex.def Info: images/"size".pdf used on input line 394.
+Package pdftex.def Info: images/"size".pdf used on input line 393.
 (pdftex.def)             Requested size: 232.17242pt x 232.17297pt.
  [7 <./images/extension.pdf> <./images/size.pdf
 
 pdfTeX warning: /usr/bin/pdflatex (file ./images/size.pdf): PDF inclusion: mult
 iple pdfs with page group included in a single page
 >]
-Underfull \hbox (badness 10000) in paragraph at lines 424--425
+Underfull \hbox (badness 10000) in paragraph at lines 423--424
 
  []
 
 Package acronym Info: Label `acro:AUC' newly defined as it shall be overridden
-although it is yet undefined on input line 428.
+although it is yet undefined on input line 427.
 [8]
-Underfull \hbox (badness 10000) in paragraph at lines 442--443
+Underfull \hbox (badness 10000) in paragraph at lines 441--442
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 444--445
+Underfull \hbox (badness 10000) in paragraph at lines 443--444
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 454--455
+Underfull \hbox (badness 10000) in paragraph at lines 453--454
 
  []
 
 [9]
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 456.
+               Default added (so using `tbp') on input line 455.
 
-<images/"boxplot auc models (nopage l2 25)".pdf, id=307, 361.35pt x 361.35pt>
+<images/"boxplot auc models (nopage l2 25)".pdf, id=300, 361.35pt x 361.35pt>
 File: images/"boxplot auc models (nopage l2 25)".pdf Graphic file (type pdf)
 
 <use images/"boxplot auc models (nopage l2 25)".pdf>
 Package pdftex.def Info: images/"boxplot auc models (nopage l2 25)".pdf used on
- input line 458.
+ input line 457.
 (pdftex.def)             Requested size: 232.17242pt x 232.17297pt.
 
-<images/"boxplot auc norms (nopage 25)".pdf, id=308, 361.35pt x 361.35pt>
+<images/"boxplot auc norms (nopage 25)".pdf, id=301, 361.35pt x 361.35pt>
 File: images/"boxplot auc norms (nopage 25)".pdf Graphic file (type pdf)
 
 <use images/"boxplot auc norms (nopage 25)".pdf>
 Package pdftex.def Info: images/"boxplot auc norms (nopage 25)".pdf used on inp
-ut line 463.
+ut line 462.
 (pdftex.def)             Requested size: 232.17242pt x 232.17297pt.
 
-<images/"boxplot auc topics(nopage l2 NMF)".pdf, id=311, 361.35pt x 361.35pt>
+<images/"boxplot auc topics(nopage l2 NMF)".pdf, id=304, 361.35pt x 361.35pt>
 File: images/"boxplot auc topics(nopage l2 NMF)".pdf Graphic file (type pdf)
 
 <use images/"boxplot auc topics(nopage l2 NMF)".pdf>
 Package pdftex.def Info: images/"boxplot auc topics(nopage l2 NMF)".pdf used on
- input line 479.
+ input line 478.
 (pdftex.def)             Requested size: 241.84961pt x 241.84961pt.
 
-<images/"distance distribution violin plot".pdf, id=314, 361.35pt x 361.35pt>
+<images/"distance distribution violin plot".pdf, id=307, 361.35pt x 361.35pt>
 File: images/"distance distribution violin plot".pdf Graphic file (type pdf)
 
 <use images/"distance distribution violin plot".pdf>
 Package pdftex.def Info: images/"distance distribution violin plot".pdf used on
- input line 494.
+ input line 493.
 (pdftex.def)             Requested size: 241.84961pt x 241.84961pt.
  [10 <./images/boxplot auc models (nopage l2 25).pdf> <./images/boxplot auc nor
 ms (nopage 25).pdf
@@ -1052,72 +1048,72 @@ e
 >]
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 518.
+               Default added (so using `tbp') on input line 517.
 
-<images/"topic 5".pdf, id=481, 1003.75pt x 501.875pt>
+<images/"topic 5".pdf, id=474, 1003.75pt x 501.875pt>
 File: images/"topic 5".pdf Graphic file (type pdf)
 
 <use images/"topic 5".pdf>
-Package pdftex.def Info: images/"topic 5".pdf used on input line 520.
+Package pdftex.def Info: images/"topic 5".pdf used on input line 519.
 (pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
 
-<images/"topic 22".pdf, id=482, 1003.75pt x 501.875pt>
+<images/"topic 22".pdf, id=475, 1003.75pt x 501.875pt>
 File: images/"topic 22".pdf Graphic file (type pdf)
 
 <use images/"topic 22".pdf>
-Package pdftex.def Info: images/"topic 22".pdf used on input line 525.
+Package pdftex.def Info: images/"topic 22".pdf used on input line 524.
 (pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
 
-<images/"topic 17".pdf, id=483, 1003.75pt x 501.875pt>
+<images/"topic 17".pdf, id=476, 1003.75pt x 501.875pt>
 File: images/"topic 17".pdf Graphic file (type pdf)
 
 <use images/"topic 17".pdf>
-Package pdftex.def Info: images/"topic 17".pdf used on input line 530.
+Package pdftex.def Info: images/"topic 17".pdf used on input line 529.
 (pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
-
-
-LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 541.
-
-<images/"topic 21".pdf, id=486, 1003.75pt x 501.875pt>
-File: images/"topic 21".pdf Graphic file (type pdf)
-
-<use images/"topic 21".pdf>
-Package pdftex.def Info: images/"topic 21".pdf used on input line 542.
-(pdftex.def)             Requested size: 241.84843pt x 120.91959pt.
  [12 <./images/topic 5.pdf> <./images/topic 22.pdf> <./images/topic 17.pdf>]
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 548.
+               Default added (so using `tbp') on input line 540.
 
-<images/"topic 21 (extension)".pdf, id=498, 1003.75pt x 501.875pt>
+<images/"topic 21".pdf, id=493, 1003.75pt x 501.875pt>
+File: images/"topic 21".pdf Graphic file (type pdf)
+
+<use images/"topic 21".pdf>
+Package pdftex.def Info: images/"topic 21".pdf used on input line 541.
+(pdftex.def)             Requested size: 241.84843pt x 120.91959pt.
+
+
+LaTeX Warning: No positions in optional float specifier.
+               Default added (so using `tbp') on input line 547.
+
+<images/"topic 21 (extension)".pdf, id=495, 1003.75pt x 501.875pt>
 File: images/"topic 21 (extension)".pdf Graphic file (type pdf)
 
 <use images/"topic 21 (extension)".pdf>
 Package pdftex.def Info: images/"topic 21 (extension)".pdf used on input line 5
-50.
+49.
 (pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
 
-<images/"topic 21 (producer)".pdf, id=499, 1003.75pt x 501.875pt>
+<images/"topic 21 (producer)".pdf, id=496, 1003.75pt x 501.875pt>
 File: images/"topic 21 (producer)".pdf Graphic file (type pdf)
 
 <use images/"topic 21 (producer)".pdf>
 Package pdftex.def Info: images/"topic 21 (producer)".pdf used on input line 55
-5.
+4.
 (pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
 
-<images/"topic 21 (tag)".pdf, id=500, 1003.75pt x 501.875pt>
+<images/"topic 21 (tag)".pdf, id=497, 1003.75pt x 501.875pt>
 File: images/"topic 21 (tag)".pdf Graphic file (type pdf)
 
 <use images/"topic 21 (tag)".pdf>
-Package pdftex.def Info: images/"topic 21 (tag)".pdf used on input line 560.
+Package pdftex.def Info: images/"topic 21 (tag)".pdf used on input line 559.
 (pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
 Package acronym Info: Label `acro:PCA' newly defined as it shall be overridden
-although it is yet undefined on input line 573.
+although it is yet undefined on input line 572.
 
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 575.
+               Default added (so using `tbp') on input line 574.
 
 
 <images/"precision recall curve (nmf nopage l2 ml 25)".pdf, id=504, 361.35pt x 
@@ -1126,7 +1122,7 @@ File: images/"precision recall curve (nmf nopage l2 ml 25)".pdf Graphic file (t
 ype pdf)
  <use images/"precision recall curve (nmf nopage l2 ml 25)".pdf>
 Package pdftex.def Info: images/"precision recall curve (nmf nopage l2 ml 25)".
-pdf used on input line 577.
+pdf used on input line 576.
 (pdftex.def)             Requested size: 232.17242pt x 232.17297pt.
 
 <images/"precision recall curve".pdf, id=505, 361.35pt x 361.35pt>
@@ -1134,36 +1130,36 @@ File: images/"precision recall curve".pdf Graphic file (type pdf)
 
 <use images/"precision recall curve".pdf>
 Package pdftex.def Info: images/"precision recall curve".pdf used on input line
- 582.
+ 581.
 (pdftex.def)             Requested size: 232.17242pt x 232.17297pt.
  [13 <./images/topic 21.pdf> <./images/topic 21 (extension).pdf> <./images/topi
 c 21 (producer).pdf> <./images/topic 21 (tag).pdf>]
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 596.
+               Default added (so using `tbp') on input line 595.
 
-<images/"boxplot neighbors".pdf, id=523, 505.89pt x 216.81pt>
+<images/"boxplot neighbors".pdf, id=526, 505.89pt x 216.81pt>
 File: images/"boxplot neighbors".pdf Graphic file (type pdf)
 
 <use images/"boxplot neighbors".pdf>
-Package pdftex.def Info: images/"boxplot neighbors".pdf used on input line 597.
+Package pdftex.def Info: images/"boxplot neighbors".pdf used on input line 596.
 
 (pdftex.def)             Requested size: 241.84843pt x 103.65077pt.
 
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 608.
+               Default added (so using `tbp') on input line 607.
 
 
 
 pdfTeX warning: /usr/bin/pdflatex (file ./images/kneighbors pca 3d 20032.pdf): 
 PDF inclusion: found PDF version <1.7>, but at most version <1.5> allowed
-<images/"kneighbors pca 3d 20032".pdf, id=526, 597.27242pt x 597.27242pt>
+<images/"kneighbors pca 3d 20032".pdf, id=529, 597.27242pt x 597.27242pt>
 File: images/"kneighbors pca 3d 20032".pdf Graphic file (type pdf)
 
 <use images/"kneighbors pca 3d 20032".pdf>
 Package pdftex.def Info: images/"kneighbors pca 3d 20032".pdf used on input lin
-e 609.
+e 608.
 (pdftex.def)             Requested size: 386.95897pt x 386.96478pt.
  [14 <./images/precision recall curve (nmf nopage l2 ml 25).pdf> <./images/prec
 ision recall curve.pdf
@@ -1173,60 +1169,269 @@ DF inclusion: multiple pdfs with page group included in a single page
 >] [15 <./images/boxplot neighbors.pdf> <./images/kneighbors pca 3d 20032.pdf>]
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 618.
+               Default added (so using `tbp') on input line 617.
 
 
 
 pdfTeX warning: /usr/bin/pdflatex (file ./images/kneighbors pca 3d 20223.pdf): 
 PDF inclusion: found PDF version <1.7>, but at most version <1.5> allowed
-<images/"kneighbors pca 3d 20223".pdf, id=633, 597.27242pt x 597.27242pt>
+<images/"kneighbors pca 3d 20223".pdf, id=636, 597.27242pt x 597.27242pt>
 File: images/"kneighbors pca 3d 20223".pdf Graphic file (type pdf)
 
 <use images/"kneighbors pca 3d 20223".pdf>
 Package pdftex.def Info: images/"kneighbors pca 3d 20223".pdf used on input lin
-e 619.
+e 618.
 (pdftex.def)             Requested size: 386.95897pt x 386.96478pt.
 
 
 LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 628.
+               Default added (so using `tbp') on input line 627.
 
-<images/"kneighbors pca 3d 14360".pdf, id=636, 722.7pt x 722.7pt>
+<images/"kneighbors pca 3d 14360".pdf, id=639, 722.7pt x 722.7pt>
 File: images/"kneighbors pca 3d 14360".pdf Graphic file (type pdf)
 
 <use images/"kneighbors pca 3d 14360".pdf>
 Package pdftex.def Info: images/"kneighbors pca 3d 14360".pdf used on input lin
-e 629.
+e 628.
 (pdftex.def)             Requested size: 386.95897pt x 386.95496pt.
  [16 <./images/kneighbors pca 3d 20223.pdf>] [17 <./images/kneighbors pca 3d 14
-360.pdf>]
+360.pdf>] [18] (./Reports.bbl)
+<images/"auc summary (nopage l2)".pdf, id=710, 361.35pt x 361.35pt>
+File: images/"auc summary (nopage l2)".pdf Graphic file (type pdf)
 
-LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 654.
+<use images/"auc summary (nopage l2)".pdf>
+Package pdftex.def Info: images/"auc summary (nopage l2)".pdf used on input lin
+e 684.
+(pdftex.def)             Requested size: 290.22107pt x 290.22174pt.
 
-<images/"kneighbors pca 3d 22566".pdf, id=696, 722.7pt x 722.7pt>
-File: images/"kneighbors pca 3d 22566".pdf Graphic file (type pdf)
 
-<use images/"kneighbors pca 3d 22566".pdf>
-Package pdftex.def Info: images/"kneighbors pca 3d 22566".pdf used on input lin
-e 655.
-(pdftex.def)             Requested size: 386.95897pt x 386.95496pt.
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 702.
- [18 <./images/kneighbors pca 3d 22566.pdf>] [19]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 702.
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"acp_1_2".pdf, id=711, 361.35pt x 361.35pt>
+File: images/"acp_1_2".pdf Graphic file (type pdf)
+ <use images/"acp_1_2".pdf>
+Package pdftex.def Info: images/"acp_1_2".pdf used on input line 691.
+(pdftex.def)             Requested size: 241.84843pt x 241.84961pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"acp_1_3".pdf, id=712, 361.35pt x 361.35pt>
+File: images/"acp_1_3".pdf Graphic file (type pdf)
+ <use images/"acp_1_3".pdf>
+Package pdftex.def Info: images/"acp_1_3".pdf used on input line 698.
+(pdftex.def)             Requested size: 241.84843pt x 241.84961pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"acp_2_3".pdf, id=713, 361.35pt x 361.35pt>
+File: images/"acp_2_3".pdf Graphic file (type pdf)
+ <use images/"acp_2_3".pdf>
+Package pdftex.def Info: images/"acp_2_3".pdf used on input line 705.
+(pdftex.def)             Requested size: 241.84843pt x 241.84961pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"topic 0".pdf, id=714, 1003.75pt x 501.875pt>
+File: images/"topic 0".pdf Graphic file (type pdf)
+
+<use images/"topic 0".pdf>
+Package pdftex.def Info: images/"topic 0".pdf used on input line 712.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 1".pdf, id=715, 1003.75pt x 501.875pt>
+File: images/"topic 1".pdf Graphic file (type pdf)
+
+<use images/"topic 1".pdf>
+Package pdftex.def Info: images/"topic 1".pdf used on input line 716.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 2".pdf, id=716, 1003.75pt x 501.875pt>
+File: images/"topic 2".pdf Graphic file (type pdf)
+
+<use images/"topic 2".pdf>
+Package pdftex.def Info: images/"topic 2".pdf used on input line 720.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"topic 3".pdf, id=717, 1003.75pt x 501.875pt>
+File: images/"topic 3".pdf Graphic file (type pdf)
+
+<use images/"topic 3".pdf>
+Package pdftex.def Info: images/"topic 3".pdf used on input line 727.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 4".pdf, id=718, 1003.75pt x 501.875pt>
+File: images/"topic 4".pdf Graphic file (type pdf)
+
+<use images/"topic 4".pdf>
+Package pdftex.def Info: images/"topic 4".pdf used on input line 731.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 6".pdf, id=719, 1003.75pt x 501.875pt>
+File: images/"topic 6".pdf Graphic file (type pdf)
+
+<use images/"topic 6".pdf>
+Package pdftex.def Info: images/"topic 6".pdf used on input line 735.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"topic 7".pdf, id=720, 1003.75pt x 501.875pt>
+File: images/"topic 7".pdf Graphic file (type pdf)
+
+<use images/"topic 7".pdf>
+Package pdftex.def Info: images/"topic 7".pdf used on input line 742.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 8".pdf, id=721, 1003.75pt x 501.875pt>
+File: images/"topic 8".pdf Graphic file (type pdf)
+
+<use images/"topic 8".pdf>
+Package pdftex.def Info: images/"topic 8".pdf used on input line 746.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 9".pdf, id=722, 1003.75pt x 501.875pt>
+File: images/"topic 9".pdf Graphic file (type pdf)
+
+<use images/"topic 9".pdf>
+Package pdftex.def Info: images/"topic 9".pdf used on input line 750.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"topic 10".pdf, id=723, 1003.75pt x 501.875pt>
+File: images/"topic 10".pdf Graphic file (type pdf)
+
+<use images/"topic 10".pdf>
+Package pdftex.def Info: images/"topic 10".pdf used on input line 757.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 11".pdf, id=724, 1003.75pt x 501.875pt>
+File: images/"topic 11".pdf Graphic file (type pdf)
+
+<use images/"topic 11".pdf>
+Package pdftex.def Info: images/"topic 11".pdf used on input line 761.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 12".pdf, id=725, 1003.75pt x 501.875pt>
+File: images/"topic 12".pdf Graphic file (type pdf)
+
+<use images/"topic 12".pdf>
+Package pdftex.def Info: images/"topic 12".pdf used on input line 765.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"topic 13".pdf, id=726, 1003.75pt x 501.875pt>
+File: images/"topic 13".pdf Graphic file (type pdf)
+
+<use images/"topic 13".pdf>
+Package pdftex.def Info: images/"topic 13".pdf used on input line 772.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 14".pdf, id=727, 1003.75pt x 501.875pt>
+File: images/"topic 14".pdf Graphic file (type pdf)
+
+<use images/"topic 14".pdf>
+Package pdftex.def Info: images/"topic 14".pdf used on input line 776.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 15".pdf, id=728, 1003.75pt x 501.875pt>
+File: images/"topic 15".pdf Graphic file (type pdf)
+
+<use images/"topic 15".pdf>
+Package pdftex.def Info: images/"topic 15".pdf used on input line 780.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"topic 16".pdf, id=729, 1003.75pt x 501.875pt>
+File: images/"topic 16".pdf Graphic file (type pdf)
+
+<use images/"topic 16".pdf>
+Package pdftex.def Info: images/"topic 16".pdf used on input line 787.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 18".pdf, id=730, 1003.75pt x 501.875pt>
+File: images/"topic 18".pdf Graphic file (type pdf)
+
+<use images/"topic 18".pdf>
+Package pdftex.def Info: images/"topic 18".pdf used on input line 791.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 19".pdf, id=731, 1003.75pt x 501.875pt>
+File: images/"topic 19".pdf Graphic file (type pdf)
+
+<use images/"topic 19".pdf>
+Package pdftex.def Info: images/"topic 19".pdf used on input line 795.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<images/"topic 20".pdf, id=732, 1003.75pt x 501.875pt>
+File: images/"topic 20".pdf Graphic file (type pdf)
+
+<use images/"topic 20".pdf>
+Package pdftex.def Info: images/"topic 20".pdf used on input line 802.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 23".pdf, id=733, 1003.75pt x 501.875pt>
+File: images/"topic 23".pdf Graphic file (type pdf)
+
+<use images/"topic 23".pdf>
+Package pdftex.def Info: images/"topic 23".pdf used on input line 806.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+<images/"topic 24".pdf, id=734, 1003.75pt x 501.875pt>
+File: images/"topic 24".pdf Graphic file (type pdf)
+
+<use images/"topic 24".pdf>
+Package pdftex.def Info: images/"topic 24".pdf used on input line 810.
+(pdftex.def)             Requested size: 159.62085pt x 79.80386pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 815.
+[19] [20 <./images/auc summary (nopage l2).pdf> <./images/acp_1_2.pdf
+
+pdfTeX warning: /usr/bin/pdflatex (file ./images/acp_1_2.pdf): PDF inclusion: m
+ultiple pdfs with page group included in a single page
+>] [21 <./images/acp_1_3.pdf> <./images/acp_2_3.pdf
+
+pdfTeX warning: /usr/bin/pdflatex (file ./images/acp_2_3.pdf): PDF inclusion: m
+ultiple pdfs with page group included in a single page
+> <./images/topic 0.pdf> <./images/topic 1.pdf> <./images/topic 2.pdf>]
+[22 <./images/topic 3.pdf> <./images/topic 4.pdf> <./images/topic 6.pdf> <./ima
+ges/topic 7.pdf> <./images/topic 8.pdf> <./images/topic 9.pdf> <./images/topic 
+10.pdf> <./images/topic 11.pdf> <./images/topic 12.pdf> <./images/topic 13.pdf>
+ <./images/topic 14.pdf> <./images/topic 15.pdf> <./images/topic 16.pdf> <./ima
+ges/topic 18.pdf> <./images/topic 19.pdf> <./images/topic 20.pdf> <./images/top
+ic 23.pdf> <./images/topic 24.pdf>]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 815.
  (./Reports.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 702.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 702.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 815.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 815.
 Package rerunfilecheck Info: File `Reports.out' has not changed.
-(rerunfilecheck)             Checksum: FB608179C131FB839E92604F87C83613;1802.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 702.
+(rerunfilecheck)             Checksum: D24615FD07FDE9782C54CD057A8633DD;1772.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 815.
  ) 
 Here is how much of TeX's memory you used:
- 13747 strings out of 493013
- 219525 string characters out of 6135681
- 384196 words of memory out of 5000000
- 16855 multiletter control sequences out of 15000+600000
- 18108 words of font info for 118 fonts, out of 8000000 for 9000
+ 13900 strings out of 493013
+ 222665 string characters out of 6135681
+ 386194 words of memory out of 5000000
+ 16960 multiletter control sequences out of 15000+600000
+ 18264 words of font info for 120 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  36i,15n,41p,2125b,524s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
@@ -1245,12 +1450,11 @@ re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texli
 ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts
-/type1/public/amsfonts/cm/cmti8.pfb></usr/share/texlive/texmf-dist/fonts/type1/
-public/amsfonts/cm/cmtt10.pfb>
-Output written on Reports.pdf (19 pages, 6844531 bytes).
+/type1/public/amsfonts/cm/cmti8.pfb>
+Output written on Reports.pdf (22 pages, 9999872 bytes).
 PDF statistics:
- 835 PDF objects out of 1000 (max. 8388607)
- 415 compressed objects within 5 object streams
- 106 named destinations out of 1000 (max. 500000)
- 16701 words of extra memory for PDF output out of 17280 (max. 10000000)
+ 1029 PDF objects out of 1200 (max. 8388607)
+ 459 compressed objects within 5 object streams
+ 123 named destinations out of 1000 (max. 500000)
+ 16301 words of extra memory for PDF output out of 17280 (max. 10000000)
 
