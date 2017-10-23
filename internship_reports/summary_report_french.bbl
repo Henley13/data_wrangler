@@ -1,0 +1,14 @@
+\begin{thebibliography}{1}
+
+\bibitem{ref2}
+D.~D. Lee and H.~S. Seung.
+\newblock Learning the parts of objects by non-negative matrix factorization.
+\newblock {\em Nature. 401}, page 788–791, 1999.
+
+\bibitem{ref3}
+E.~Y. Liu, Z.~Guo, X.~Zhang, V.~Jojic, and W.~Wang.
+\newblock Machine learning from relative comparisons by minimizing squared
+  residual.
+\newblock 2012.
+
+\end{thebibliography}

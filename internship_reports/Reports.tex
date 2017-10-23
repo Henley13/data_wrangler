@@ -37,54 +37,46 @@
 
 \begin{document}
 	
-	\maketitle
+	%\maketitle
 	
-	The internship took place in the \href{https://team.inria.fr/parietal/}{Parietal} team at INRIA. My supervisors was Ga\"el Varoquaux.
+	\renewcommand{\contentsname}{Table of contents} 
+	\setcounter{tocdepth}{4}
+	\tableofcontents
+	\listoffigures
 	
-	\section{Summary}
+	\newpage
 	
 	\section{Introduction}
 	
-	\subsection{Heterogeneous data, producers and value}
-	
-	Nowadays, the production of data has considerably grown. Each organization exploits and issues data, using its own schema. Most of the time, these files are produced for specific purpose, taking into account some internal rules or constraints. That leads to a vast amount of data available online, often sharing the same file formats, but still deeply heterogeneous by their structure. Indeed, this heterogeneity complicates the integration of different files.
-	
-	By the same time, the current enthusiasm around data science and its predictive models shows a high potential for crossing data. 
-	
-	\subsection{A theoritical framework}
-	
-	\paragraph{Related problems}
-	
-	\paragraph{Our strategy}
+	Nowadays, the production of data has considerably grown. Each organization exploits and issues data, using its own schema. Most of the time, these files are produced for specific purpose, taking into account some internal rules or constraints. That leads to a vast amount of data available online, often sharing the same file formats, but still deeply heterogeneous by their structure. Indeed, this heterogeneity complicates the integration of files issued from different sources. There are as many different ways to store and structure data as there are producers. By the same time, the current enthusiasm around data science and its predictive models shows a high potential for crossing data. 
+		
+	This paper aims to integrate such heterogeneous datasets. It involves both an ability to reshape and clean the files based on a common schema and a method to reveal potential connections between them. Formally, our study meets several well known problems related to the data-integration state of the art. The first one is Record linkage. It consists in matching different representations of the same entity (for example a file, a city or a person) among different datasets. Several methods have been proposed as probabilistic models to analyze similarities between entities \cite{ref9}, active learning to use user-driven annotations \cite{ref10} or even neural networks \cite{ref11}. A complementary problem is Foreign key discovery. It consists in finding a unique identifiers column shared by, at least, two different tables. The problem can be approached by comparing distribution of entries columns \cite{ref12}. Combined with record linkage methods, it allows to infer connections between different tables and merge them, even with imperfect join columns. As we manipulate symbolic data (heterogeneous files), usual statistical tools are not applicable. Therefore, semantic analysis approaches are useful to represent our entities within a vectorial space (an embedding). The well known words embedding are a relevant application \cite{ref7}.
+
+	Our ultimate goal is to build a file embedding where each table is represented with a vector. It involves, among other things, the use of topics extraction \cite{ref2} and metric learning models \cite{ref3}. This allows us to return statistical-learning results and compare our file entities between each others. By computing distances within this embedding, we want to automatically suggest connections among close datasets. Finally, from a query file, we design a pipeline to recommend some potential datasets to cross.
 	
 	\section{An application to Open Data}
 	
-	\subsection{Open and heterogeneous data}
+	In order to collect a vast amount of heterogeneous data we exploit open data. It is freely available to everyone. We can use, reuse or redistribute it without any patent or copyright restrictions. Ideally, it also need to be cleaned and technically available with standard formats. Open data may includes textual and non-textual material, tables, geographical data, etc. It has even been shown that open and public data stimulate growth in a country \cite{ref13}. It can be combined with business-specific data to return relevant statistical results and drive strategic decisions. 
 	
-	In order to collect a vast amount of heterogeneous data we exploit the Open Data available online.
+	A French open data platform exists. It lists all the information needed to use files issued by the French public organizations: \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. This website hosts and indexes multiple datasets and give information about their producer. However, it is not what we call Big data. Most of the datasets have a huge statistical potential, but a small or medium size, extremely heterogeneous structures (missing values, misspelling, commentary, non structured format). Therefore, each analysis would involve laborious data manipulation and normalization.
 	
-	% definition of Open Data 
+	Additionally, \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} lists reuses that have been done exploiting one or several open datasets. For example, a reuse can be a map of public services, a visualization of presidential election results, or any statistical analysis crossing socio-economics data. We manage to use such information between datasets to improve our pipeline. Indeed, one of the standard connection we try to infer between files are the relevancy of a potential common reuse. Meet our integration problem with reuses prediction allows us to transform the problem as a supervised one. Within a machine learning framework, reuses gives us labeled data and help us to learn new connections between files. Prediction of reuses becomes a pretext task to validate our methods and settings.
 	
-	A French platform exists, gathering all the information needed to use the files issued by the French public organizations: \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. This website hosts and indexes multiple sources
+	Figure~\ref{fig:introduction} illustrates the typical result we are looking for in this paper. From a file embedding, we compute distances to reveal the closest neighbors from a query file. Closer they are, more relevant a reuse should be. We show only a partial view of the embedding, in three dimensions. The three reused files (connected with orange lines) include data about births of horses. Our embedding suggests to cross them again with three other datasets dealing with mare mating. 
 	
-	\subsection{How can we reuse the data}
-	
-	%\begin{figure}
-	%	\centering
-	%	\includegraphics[width = .9\linewidth]{}
-	%	\caption{Neighborhood examples}
-	%	\label{fig:neighbor-police}
-	%\end{figure}
-	
-	\subsection{An academic angle}
-	
-	\subsection{Internship's goal}
+	\begin{figure}[]
+		\includegraphics[width=.5\linewidth]{images/"kneighbors pca 3d 20032".pdf}
+		\caption{Suggestion of potential connections}
+		\floatfoot{Note: This is a partial 3-dimensional view (PCA) of our final file embedding. The query file is represented with the red circle. All the other points are files with a potential connection. Files with an actual connection are linked by an orange line.}
+		\label{fig:introduction}
+		\ref{fig:introduction}
+	\end{figure}
 	
 	\section{From a bunch of heterogeneous data to a recommendation system}
 	
 	Before any analyze, we build our dataset. From the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}, we collect quantities of metadata. It generally includes an URL address where the file is stored. We then directly download as many files as possible. For each file downloaded, we try to clean it such as we can display its content in a tabular form.
 	
-	At that point, we start the analysis. Firstly by preprocessing files' textual content. The result consists in a \ac{TFIDF} matrix. It allows us to weight word occurrences within our corpus according to their importance for each file. Secondly by building a vectorial topic space to represent every files (a file embedding) and based on the \ac{TFIDF} matrix. This also includes an optimization step where we compare two topic extraction algorithms - \ac{NMF} and \ac{SVD} - along with different configurations. Thirdly by looking for closest neighbors in this "topic space", in order to interpret distances within the embedding. Using a pretext task (the suggestion of a reuse between pairs of files) and a metric learning algorithm, \ac{LSML}, we also try to strengthen our file embedding and the interpretation of its clusters.
+	At that point, we start the analysis. Firstly by preprocessing files' textual content. The result consists in a \ac{TFIDF} matrix. It allows us to weight word occurrences within our corpus according to their relative importance for each file. Secondly by building a vectorial topic space to represent every files (a file embedding) the \ac{TFIDF} matrix. This also includes an optimization step where we compare two topic extraction algorithms - \ac{NMF} and \ac{SVD} - along with different configurations. Thirdly by looking for closest neighbors in this "topic space", in order to interpret distances within the embedding. Using a pretext task (the suggestion of a reuse between files) and a metric learning algorithm, \ac{LSML}, we also try to strengthen our file embedding and the interpretation of its distances.
 	
 	%\begin{figure}
 	%	\centering
@@ -183,7 +175,7 @@
 	
 	\subsection{Build a file embedding}
 	
-	Once we have enough tables, with extradata for some of them, the third step consist in building a file embedding. That means we want to represent our files within a vectorial space in order to easily compute distances between files, and group them by cluster. We define a pretext task, predict a reuse between two files, to validate our process and determine if our embedding represent the corpus efficiently: two files reused together should be close in our space. 
+	Once we have enough tables, with extradata for some of them, the third step consists in building a file embedding. That means we want to represent our files within a vectorial space in order to easily compute distances between files, and group them by cluster. We define a pretext task, predict a reuse between two files, to validate our process and determine if our embedding represent the corpus efficiently: two files reused together should be close in our space.
 	
 	\paragraph{Text data preprocessing}
 	
@@ -603,16 +595,8 @@
 	\paragraph{Neighborhood}
 	
 	Once we choose our best radius, we can fit a \emph{NearestNeighbors} model from \emph{sklearn}. The function \emph{radius\_neighbors} returns indices and distances of every files that lie within a ball of size radius around the targeted file. When we analyze the neighborhoods created, we notice than 7663 of the 23112 files have at least one neighbor. If we plot their distribution (see figure~\ref{fig:neighbors}), we observe a unbalanced shape. Most of the files with a neighborhood have less than 250 neighbors. On the top of the distribution, a group of files seems to share more than 2000 neighbors. Most of them are GEOJSON files. If we only consider the files with at least one neighbor, each neighborhood contains, in average, 143 neighbors and 69 reused pairs. For further analysis, we select some files with an interesting number of neighbors and reuses between these neighbors. 
-
-	\begin{figure}[]
-		\includegraphics[width=.8\linewidth]{images/"kneighbors pca 3d 20032".pdf}
-		\caption{Potential files to reuse together}
-		\floatfoot{Note: A 3-component PCA is applied on the neighborhood define around a file reporting births of horses. Orange relations represent an actual reuse. The orange area is the radius.}
-		\label{fig:pca horse}
-		\ref{fig:pca horse}
-	\end{figure}
 	
-	The first example illustrates the case where the algorithm can suggest potential new reuses. Figure~\ref{fig:pca horse} represents a 3-components PCA performed on the neighborhood of the file \emph{Nombre de naissances d'équidés en France}. Components 1 and 3 are the most interesting. We observe six neighbors, two from the same page than our target file (red diamonds), three from the page \emph{Nombre de juments saillies en France} (blue crosses) and one from the page \emph{Périmètres des pays} (orange crosses). Both pages dealing with horse-riding data (red and blue points) come from the same producer, the French institute of horses and horse-riding. A reuse already exists with our target page about births of horses. However, this neighborhood also suggests us reusing this target page with data about mare mating. Such reuse seems relevant. 
+	The first example illustrates the case where the algorithm can suggest potential new reuses. Figure~\ref{fig:introduction} we have already presented in introduction shows a 3-components PCA performed on the neighborhood of the file \emph{Nombre de naissances d'équidés en France}. Components 1 and 3 are the most interesting. We observe six neighbors, two from the same page than our target file (red diamonds), three from the page \emph{Nombre de juments saillies en France} (blue crosses) and one from the page \emph{Périmètres des pays} (orange crosses). Both pages dealing with horse-riding data (red and blue points) come from the same producer, the French institute of horses and horse-riding. A reuse already exists with our target page about births of horses. However, this neighborhood also suggests us reusing this target page with data about mare mating. Such reuse seems relevant. 
 	
 	\begin{figure}[]
 		\includegraphics[width=.8\linewidth]{images/"kneighbors pca 3d 20223".pdf}
@@ -636,7 +620,7 @@
 	
 	\section{Discussion}
 	
-	This study is need to be read with a critical distance as it involves complex data, unusual methods and laborious problematic. But even so, it makes possible multiple improvements in different area.
+	This study involves complex data, unusual methods and ambitious problematic. But even so, it makes possible multiple improvements in different areas.
 	
 	\subsection{Limitations and potential improvements}
 	
@@ -644,15 +628,15 @@
 	
 	According to the previous description of the pipeline used to build our dataset, from metadata collection to files cleaning, different kind of failures happened. We do not manage to download and clean all the data listed in \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. Our goal is simply to gather enough data to infer the most relevant statistical results. However, our current dataset presents some limitations. 
 	
-	Even if we can't correct the wrong URL during the downloading step, some solutions exist to store more data. It might be worth downloading some remote files. For example, the biggest platforms (as the National Institute for Statistics and Economic Studies) would deserve a specific code to collect their data. More generally, additional sources of open data could diversify and enlarge our dataset. This could be done with the World Bank or Eurostat. The latters would provide cleaned files with relevant socio-economic data. Lastly, two prominent and interesting sources of open data are the British and American version of \emph{data.gouv}.
+	As we can't correct the wrong URL during the downloading step, others solutions exist to store more data. It might be worth downloading some remote files. For example, the biggest platforms (as the National Institute for Statistics and Economic Studies) would deserve a specific code to collect their data. More generally, additional sources of open data could diversify and enlarge our dataset. This could be done with the World Bank or Eurostat. The latters would provide cleaned files with relevant socio-economic data. Lastly, two prominent and interesting sources of open data are the British and American version of \emph{data.gouv}.
 	
-	Concerning the cleaning step, it might be worth to focus on data produced by the city of Lyon and the recurrent departmental authorities \emph{Direction Départementale des Territoires}. Firstly they are the source of a majority of our cleaning errors. Secondly, even when it does not raise an exception, some of their files are badly cleaned with only one column or on row. Still, it will be difficult to get pass some limits as our cleaning capacity is mainly based on external library such that \emph{chardet} or \emph{magic}. If they fail to detect the encoding or the MIME type, our pipeline become inefficient.
+	Concerning the cleaning step, it might be worth to focus on data produced by the city of Lyon and the recurrent departmental authorities \emph{Direction Départementale des Territoires}. Firstly they are the sources of a majority of our cleaning errors. Secondly, even when it does not raise an exception, some of their files are badly cleaned with only one column or on row. Still, it will be difficult to get pass some limits as our cleaning capacity is mainly based on external library such that \emph{chardet} or \emph{magic}. If they fail to detect the encoding or the MIME type, our pipeline become inefficient.
 	
 	Besides limitations and potential improvements of our pipeline, some weaknesses are directly related to the data hosted by \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. Indeed, very few reuses are listed. There are 1711 reuses listed in the platform, but 1390 of them (81\%) concern only one page of data. This makes reuses less relevant to learn how to cross files from different origins.
 	
 	\paragraph{Methods}
 	
-	The use of \ac{NMF} algorithm to factorize matrix suffers from a interpretational drawback. According to Donoho and Stodden (2004), the decomposition returned by the algorithm may not be unique. Thus, the result would depend on the initialization and the starting values. If the \ac{TFIDF} evolves too much (by adding new files for example), the topics returned might loose their consistency. 
+	The use of \ac{NMF} algorithm to factorize matrix suffers from a interpretational drawback. According to Donoho and Stodden (2004) \cite{ref1}, the decomposition returned by the algorithm may not be unique. Thus, the result would depend on the starting values. If the \ac{TFIDF} evolves too much (by adding new files for example), the topics returned might loose their consistency. 
 	
 	Concerning the metric learning model, a limit can be defined too. As most of the supervised models, it suffers from unbalanced labels. This is clearly our situation as a very low proportion of pairs are actually reused (around 0.01\%). That is why, we make sure to keep 30\% of reused pairs when we build the vectors X and y. This is equivalent to perform an undersampling technique over non reused pairs. Such a method makes features appear with a higher variance than they do.
 	
@@ -660,19 +644,19 @@
 		
 	\paragraph{Problematic}
 	
-	As we said, it might be worth having more reuses. With a majority of reuses concerning only one page fo data, the correlation between reuses and similarity increases. Our embedding learns that a reuse associates most of the time quasi identical files. It's relevant. However, this denies an interesting dimension of the reuse: crossing two files from completely different, but nonetheless complementary topics. More generally, define what could be a true reuse is subtle. For now, our embedding strongly depends on what has been actually done in \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} in term of reuse. This is also our only way to validate if the suggestions returned by our algorithm are relevant or not. Therefore, we certainly miss some reuse opportunities. If a topic has never been reused we could not recognize the potential of related files.
+	With a majority of reuses concerning only one page of data, the correlation between reuses and similarity increases. Our embedding learns that a reuse associates most of the time quasi identical files. It's relevant but it denies an interesting dimension of the reuse: crossing two files from completely different, but nonetheless complementary topics. More generally, define what could be a true reuse is subtle. For now, our embedding strongly depends on what has been actually done in \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} in term of reuse. This is also our only way to validate if the suggestions returned by our algorithm are relevant or not. Therefore, we certainly miss some reuse opportunities. If a topic has never been reused we could not recognize the potential of related files.
 	
 	\subsection{Future work}
 	
-	With its results and its limits, this study gives us several prospects. Firstly, we can focus on the geographical data and especially on the GEOJSON extension. Using \emph{geopandas} library, we could efficiently parse and manipulate these files. As numerous geographical files are close from each other in huge cluster, being able to infer the geographical area concerned by their data would help us to discriminate them. Secondly, we could perform foreign key mining and record linkage over the closest files in the embedding. Ideally,It would be possible to automatically merge several files once we recognized a common id columns between them. Lastly, the relations and the limits described in this paper could help the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. The pipeline and the suggestions of files returned could even be integrated to an user interface. 
+	This study gives us several prospects. Firstly, we can focus on the geographical data and especially on the GEOJSON extension. Using \emph{geopandas} library, we could efficiently parse and manipulate these files. As numerous geographical files are close from each other, being able to infer the geographical area concerned by their data would help us to discriminate them. Secondly, we could perform foreign key mining and record linkage over the closest files in the embedding. Ideally,It would be possible to automatically merge several files once we recognized a common id column between them. Lastly, the relations and limits described in this paper could help the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. Pipeline and suggestions of files we returned could even be integrated to such an user interface. 
 
 	\section{Conclusion}	
 	
-	Integrate heterogeneous datasets can bring us to different paths. We choose to approach the problem with a statistical point of view and machine learning tools. 
+	Integrate heterogeneous datasets can bring us to various directions. We choose to approach the problem with a statistical point of view and machine learning tools. 
 	
 	The first task is the building of a relevant dataset, big enough to ensure statistical results. It gives us the opportunity to develop algorithms in order to parse, clean and reshape numerous files on a large scale. The second task is the building of a file embedding, in order to easily compute distances between files and infer relevant relations. This involved unsupervised and supervised technique as matrix factorization or metric learning. A cross-validation pipeline with distinct train and test datasets allows us to control the results and validate any improvement. To fit with learning framework, we define a pretext task: the suggestion of reuses between files. 
 	
-	Finally, we present a study with multiple dimensions. Beyond reuse prediction, it is our capacity to infer relevant information about a file or a group of files that matters. Considering its successes and limits, this work illustrates the growing interest for data wrangling. Some results or problems raised could definitely interest future papers, as volume and diversity of data increase. 
+	Finally, we present a study with multiple dimensions. Beyond reuse prediction, it is our capacity to infer any kind of relevant information about a file or a group of files that matters. This work illustrates well the growing interest for data wrangling. Some results or problems raised could definitely interest future papers, as volume and diversity of data should increase. 
 	
 	\bibliographystyle{abbrv}
 	\bibliography{report_biblio}

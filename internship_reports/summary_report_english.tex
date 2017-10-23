@@ -1,0 +1,132 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[a4paper]{geometry}
+\geometry{hmargin=2cm, vmargin = 3cm}
+\usepackage{microtype}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{bbm}
+\usepackage[ruled]{algorithm2e}
+\usepackage{acronym}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{cleveref}
+\crefname{algocf}{alg.}{algs.}
+\Crefname{algocf}{Algorithm}{Algorithms}
+\usepackage{amsmath}
+\usepackage{floatrow}
+\usepackage[font=bf]{caption}
+\usepackage{wrapfig}
+
+%\setlength{\parindent}{0pt}
+
+\newacro{TFIDF}{Term Frequency - Inverse Document Frequency}
+\newacro{LDA}{Latent Dirichlet Allocation}
+\newacro{NMF}{Non-negative Matrix Factorization}
+\newacro{SVD}{Singular Value Decomposition}
+\newacro{LSML}{Least Square-residual Metric Learning}
+\newacro{AUC}{Area Under Curve}
+\newacro{PCA}{Principal Component Analysis}
+
+\author{Arthur Imbert}
+\title{Integration of heterogeneous datasets}
+\date{October 2017}
+
+\begin{document}
+	
+	\maketitle
+	
+	The internship took place in the \href{https://team.inria.fr/parietal/}{Parietal} team at INRIA. My supervisor was Ga\"el Varoquaux.
+	
+	\section{Introduction}
+	
+	Nowadays, the production of data has considerably grown. Each organization exploits and issues data, using its own schema. Most of the time, these files are produced for specific purpose, taking into account some internal rules or constraints. That leads to a vast amount of data available online, often sharing the same file formats, but still deeply heterogeneous by their structure. Indeed, this heterogeneity complicates the integration of files issued from different sources. There are as many different ways to store and structure data as there are producers. By the same time, the current enthusiasm around data science and its predictive models shows a high potential for crossing relevant data. 
+		
+	This paper aims to integrate such heterogeneous datasets. This involves both an ability to reshape and clean files and a method to reveal potential connections between them. Our goal is to build a file embedding (a vectorial space) where each dataset is represented with a vector. It involves, among other things, the use of topics extraction \cite{ref2} and metric learning models \cite{ref3}. By computing distances within this vectorial space, we want to automatically suggest connections between relevant datasets. Finally, from a query file, we design a pipeline to recommend some potential datasets to cross.
+	
+	In order to collect a vast amount of heterogeneous data we exploit open data. It is freely available to everyone. We can use, reuse or redistribute it without any patent or copyright restrictions. Open data may includes textual and non-textual material, tables, geographical data, etc. 
+	
+	A French open data platform exists. It lists all the information needed to use files issued by the French public organizations: \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. This website hosts and indexes multiple datasets and give information about their producer. However, it is not Big data. Most of the datasets have a huge statistical potential, but a small or medium size and an extremely heterogeneous structures (missing values, misspelling, commentary, non structured format). Therefore, each analysis using these datasets would need laborious data manipulation and normalization. We want to reduce this cost and apply a general algorithm to clean datasets.
+	
+	Additionally, \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} lists reuses that have been done exploiting one or several open datasets. For example, a reuse can be a map of public services, a visualization of presidential election results, or any statistical analysis crossing socio-economics data. Thus, we expect to answer our integration problem by predicting reuses between files. It allows us to transform our problem as a supervised one and use a statistical learning framework. Existing reuses gives us labeled data and help us to learn new connections between files. Prediction of reuses becomes a pretext task to validate our methods and settings.
+	
+	Figure~\ref{fig:introduction} illustrates the typical result we are looking for in this paper. From a file embedding, we compute distances to reveal the closest neighbors from a query file. Closer they are, more relevant a reuse should be. The three reused files (connected with orange lines) include data about births of horses. Our embedding suggests to cross them again with three other datasets dealing with mare mating. 
+	
+	\begin{figure}[]
+		\includegraphics[width=.5\linewidth]{images/"kneighbors pca 3d 20032".pdf}
+		\caption{Suggestion of potential connections}
+		\floatfoot{Note: This is a partial 3-dimensional view (PCA) of our final file embedding. The query file is represented with the red circle. All the other points are files with a potential connection. Files with an actual connection are linked by an orange line.}
+		\label{fig:introduction}
+		\ref{fig:introduction}
+	\end{figure}
+	
+	\section{Results and validation}
+	
+	From the platform \href{http://www.data.gouv.fr/fr/}{data.gouv.fr} we collect the metadata of 26856 different pages. Each page comes from an unique producer and deals with a specific topic. Usually, one page hosts several files with their respective URL to download them. We manage to load 55138 files and store 348GB. We also manage to clean 23112 files (for 72GB) coming from 9092 different pages. Among them, 17147 (74\%) have not been reused, 898 (4\%) have been reused once and 4511 (20\%) twice.
+	
+	The rest of the pipeline includes different parameters we need to set up. The metric learning process has to be evaluated too. Hence, we define a cross-validation framework (splitting our dataset to validate on test embedding what we learned from the train embedding). Once we find our optimal parametrization, we compute our file embedding with 25 dimensions (or topics) using \ac{NMF} and \ac{LSML} algorithms.
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width = .5\linewidth, height = .5\linewidth]{images/"distance distribution violin plot".pdf}
+		\caption{Cosine distance distribution in the best file embedding}
+		\ref{fig:distance-distribution}
+		\label{fig:distance-distribution}
+	\end{figure}
+	
+	In the figure~\ref{fig:distance-distribution}, we plot the distribution of cosine distances within our file embedding. It first shows that files from same extension do not appear to be closer in the embedding. The original extension doesn't have an impact on the embedding. It validates a part of our cleaning process where we return homogeneous dataframes from heterogeneous files with various format. Finally, figure~\ref{fig:distance-distribution} shows a higher variance for distances between files reused together. Yet, most of these pairs still present a relative closer distance than what we observe in the rest of the topic space.
+	
+	An other way to analyze our topic space is to plot wordclouds for specific dimensions (or topics). The weight of every word in a topic determines its size in the plot.
+	
+	\begin{figure}[]
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 5".pdf}
+		\label{fig:wc-region}
+		\subcaption{Region topic}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 22".pdf}
+		\label{fig:wc-police}
+		\subcaption{Police and criminality topic}
+		\endminipage\hfill
+		\minipage{0.33\textwidth}
+		\includegraphics[width=\linewidth]{images/"topic 17".pdf}
+		\label{fig:wc-budget}
+		\subcaption{Budget topic}
+		\endminipage
+		\caption{Three wordcloud topics}
+		\label{fig:wc}
+		\ref{fig:wc}
+	\end{figure}
+
+	We present three examples of homogeneous topics in the figure~\ref{fig:wc}. The left one gathers quasi exclusively geographical words indicating well known locations in France. The second one probably comes from a group of police reports. It mostly includes vocabulary about crimes, thefts or burglaries. The third example, on the right, shows a mixed vocabulary related to budget and bureaucracy concepts.
+	
+	\begin{figure}[]
+		\includegraphics[width=.5\linewidth]{images/"boxplot neighbors".pdf}
+		\caption{Neighbors distribution}
+		\floatfoot{Note: Only the file with at least one neighbor are considered for this distribution.}
+		\label{fig:neighbors}
+		\ref{fig:neighbors}
+	\end{figure}
+
+	For each file, we return its neighbors within a specific radius in the embedding. We notice than 7663 of the 23112 files have at least one neighbor. If we plot their distribution (see figure~\ref{fig:neighbors}), we observe a unbalanced shape. Most of the files with a neighborhood have less than 250 neighbors. On the top of the distribution, a group of files seems to share more than 2000 neighbors. Each neighborhood contains, in average, 143 neighbors and 69 reused pairs.
+	
+	\section{Discussion}
+	
+	This study involves complex data, unusual methods and ambitious problematic. We do not manage to download and clean all the data listed in \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}. Our goal is simply to gather enough data to infer the most relevant statistical results. But additional datasets could be collected from diversified sources. Moreover, there are 1711 reuses listed in the platform, but 1390 of them (81\%) concern only one page of data. During our learning process, we even had to undersample the non reused pairs of files. This makes reuses less relevant to learn how to cross files from different origins. With a majority of reuses concerning only one page fo data, the correlation between reuses and similarity increases. Our embedding learns that a reuse associates most of the time quasi identical files. It's relevant but it denies an interesting dimension of the reuse: crossing two files from completely different, but nonetheless complementary topics. Therefore, we certainly miss some reuse opportunities.
+	
+	This study gives us several prospects. Firstly, we can focus on the geographical data and especially on the GEOJSON extension. As numerous geographical files are close from each other, being able to infer the geographical area concerned by their data would help us to discriminate them. Secondly, it would be possible to automatically merge several files once we recognized a common id columns between them. Lastly, our pipeline could be integrated to an user interface as \href{http://www.data.gouv.fr/fr/}{data.gouv.fr}
+
+	\section{Conclusion}	
+	
+	Integrate heterogeneous datasets can bring us to various directions. We choose to approach the problem with a statistical point of view and machine learning tools. 
+	
+	The first task is the building of a relevant dataset, big enough to ensure statistical results. It gives us the opportunity to develop algorithms in order to parse, clean and reshape numerous files on a large scale. The second task is the building of a file embedding, in order to easily compute distances between files and infer relevant connections. To fit with a learning framework, we define a pretext task: the suggestion of reuses between files.
+	
+	\bibliographystyle{abbrv}
+	\bibliography{report_biblio}
+
+\end{document}

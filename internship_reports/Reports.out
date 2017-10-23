@@ -1,26 +1,44 @@
-\BOOKMARK [1][-]{section.1}{Summary}{}% 1
-\BOOKMARK [1][-]{section.2}{Introduction}{}% 2
-\BOOKMARK [2][-]{subsection.2.1}{Heterogeneous data, producers and value}{section.2}% 3
-\BOOKMARK [2][-]{subsection.2.2}{A theoritical framework}{section.2}% 4
-\BOOKMARK [1][-]{section.3}{An application to Open Data}{}% 5
-\BOOKMARK [2][-]{subsection.3.1}{Open and heterogeneous data}{section.3}% 6
-\BOOKMARK [2][-]{subsection.3.2}{How can we reuse the data}{section.3}% 7
-\BOOKMARK [2][-]{subsection.3.3}{An academic angle}{section.3}% 8
-\BOOKMARK [2][-]{subsection.3.4}{Internship's goal}{section.3}% 9
-\BOOKMARK [1][-]{section.4}{From a bunch of heterogeneous data to a recommendation system}{}% 10
-\BOOKMARK [2][-]{subsection.4.1}{Build a database}{section.4}% 11
-\BOOKMARK [2][-]{subsection.4.2}{Clean and filter data}{section.4}% 12
-\BOOKMARK [2][-]{subsection.4.3}{Build a file embedding}{section.4}% 13
-\BOOKMARK [2][-]{subsection.4.4}{Find neighborhood}{section.4}% 14
-\BOOKMARK [1][-]{section.5}{Results and validation}{}% 15
-\BOOKMARK [2][-]{subsection.5.1}{Downloaded and cleaned files}{section.5}% 16
-\BOOKMARK [2][-]{subsection.5.2}{Metrics and cross-validation framework}{section.5}% 17
-\BOOKMARK [2][-]{subsection.5.3}{Results}{section.5}% 18
-\BOOKMARK [3][-]{subsubsection.5.3.1}{Optimal parametrization}{subsection.5.3}% 19
-\BOOKMARK [3][-]{subsubsection.5.3.2}{Topics and Wordclouds}{subsection.5.3}% 20
-\BOOKMARK [3][-]{subsubsection.5.3.3}{Reuse prediction}{subsection.5.3}% 21
-\BOOKMARK [1][-]{section.6}{Discussion}{}% 22
-\BOOKMARK [2][-]{subsection.6.1}{Limitations and potential improvements}{section.6}% 23
-\BOOKMARK [2][-]{subsection.6.2}{Future work}{section.6}% 24
-\BOOKMARK [1][-]{section.7}{Conclusion}{}% 25
-\BOOKMARK [1][-]{section.8}{Appendix}{}% 26
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{An application to Open Data}{}% 2
+\BOOKMARK [1][-]{section.3}{From a bunch of heterogeneous data to a recommendation system}{}% 3
+\BOOKMARK [2][-]{subsection.3.1}{Build a database}{section.3}% 4
+\BOOKMARK [3][-]{section*.8}{Collect metadata}{subsection.3.1}% 5
+\BOOKMARK [4][-]{section*.9}{Download data}{section*.8}% 6
+\BOOKMARK [2][-]{subsection.3.2}{Clean and filter data}{section.3}% 7
+\BOOKMARK [3][-]{section*.10}{Filter the formats}{subsection.3.2}% 8
+\BOOKMARK [4][-]{section*.11}{CSV files}{section*.10}% 9
+\BOOKMARK [4][-]{section*.12}{Excel files}{section*.10}% 10
+\BOOKMARK [4][-]{section*.13}{JSON, GEOJSON and XML files}{section*.10}% 11
+\BOOKMARK [4][-]{section*.14}{Errors and extradata}{section*.10}% 12
+\BOOKMARK [2][-]{subsection.3.3}{Build a file embedding}{section.3}% 13
+\BOOKMARK [3][-]{section*.15}{Text data preprocessing}{subsection.3.3}% 14
+\BOOKMARK [4][-]{section*.16}{Topic modeling}{section*.15}% 15
+\BOOKMARK [4][-]{section*.17}{Non-negative Matrix Factorization \(NMF\)}{section*.15}% 16
+\BOOKMARK [4][-]{section*.18}{Singular Value Decomposition \(SVD\)}{section*.15}% 17
+\BOOKMARK [4][-]{section*.19}{Metric learning}{section*.15}% 18
+\BOOKMARK [4][-]{section*.20}{Least Square-residual Metric Learning \(LSML\)}{section*.15}% 19
+\BOOKMARK [2][-]{subsection.3.4}{Find neighborhood}{section.3}% 20
+\BOOKMARK [1][-]{section.4}{Results and validation}{}% 21
+\BOOKMARK [2][-]{subsection.4.1}{Downloaded and cleaned files}{section.4}% 22
+\BOOKMARK [3][-]{section*.21}{Metadata}{subsection.4.1}% 23
+\BOOKMARK [4][-]{section*.22}{Downloaded files}{section*.21}% 24
+\BOOKMARK [4][-]{figure.caption.24}{Cleaned files}{section*.21}% 25
+\BOOKMARK [2][-]{subsection.4.2}{Metrics and cross-validation framework}{section.4}% 26
+\BOOKMARK [3][-]{section*.25}{Cross-validation}{subsection.4.2}% 27
+\BOOKMARK [4][-]{section*.27}{Precision Recall curve and AUC}{section*.25}% 28
+\BOOKMARK [2][-]{subsection.4.3}{Results}{section.4}% 29
+\BOOKMARK [3][-]{subsubsection.4.3.1}{Optimal parametrization}{subsection.4.3}% 30
+\BOOKMARK [3][-]{subsubsection.4.3.2}{Topics and Wordclouds}{subsection.4.3}% 31
+\BOOKMARK [4][-]{section*.31}{Topic space}{subsubsection.4.3.2}% 32
+\BOOKMARK [4][-]{section*.32}{Wordclouds}{subsubsection.4.3.2}% 33
+\BOOKMARK [3][-]{subsubsection.4.3.3}{Reuse prediction}{subsection.4.3}% 34
+\BOOKMARK [4][-]{section*.38}{Precision, recall and radius}{subsubsection.4.3.3}% 35
+\BOOKMARK [4][-]{section*.40}{Neighborhood}{subsubsection.4.3.3}% 36
+\BOOKMARK [1][-]{section.5}{Discussion}{}% 37
+\BOOKMARK [2][-]{subsection.5.1}{Limitations and potential improvements}{section.5}% 38
+\BOOKMARK [3][-]{section*.43}{Data}{subsection.5.1}% 39
+\BOOKMARK [4][-]{section*.44}{Methods}{section*.43}% 40
+\BOOKMARK [4][-]{section*.45}{Problematic}{section*.43}% 41
+\BOOKMARK [2][-]{subsection.5.2}{Future work}{section.5}% 42
+\BOOKMARK [1][-]{section.6}{Conclusion}{}% 43
+\BOOKMARK [1][-]{section.7}{Appendix}{}% 44
