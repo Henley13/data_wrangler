@@ -1,0 +1,452 @@
+<!--
+
+CDS talk, June 2017:
+
+-->
+
+
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Crawling and structuring Open Data</title>
+    <meta charset="utf-8">
+      <link rel="stylesheet" type="text/css" href="slides.css">
+<!--    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      #slideshow .slide .content .cols.two .col { width: 48%; }
+    </style>
+-->
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Crawling and structuring Open Data
+
+## from http://www.data.gouv.fr/
+
+Arthur Imbert, Inria, June 21, 2017
+
+https://gitlab.inria.fr/parietal/arthur_imbert/
+
+.affiliations[![:scale 25%](img/inria-logo.png)]
+
+---
+
+# What is Open data?
+
+.center["Open data is the idea that some data should be **freely available** to everyone to use and republish as they wish, **without restrictions** from copyright, patents or other mechanisms of control"]
+
+.center[==> Technical restrictions!]
+
+--
+count: false
+
+There are different levels of quality:
+- data available on the web under an open license
+- data available in a structured format
+- data available in a non-proprietary open format
+- data with Uniform Ressource Identifier
+- data linked to another data
+
+???
+reuse
+linked open data,  Tim Berners-Lee
+
+---
+
+class: center, middle
+
+# A government platform
+
+![:scale 30%](img/datagouv_logo.jpeg)
+
+---
+
+class: center, middle
+
+![:scale 100%](img/main page datagouv.png)
+
+
+https://www.data.gouv.fr/fr/
+
+---
+
+class: center, middle
+
+## An example of dataset: food inspection reports
+
+![:scale 100%](img/inspection sanitaire 2.png)
+
+---
+
+class: center, middle
+
+## An example of reuse: Alim'confiance
+
+![:scale 100%](img/reu inspection sanitaire.png)
+
+---
+
+class: center, middle
+
+### - 25715 datasets
+### - 1260 organisations
+### - 1690 reuses
+
+---
+
+class: center, middle
+
+# Collecting reliable data
+
+---
+
+## Collecting data from data.gouv
+
+There are dataset, producer, reuse catalogs... and an API!
+--
+count: false
+
+With an http request, we can collect:
+- the title of the page
+- the name of the producer
+- the creation date
+- the granularity
+- the frequency (time information)
+- the tags
+- the number of downloads
+- a description
+- an url to download the files
+
+---
+
+## Collecting data from data.gouv
+
+.center[![:scale 30%](img/BaseX-300x252.png)]
+
+.center[Metadata collected for 24617 pages]
+
+.center[39405 files downloaded]
+
+.center[269 Go of data]
+
+---
+
+## 'Tablizing' everything
+
+An example of file easy to clean
+
+.center[![:scale 100%](img/inspection sanitaire base crop 2)]
+
+- a tabular form
+- a first row as header
+- consistency of the data below the header
+--
+count: false
+
+... still with some limitations
+- no Uniforme Ressource Identifier for the adresses
+- no Uniforme Ressource Identifier for the city names
+
+---
+
+## 'Tablizing' everything
+
+An example of 'dirty data'
+
+.center[![:scale 80%](img/dirty data 2 crop)]
+
+???
+- title and subtitles
+- merged cells
+- multiheader and vertical header
+- commentary
+
+---
+
+## 'Tablizing' everything
+
+### .center[Cleaning steps]
+
+- Is it a zipfile?
+
+- Encoding and extension detections (`chardet` and `magic` libraries)
+
+- Is it a json? A geojson?
+
+- Different extensions (csv, pdf, json, etc.), different strategies
+
+---
+
+### CSV
+
+- Detect the delimiter from a sample (`from csv import Sniffer`)
+
+- Detect the header
+--
+count: false
+
+```python
+# we test if the first row could be a header
+def is_header(file):
+	# we test the consistency of the types over the rows
+
+# we test the first rows of the file
+for row in file:
+	is_header(row)
+```
+
+???
+- We assume the first row is header
+- We initialize dictionary of types
+- We analyze the consistency of 10 rows
+- We test the type of each column
+- Problem if the dictionary is empty
+- Finally, we compare results against first row and "vote" on whether
+- We penalize invalid column names
+- We test if it's a length
+- We attempt typecast
+
+---
+
+### Excel
+
+.center[![:scale 100%](img/dirty data 2 crop)]
+
+---
+
+### Excel
+
+- Detect the number of columns
+
+- Fill in the merged cells
+
+- Detect a multiheader
+
+---
+
+### Json
+
+- Explore the json (recursive function)
+
+- Flatten the json (`from pandas.io.json import json_normalize`)
+--
+count: false
+
+```python
+# we explore the json until we find a good structure to flatten
+def recursive(json):
+	if ...
+		# we test if the json is a list of dictionary
+	else:
+		# we keep searching that structure deeper in the json 
+
+# we flatten the json
+right_structure = recursive(json)
+df = json_normalize(right_structure)
+```
+--
+count: false
+
+- What about XML?
+
+---
+
+### Results
+
+.center[![:scale 70%](img/extension.svg)]
+
+---
+
+### Results
+
+.center[![:scale 70%](img/size.svg)]
+
+---
+
+class: center, middle
+
+# Learning semantic structure
+
+???
+Te ultimate goal we want to achieve is, given two files, to be able to determine if they are related or not, if we can cross them.
+There are many different way to make two datasets in relation, but for now we will only focus on their semantic content. 
+We want to determine if two datasets are talking about the same topic, and use the same concepts.
+For example, if a city and the Minister of Justice issue reports on the level of criminality... 
+---
+
+## Preprocessing
+
+- Tokenization
+
+.center[Count words which contain characters only]
+
+.center[=> Count_matrix [n_files, n_words]]
+
+---
+count: false
+## Preprocessing
+
+- Tokenization
+- Normalization
+
+.center[Weight each file to compensate for varying file sizes]
+
+---
+count: false
+## Preprocessing
+
+- Tokenization
+- Normalization
+- Content, header and metadata
+
+.center[total = 0.5 content + 0.25 header + 0.25 metadata]
+
+---
+count: false
+## Preprocessing
+
+- Tokenization
+- Normalization
+- Content, header and metadata
+- Stemming and unstemming
+
+.center[Reduce each word to its root form:]
+
+.center[continuer -> continu]
+.center[continuant -> continu]
+
+---
+count: false
+## Preprocessing
+
+- Tokenization
+- Normalization
+- Content, header and metadata
+- Stemming and unstemming
+- TFIDF
+
+.center[Weight each word frequency by its inverse document frequency]
+
+.center[=> A word relatively frequent in a specific file will be discriminant]
+
+---
+
+## Topic modeling
+
+###.center[NMF]
+
+.center[![:scale 90%](img/400px-NMF.png)]
+
+.center[**V** is a TFIDF matrix [n_files, n_words]]
+
+.center[**W** is a matrix [n_files, n_topics] => files embedding]
+
+.center[**H** is a matrix [n_topics, n_words] => wordcloud per topic]
+--
+count: false
+
+.center[**n_topics = 20**]
+---
+
+## A reliable embedding ?
+
+.center[![:scale 90%](img/topic 1.png)]
+--
+count: false
+
+**Tags** : faits_constates, police, criminalite
+
+**Producer** : Observatoire national de la délinquance et des réponses pénales, Ministère de la Justice, Ministère de l'Intérieur
+
+**Extension** : excel, geojson, text
+---
+
+## A reliable embedding ?
+
+.center[![:scale 90%](img/topic 10.png)]
+--
+
+
+**Tags** : amenagements_de_peine, ecroues, immigration
+
+**Producer** : Ministère de la Justice, Ministère des finances et des comptes publics, Ministère de l'Intérieur
+
+**Extension** : excel, text, geojson
+
+---
+
+## A reliable embedding ?
+
+.center[![:scale 90%](img/topic 14.png)]
+--
+
+
+**Tags** : finances_publiques, planning_cadastre, usage_des_sols
+
+**Producer** : Ministère des finances et des comptes publics, Ministère de l'Intérieur, Ministère de la Justice
+
+**Extension** : text, excel, geojson
+
+---
+
+## A reliable embedding ?
+
+.center[![:scale 90%](img/topic 12.png)]
+--
+
+
+**Tags** : planning_cadastre, usage_des_sols, plu
+
+**Producer** : Direction Départementale des Territoires de *
+
+**Extension** : geojson, excel, text
+
+---
+
+class: center, middle
+
+# What are the next steps ?
+
+- Keep working on the embedding
+- Find new ways to visualize the relevance of our embedding
+- Explore new kind of relations between the files (mutual geographic space, datetime)
+
+---
+
+class: center, middle
+
+![:scale 70%](img/keep_calm_open_data.png)
+
+
+    </textarea>
+<!--    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>-->
+    <script src="../remark.min.js" type="text/javascript">
+    </script>
+    <script>
+	    remark.macros.scale = function (percentage) {
+          var url = this;
+          return '<img src="' + url + '" style="width: ' + percentage + '" />';
+      };
+      remark.macros.scaleH = function (percentage) {
+          var url = this;
+          return '<img src="' + url + '" style="height: ' + percentage + '" />';
+      };
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>

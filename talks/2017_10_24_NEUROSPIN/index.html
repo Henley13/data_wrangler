@@ -1,0 +1,274 @@
+<!--
+
+NEUROSPIN talk, October 2017:
+
+-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Integration of heterogeneous datasets</title>
+    <meta charset="utf-8">
+      <link rel="stylesheet" type="text/css" href="slides.css">
+<!--    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      #slideshow .slide .content .cols.two .col { width: 48%; }
+    </style>
+-->
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Integration of heterogeneous datasets
+
+Arthur Imbert, Inria, June 21, 2017
+
+https://gitlab.inria.fr/parietal/arthur_imbert/
+
+.affiliations[![:scale 30%](img/inria-logo.png)]
+
+---
+
+class: center, middle
+
+# Introduction
+
+---
+
+## Problems related to data integration
+
+- Record linkage
+
+.center[![:scale 85%](img/Record_linkage.png)]
+--
+count: false
+- Foreign key discovery
+--
+count: false
+- Semantic analysis
+
+---
+
+## What is Open data?
+
+.center["Open data is the idea that some data should be **freely available** to everyone to use and republish as they wish, **without restrictions** from copyright, patents or other mechanisms of control"]
+--
+count: false
+
+.center[![:scale 30%](img/datagouv_logo.jpeg)]
+
+.center[**Volume and heterogeneity!**]
+
+---
+
+## Reuses
+
+1711 reuses using one or several open datasets are listed
+- Map of public services
+- Visualization of Presidential election results
+- Statistical analysis crossing socio-economic data
+- ...
+--
+count: false
+
+.center[**New task: Predict reuses**]
+
+.center[Closer datasets are in a file embedding, more relevant a reuse should be]
+
+---
+
+class: center, middle
+
+![:scale 85%](img/kneighbors pca 3d 20032.png)
+
+---
+
+class: center, middle
+
+# Build a corpus of datasets
+
+55138 downloaded files (348GB)
+
+23112 cleaned files (72GB)
+
+---
+
+## 'Tablizing' everything
+
+An example of file easy to clean
+
+.center[![:scale 100%](img/inspection sanitaire base crop 2.png)]
+
+- a tabular form
+- a first row as header
+- consistency of the data below the header
+
+... still with some limitations
+- no Uniforme Ressource Identifier for the adresses
+- no Uniforme Ressource Identifier for the city names
+
+---
+
+## 'Tablizing' everything
+
+An example of 'dirty data'
+
+.center[![:scale 80%](img/dirty data 2 crop.png)]
+
+???
+- title and subtitles
+- merged cells
+- multiheader and vertical header
+- commentary
+
+---
+
+## Extensions of the cleaned files
+
+.center[![:scale 70%](img/extension.png)]
+
+---
+
+## Size of the cleaned files
+
+.center[![:scale 70%](img/size.png)]
+
+---
+
+class: center, middle
+
+# Build a file embedding
+
+TF-IDF
+
+Non-negative Matrix Factorization
+
+Metric learning
+
+Cross-validation
+
+
+---
+
+## TF-IDF and NMF
+
+.center[Weight each word frequency by its inverse document frequency]
+--
+count: false
+
+.center[![:scale 85%](img/nmf)]
+
+.center[**W** = the topic space]
+
+.center[**H** = the dictionary]
+---
+
+## Metric learning
+
+.center[**X** and **y** built from **W**]
+
+.center[![:scale 85%](img/metric learning.jpg)]
+
+---
+
+## Cross-validation results
+
+.center[![:scale 75%](img/boxplot auc models nopage l2 25.png)]
+
+---
+
+class: center, middle
+
+# Results
+
+---
+
+## Cosine distance in the embedding
+
+.center[![:scale 75%](img/distance distribution violin plot.png)]
+
+---
+
+## Region topic
+
+.center[![:scale 100%](img/topic 5.png)]
+
+---
+
+## Budget topic
+
+.center[![:scale 100%](img/topic 17.png)]
+
+---
+
+## Criminality topic
+
+.center[![:scale 100%](img/topic 22.png)]
+
+---
+
+.center[![:scale 85%](img/kneighbors pca 3d 14360.png)]
+
+---
+
+.center[![:scale 85%](img/kneighbors pca 3d 20223.png)]
+
+---
+
+## Limits
+
+- Heterogeneous data and cleaning failures
+
+- Not enough reuses
+
+- Undersampling of non reused pairs
+
+- Reuse = similarity?
+
+---
+
+## Future work
+
+- Use `geopandas` to infer geographical information from GEOJSON
+
+- Infer temporal information
+
+- Perform foreign key discovery and record linkage over the closest files and merge them
+
+- Share the results with https://www.data.gouv.fr/fr/
+
+---
+
+class: center, middle
+
+![:scale 70%](img/keep_calm_open_data.png)
+
+    </textarea>
+<!--    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>-->
+    <script src="../remark.min.js" type="text/javascript">
+    </script>
+    <script>
+	    remark.macros.scale = function (percentage) {
+          var url = this;
+          return '<img src="' + url + '" style="width: ' + percentage + '" />';
+      };
+      remark.macros.scaleH = function (percentage) {
+          var url = this;
+          return '<img src="' + url + '" style="height: ' + percentage + '" />';
+      };
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>

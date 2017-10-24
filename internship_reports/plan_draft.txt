@@ -45,6 +45,8 @@ We choose to predict the reuses in order to shape the problem as a supervised on
 The pipeline (10 pages)
 -----------------------
 
+Brief summary of the full pipeline.
+
          |---------------------|
          |                     |
          |                     |
