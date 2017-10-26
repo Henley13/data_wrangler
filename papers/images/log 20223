@@ -1,0 +1,551 @@
+i_target : 20223
+number of neighbors : 54
+#################################
+target : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1974t2_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+#################################
+
+neighbors : 12981cd1-d5df-42a4-a4aa-99a47cd69652
+--- source file : 12981cd1-d5df-42a4-a4aa-99a47cd69652
+--- distance : 0.0542073895246
+--- page : Elections législatives 1958-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_legislatives legislatives
+--- common reuse : True
+------------------------------------------
+
+neighbors : 5db27f56-8d76-4ad2-ae0c-f6b9633d1edf__Feuil3
+--- source file : 5db27f56-8d76-4ad2-ae0c-f6b9633d1edf
+--- distance : 0.0416778477164
+--- page : Effectif Orange Groupe en France / femme-homme/ par département et catégories socio professionnelles
+--- producer : Orange
+--- extension : cdfv2
+--- tags : alternants cdd cdi effectifs france orange
+--- common reuse : False
+------------------------------------------
+
+neighbors : 3dbc3cfa-19db-4742-a68b-c09d39c955a0__Départements
+--- source file : 3dbc3cfa-19db-4742-a68b-c09d39c955a0
+--- distance : 0.0442245139611
+--- page : Référendum de 1992
+--- producer : Ministère de l'Intérieur
+--- extension : cdfv2
+--- tags : nan
+--- common reuse : False
+------------------------------------------
+
+neighbors : 24edebaf-c0fb-467a-9350-3487e58af1f6__Feuil1
+--- source file : 24edebaf-c0fb-467a-9350-3487e58af1f6
+--- distance : 0.0434095356516
+--- page : 2014-07 - Stock de titres et autorisations provisoires de séjour en cours de validité par département
+--- producer : Ministère de l'Intérieur
+--- extension : cdfv2
+--- tags : admission_au_sejour autorisation_de_sejour autorisation_provisoire_de_sejou carte_de_sejour eee entree_en_france espace_schengen etranger immigration immigration_familiale immigre migrant migration_economique migration_professionnelle regroupement_familial titre_de_sejour visiteur
+--- common reuse : False
+------------------------------------------
+
+neighbors : LEGISLATIVES_1958-2012-csv--cdsp_legi1981t2_circ.csv
+--- source file : 82734ca4-9362-42b8-8646-395a1bd8ec1c
+--- distance : 0.0542073895246
+--- page : Elections législatives 1958-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_legislatives legislatives
+--- common reuse : True
+------------------------------------------
+
+neighbors : 34ef836b-e5ef-4e37-894c-1356400baf4e__Permis_rétablis_capital_initial
+--- source file : 34ef836b-e5ef-4e37-894c-1356400baf4e
+--- distance : 0.00690965116442
+--- page : Permis à points - année 2009
+--- producer : Ministère de l'Intérieur
+--- extension : excel
+--- tags : nan
+--- common reuse : False
+------------------------------------------
+
+neighbors : 34ef836b-e5ef-4e37-894c-1356400baf4e__Permis_au_solde_nul
+--- source file : 34ef836b-e5ef-4e37-894c-1356400baf4e
+--- distance : 0.0108295681121
+--- page : Permis à points - année 2009
+--- producer : Ministère de l'Intérieur
+--- extension : excel
+--- tags : nan
+--- common reuse : False
+------------------------------------------
+
+neighbors : 34ef836b-e5ef-4e37-894c-1356400baf4e__Infractions
+--- source file : 34ef836b-e5ef-4e37-894c-1356400baf4e
+--- distance : 0.0132688496884
+--- page : Permis à points - année 2009
+--- producer : Ministère de l'Intérieur
+--- extension : excel
+--- tags : nan
+--- common reuse : False
+------------------------------------------
+
+neighbors : 34ef836b-e5ef-4e37-894c-1356400baf4e__Points_retirés
+--- source file : 34ef836b-e5ef-4e37-894c-1356400baf4e
+--- distance : 0.00995334334497
+--- page : Permis à points - année 2009
+--- producer : Ministère de l'Intérieur
+--- extension : excel
+--- tags : nan
+--- common reuse : False
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1974t1_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.000772302364274
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1969t2_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.00517292274381
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : fa68e017-6f03-4812-a25c-65931ca26962
+--- source file : fa68e017-6f03-4812-a25c-65931ca26962
+--- distance : 0.00517292274381
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 8dba152f-81ca-45cd-9b00-e3ccc0180769__Feuil1
+--- source file : 8dba152f-81ca-45cd-9b00-e3ccc0180769
+--- distance : 0.00630924696844
+--- page : 15007 - Stock de titres et autorisations provisoires de séjour en cours de validité par département
+--- producer : Ministère de l'Intérieur
+--- extension : cdfv2
+--- tags : admission_au_sejour autorisation_de_sejour autorisation_provisoire_de_sejou carte_de_sejour eee entree_en_france espace_schengen etranger immigration immigration_familiale immigre migrant migration_economique migration_professionnelle regroupement_familial titre_de_sejour
+--- common reuse : False
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1969t1_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.00594573658748
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 3746ad47-79e4-46c0-99e3-896bbfc9f272__evolution2002-2014
+--- source file : 3746ad47-79e4-46c0-99e3-896bbfc9f272
+--- distance : 0.00147042151373
+--- page : Nombre de naissances par département
+--- producer : DataSpot
+--- extension : excel
+--- tags : demographie naissances naissances_annuelles natalite
+--- common reuse : False
+------------------------------------------
+
+neighbors : 21f55439-33f4-49b8-b342-fb15a740c5a6
+--- source file : 21f55439-33f4-49b8-b342-fb15a740c5a6
+--- distance : 0.00594573658748
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 39ad2d9a-a304-4417-b5f3-b7afe71f3f66
+--- source file : 39ad2d9a-a304-4417-b5f3-b7afe71f3f66
+--- distance : 0.000772302364274
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : e67eca0f-f73f-44de-b4fe-1a2d07c9c38f
+--- source file : e67eca0f-f73f-44de-b4fe-1a2d07c9c38f
+--- distance : 0.0109701721885
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1981t2_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0109701721885
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1981t1_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0116785963451
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : fc1e47fc-d30a-4f88-a5e9-98ad710c41e9
+--- source file : fc1e47fc-d30a-4f88-a5e9-98ad710c41e9
+--- distance : 0.0116785963451
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1988t2_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0145077120368
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 47664dca-b665-4659-b572-01835ade94ed
+--- source file : 47664dca-b665-4659-b572-01835ade94ed
+--- distance : 0.0145077120368
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : c81d1527-338d-40c7-a80f-d734d71d169b
+--- source file : c81d1527-338d-40c7-a80f-d734d71d169b
+--- distance : 0.0147137188334
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : REGIONALES_1986-2010-csv--cdsp_regio1986_dep_ag.csv
+--- source file : 768691d2-e5f8-466f-bcb6-d8a736669e07
+--- distance : 0.0187596364893
+--- page : Elections régionales 1986-2010
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions communes departements elections regionales regions
+--- common reuse : True
+------------------------------------------
+
+neighbors : fdea2152-bf13-4aad-8764-af8c662d4628
+--- source file : fdea2152-bf13-4aad-8764-af8c662d4628
+--- distance : 0.01537497927
+--- page : Elections législatives 1958-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_legislatives legislatives
+--- common reuse : True
+------------------------------------------
+
+neighbors : de38f699-add5-4ca8-9b82-61cf4206bbd1
+--- source file : de38f699-add5-4ca8-9b82-61cf4206bbd1
+--- distance : 0.0187596364893
+--- page : Elections régionales 1986-2010
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions communes departements elections regionales regions
+--- common reuse : True
+------------------------------------------
+
+neighbors : LEGISLATIVES_1958-2012-csv--cdsp_legi1981t1_circ.csv
+--- source file : 82734ca4-9362-42b8-8646-395a1bd8ec1c
+--- distance : 0.01537497927
+--- page : Elections législatives 1958-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_legislatives legislatives
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi2012t1_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0219565366052
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1995t2_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0147137188334
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 2c3ad138-f5e7-4c33-a658-5b913a9d6883
+--- source file : 2c3ad138-f5e7-4c33-a658-5b913a9d6883
+--- distance : 0.0147297902347
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 6370ae59-c4ad-4305-8a8c-f04503404395
+--- source file : 6370ae59-c4ad-4305-8a8c-f04503404395
+--- distance : 0.0198319070113
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : dca1e9d6-30ff-44b6-a4bc-2eec177c2121
+--- source file : dca1e9d6-30ff-44b6-a4bc-2eec177c2121
+--- distance : 0.0219565366052
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1988t1_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0147297902347
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : bb902209-1e3a-41f9-861b-46968f536606
+--- source file : bb902209-1e3a-41f9-861b-46968f536606
+--- distance : 0.0153241534017
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi1995t1_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0153241534017
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 67fe1163-5df1-40d2-a76a-28e422da86a8
+--- source file : 67fe1163-5df1-40d2-a76a-28e422da86a8
+--- distance : 0.0184643365926
+--- page : Elections législatives 1958-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_legislatives legislatives
+--- common reuse : True
+------------------------------------------
+
+neighbors : LEGISLATIVES_1958-2012-csv--cdsp_legi1986_circ.csv
+--- source file : 82734ca4-9362-42b8-8646-395a1bd8ec1c
+--- distance : 0.0184643365926
+--- page : Elections législatives 1958-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_legislatives legislatives
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi2012t2_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0198319070113
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : f61bc72c-3f85-4660-b292-18944ebea9a6
+--- source file : f61bc72c-3f85-4660-b292-18944ebea9a6
+--- distance : 0.0419162444393
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 5b2d3a24-31f5-4d28-b083-e477eca4a532
+--- source file : 5b2d3a24-31f5-4d28-b083-e477eca4a532
+--- distance : 0.0422864532169
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 8ed75fad-81cb-419f-86b4-3a47d61c1768
+--- source file : 8ed75fad-81cb-419f-86b4-3a47d61c1768
+--- distance : 0.0397422980277
+--- page : Travaux d’évaluations immobilières domaniales.
+--- producer : Ministère de l'économie et des finances
+--- extension : csv
+--- tags : dgfip die domaine domanial evaluation immobilier_etat locative mef valeur venale
+--- common reuse : False
+------------------------------------------
+
+neighbors : b825b42f-d85c-4759-87dd-4e49001d352a__Data
+--- source file : b825b42f-d85c-4759-87dd-4e49001d352a
+--- distance : 0.0405071003224
+--- page : Emploi d’avenir et CUI - CAE  dans les domaines du sport et de l’animation
+--- producer : Ministère de la ville, de la jeunesse et des sports
+--- extension : excel
+--- tags : aide cui emploi insertion_professionnelle sport
+--- common reuse : False
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi2002t1_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0419162444393
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 3dbc3cfa-19db-4742-a68b-c09d39c955a0__Circo_Leg
+--- source file : 3dbc3cfa-19db-4742-a68b-c09d39c955a0
+--- distance : 0.0451171989098
+--- page : Référendum de 1992
+--- producer : Ministère de l'Intérieur
+--- extension : cdfv2
+--- tags : nan
+--- common reuse : False
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi2002t2_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0422864532169
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 61cfbdbc-392d-4a90-b43f-7149696d9561
+--- source file : 61cfbdbc-392d-4a90-b43f-7149696d9561
+--- distance : 0.0458745799389
+--- page : Travaux d’évaluations immobilières domaniales.
+--- producer : Ministère de l'économie et des finances
+--- extension : csv
+--- tags : dgfip die domaine domanial evaluation immobilier_etat locative mef valeur venale
+--- common reuse : False
+------------------------------------------
+
+neighbors : 24cf7222-8f19-4f79-8904-7840521ee7cb
+--- source file : 24cf7222-8f19-4f79-8904-7840521ee7cb
+--- distance : 0.0458745799389
+--- page : Travaux d’évaluations immobilières domaniales.
+--- producer : Ministère de l'économie et des finances
+--- extension : csv
+--- tags : dgfip die domaine domanial evaluation immobilier_etat locative mef valeur venale
+--- common reuse : False
+------------------------------------------
+
+neighbors : e573ac8a-2f4f-4d32-999f-b78b54a3dbdc
+--- source file : e573ac8a-2f4f-4d32-999f-b78b54a3dbdc
+--- distance : 0.0458745799389
+--- page : Travaux d’évaluations immobilières domaniales.
+--- producer : Ministère de l'économie et des finances
+--- extension : csv
+--- tags : dgfip die domaine domanial evaluation immobilier_etat locative mef valeur venale
+--- common reuse : False
+------------------------------------------
+
+neighbors : e242dc61-3237-4ab3-be6f-fc621357a980
+--- source file : e242dc61-3237-4ab3-be6f-fc621357a980
+--- distance : 0.0458745799389
+--- page : Travaux d’évaluations immobilières domaniales.
+--- producer : Ministère de l'économie et des finances
+--- extension : csv
+--- tags : dgfip die domaine domanial evaluation immobilier_etat locative mef valeur venale
+--- common reuse : False
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi2007t2_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0515325717283
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : 29852f48-c30e-42ac-8996-1166ba105435
+--- source file : 29852f48-c30e-42ac-8996-1166ba105435
+--- distance : 0.0517161615646
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : c4055fd0-e337-4a74-af4c-aad94e91be0a
+--- source file : c4055fd0-e337-4a74-af4c-aad94e91be0a
+--- distance : 0.0515325717283
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
+neighbors : PRESIDENTIELLES_1965-2012-csv--cdsp_presi2007t1_circ.csv
+--- source file : 2e9635ad-2457-4f25-a023-73c3c8e269aa
+--- distance : 0.0517161615646
+--- page : Elections présidentielles 1965-2012
+--- producer : Sciences Po
+--- extension : csv
+--- tags : circonscriptions elections elections_presidentielles presidentielles
+--- common reuse : True
+------------------------------------------
+
