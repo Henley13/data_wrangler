@@ -9,13 +9,38 @@ src/WEB-INF
 src/__pycache__
 src/toolbox/__pycache__
 src/test/__pycache__
-.cache
+*.cache
 
 # gitkeep
 !__init__.py
 
 # PyCharm
-.idea
+*.idea
 
 # data folder
 data
+
+# latex
+*.aux
+*.glo
+*.idx
+*.log
+*.toc
+*.ist
+*.acn
+*.acr
+*.alg
+*.bbl
+*.blg
+*.dvi
+*.glg
+*.gls
+*.ilg
+*.ind
+*.lof
+*.lot
+*.maf
+*.mtc
+*.mtc1
+*.out
+*.synctex.gz
