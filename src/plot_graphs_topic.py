@@ -16,12 +16,14 @@ from toolbox.utils import (get_config_tag, load_sparse_csr, save_sparse_csr,
                            split_str, get_path_cachedir, save_dictionary,
                            print_top_words)
 from scipy.spatial.distance import cosine
+from scipy.spatial.distance import euclidean
 from wordcloud.wordcloud import WordCloud
 from metric_transformation import (compute_topic_space_nmf,
                                    compute_topic_space_svd,
                                    get_all_reused_pairs, get_x_y_balanced,
                                    get_auc, get_x_score, learn_metric,
                                    transform_space)
+from scipy.linalg import norm
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -80,7 +82,7 @@ def compute_best_topic_space(result_directory, tfidf, df_log, d_best):
 ###############################################################################
 
 
-@memory.cache()
+# @memory.cache()
 def _compute_distances(df_log, w):
     """
     Function to randomly compute distances between files
@@ -114,7 +116,21 @@ def _compute_distances(df_log, w):
             j_reuse = split_str(df_log.at[j, "reuses"])
             j_extension = df_log.at[j, "extension"]
             j_topic = w[j, :]
-            distance_ij = cosine(i_topic, j_topic)
+            # distance_ij = cosine(i_topic, j_topic)
+            distance_ij = euclidean(i_topic, j_topic)
+            if distance_ij < 0:
+                print(distance_ij)
+                print("---------------")
+                print(i_page)
+                print(j_page)
+                print(i_topic)
+                print(j_topic)
+                print("---------------")
+                print(norm(i_topic))
+                print(norm(j_topic))
+                print(np.dot(i_topic, j_topic))
+                print(np.dot(i_topic, j_topic) / (norm(i_topic) * norm(j_topic)))
+                print("---------------", "\n")
 
             if not np.isnan(distance_ij) and np.isfinite(distance_ij):
                 c = True
@@ -160,6 +176,24 @@ def plot_distribution_distance(result_directory, df_log, w):
     # collect several random couples of files
     (same_tag, same_producer, same_page, same_reuse, same_extension, other,
      all_) = _compute_distances(df_log, w)
+
+    m = np.nanmax(all_)
+    same_tag = [i / m for i in same_tag]
+    same_producer = [i / m for i in same_producer]
+    same_page = [i / m for i in same_page]
+    same_reuse = [i / m for i in same_reuse]
+    same_extension = [i / m for i in same_extension]
+    other = [i / m for i in other]
+    all_ = [i / m for i in all_]
+
+    print("all", np.nanmax(all_), np.nanmin(all_))
+    print("other", np.nanmax(other), np.nanmin(other))
+    print("tag", np.nanmax(same_tag), np.nanmin(same_tag))
+    print("reuse", np.nanmax(same_reuse), np.nanmin(same_reuse))
+    print("page", np.nanmax(same_page), np.nanmin(same_page))
+    print("extension", np.nanmax(same_extension), np.nanmin(same_extension))
+    print("producer", np.nanmax(same_producer), np.nanmin(same_producer), "\n")
+
     values = [same_tag, same_producer, same_page, same_reuse, same_extension]
     name_other = ["other \n(%s%%)" % str(round(len(other) * 100 / len(all_),
                                                2))]
@@ -987,16 +1021,16 @@ def main(general_directory, result_directory, d_best, n_top_words):
     plot_distribution_distance(result_directory, df_log, w)
 
     # plot topic wordclouds
-    count_tag(result_directory, df_log)
-    topic_tag(result_directory, w)
-    count_reuse(general_directory, result_directory, df_log)
-    topic_reuse(result_directory, w)
-    count_producer(result_directory, df_log)
-    topic_producer(result_directory, w)
-    count_extension(result_directory, df_log)
-    topic_extension(result_directory, w)
-    make_wordcloud_object(result_directory, n_top_words)
-    make_wordcloud_vocabulary(result_directory, model_fitted, n_top_words)
+    # count_tag(result_directory, df_log)
+    # topic_tag(result_directory, w)
+    # count_reuse(general_directory, result_directory, df_log)
+    # topic_reuse(result_directory, w)
+    # count_producer(result_directory, df_log)
+    # topic_producer(result_directory, w)
+    # count_extension(result_directory, df_log)
+    # topic_extension(result_directory, w)
+    # make_wordcloud_object(result_directory, n_top_words)
+    # make_wordcloud_vocabulary(result_directory, model_fitted, n_top_words)
 
     return
 
