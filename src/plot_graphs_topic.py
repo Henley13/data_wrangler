@@ -15,7 +15,6 @@ from sklearn.metrics import precision_recall_curve
 from toolbox.utils import (get_config_tag, load_sparse_csr, save_sparse_csr,
                            split_str, get_path_cachedir, save_dictionary,
                            print_top_words)
-from scipy.spatial.distance import cosine
 from scipy.spatial.distance import euclidean
 from wordcloud.wordcloud import WordCloud
 from metric_transformation import (compute_topic_space_nmf,
@@ -79,6 +78,40 @@ def compute_best_topic_space(result_directory, tfidf, df_log, d_best):
     return w, auc, precision, recall, threshold, model_fitted
 
 
+@memory.cache()
+def compute_both_topic_space(tfidf, df_log, d_best):
+    # parameters
+    model = d_best["model"]
+    n_topics = d_best["n_topics"]
+    balance_reuse = d_best["balance_reuse"]
+    same_page = d_best["same_page"]
+    max_reuse = d_best["max_reuse"]
+    learning = d_best["learning"]
+    norm = d_best["norm"]
+
+    # reshape data
+    df_log_reset = df_log.reset_index(drop=False, inplace=False)
+
+    # get topic space
+    if model == "nmf":
+        w, model_fitted = compute_topic_space_nmf(tfidf, n_topics)
+    else:
+        w, model_fitted = compute_topic_space_svd(tfidf, n_topics)
+
+    # get all reused pairs
+    df_pairs_reused = get_all_reused_pairs(df_log_reset)
+
+    #  build a dataset Xy
+    x, y = get_x_y_balanced(df_pairs_reused, df_log_reset, w, same_page,
+                            balance_reuse, max_reuse)
+
+    # transform topic space
+    l = learn_metric(x, y)
+    w_ml = transform_space(w, l)
+
+    return w, w_ml
+
+
 ###############################################################################
 
 
@@ -116,21 +149,7 @@ def _compute_distances(df_log, w):
             j_reuse = split_str(df_log.at[j, "reuses"])
             j_extension = df_log.at[j, "extension"]
             j_topic = w[j, :]
-            # distance_ij = cosine(i_topic, j_topic)
             distance_ij = euclidean(i_topic, j_topic)
-            if distance_ij < 0:
-                print(distance_ij)
-                print("---------------")
-                print(i_page)
-                print(j_page)
-                print(i_topic)
-                print(j_topic)
-                print("---------------")
-                print(norm(i_topic))
-                print(norm(j_topic))
-                print(np.dot(i_topic, j_topic))
-                print(np.dot(i_topic, j_topic) / (norm(i_topic) * norm(j_topic)))
-                print("---------------", "\n")
 
             if not np.isnan(distance_ij) and np.isfinite(distance_ij):
                 c = True
@@ -272,7 +291,7 @@ def plot_distribution_distance(result_directory, df_log, w):
     xticks = ax3.xaxis.get_major_ticks()
     xticks[0].label1.set_visible(False)
     xticks[-1].label1.set_visible(False)
-    ax3.set_xlabel("cosine distance", fontsize=15)
+    ax3.set_xlabel("Euclidean distance", fontsize=13)
     ax3.set_yticklabels([""] + name_other, fontsize=10,
                         multialignment='center')
 
@@ -334,7 +353,7 @@ def plot_distribution_distance(result_directory, df_log, w):
                    palette=None,
                    saturation=0.8,
                    ax=ax)
-    ax.set_xlabel("cosine distance", fontsize=15)
+    ax.set_xlabel("Euclidean distance", fontsize=13)
     ax.yaxis.label.set_visible(False)
     plt.text(-0.1, 7.3, "close in the \ntopic space", fontsize=9,
              multialignment='center')
@@ -356,6 +375,142 @@ def plot_distribution_distance(result_directory, df_log, w):
 
     return
 
+
+def _compute_distances_comparison(df_log, w1, w2):
+    """
+    Function to randomly compute distances between files for two files
+    embeddings in order to compare them.
+    :param df_log: pandas Dataframe
+    :param w1: matrix [n_samples, n_topics]
+    :param w2: matrix [n_samples, n_topics]
+    :return: {list of floats, list of floats, list of floats, list of floats,
+             list of floats, list of floats, list of floats} x 2
+    """
+    print("shape W:", w1.shape)
+    print("shape W_ml:", w2.shape)
+
+    # collect several random couples of files
+    d1 = defaultdict(lambda: [])
+    d2 = defaultdict(lambda: [])
+    for i in tqdm(range(df_log.shape[0])):
+        i_tag = split_str(df_log.at[i, "tags_page"])
+        i_producer = df_log.at[i, "title_producer"]
+        i_page = df_log.at[i, "title_page"]
+        i_reuse = split_str(df_log.at[i, "reuses"])
+        i_extension = df_log.at[i, "extension"]
+        i_topic1 = w1[i, :]
+        i_topic2 = w2[i, :]
+        partners = random.sample(
+            [j for j in range(df_log.shape[0]) if j != i],
+            k=100)
+        for j in partners:
+            j_tag = split_str(df_log.at[j, "tags_page"])
+            j_producer = df_log.at[j, "title_producer"]
+            j_page = df_log.at[j, "title_page"]
+            j_reuse = split_str(df_log.at[j, "reuses"])
+            j_extension = df_log.at[j, "extension"]
+            j_topic1 = w1[j, :]
+            j_topic2 = w2[j, :]
+            distance_ij1 = euclidean(i_topic1, j_topic1)
+            distance_ij2 = euclidean(i_topic2, j_topic2)
+            if (not np.isnan(distance_ij1) and np.isfinite(distance_ij1) and
+                    not np.isnan(distance_ij2) and np.isfinite(distance_ij2)):
+
+                # distance in w1 and w2
+                c = True
+                d1["all"].append(distance_ij1)
+                d2["all"].append(distance_ij2)
+                if i_page == j_page:
+                    d1["same_page"].append(distance_ij1)
+                    d2["same_page"].append(distance_ij2)
+                    continue
+                if len(set(i_tag).intersection(j_tag)) > 0:
+                    d1["same_tag"].append(distance_ij1)
+                    d2["same_tag"].append(distance_ij2)
+                    c = False
+                if i_producer == j_producer:
+                    d1["same_producer"].append(distance_ij1)
+                    d2["same_producer"].append(distance_ij2)
+                    c = False
+                if len(set(i_reuse).intersection(j_reuse)) > 0:
+                    d1["same_reuse"].append(distance_ij1)
+                    d2["same_reuse"].append(distance_ij2)
+                    c = False
+                if i_extension == j_extension:
+                    d1["same_extension"].append(distance_ij1)
+                    d2["same_extension"].append(distance_ij2)
+                    c = False
+                if c:
+                    d1["other"].append(distance_ij1)
+                    d2["other"].append(distance_ij2)
+
+    return d1, d2
+
+
+def plot_comparison_embeddings(result_directory, df_log, w1, w2):
+    """
+        Function to plot the differences of distances for the same pairs, within
+        two different embedding.
+        :param df_log: pandas Dataframe
+        :param result_directory: string
+        :param w1: numpy matrix
+        :param w2: numpy matrix
+        :return:
+        """
+    print("plot comparison distances", "\n")
+
+    # paths
+    path_png = os.path.join(result_directory, "graphs", "png")
+    path_pdf = os.path.join(result_directory, "graphs", "pdf")
+    path_jpeg = os.path.join(result_directory, "graphs", "jpeg")
+    path_svg = os.path.join(result_directory, "graphs", "svg")
+
+    # collect the same random couples of files for the two embeddings
+    d1, d2 = _compute_distances_comparison(df_log, w1, w2)
+
+    m1 = np.max(d1["all"])
+    m2 = np.max(d2["all"])
+
+    # plot scatterplot
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.set_facecolor('white')
+
+    # plot all
+    x = np.array(d1["all"]) / m1
+    y = np.array(d2["all"]) / m2
+    ax.scatter(x, y, s=20, c="lightgrey", marker=".", label="others")
+
+    # plot same reuse
+    x = np.array(d1["same_reuse"]) / m1
+    y = np.array(d2["same_reuse"]) / m2
+    ax.scatter(x, y, s=20, c="forestgreen", marker=",",
+               label="pairs reused together")
+
+    # plot y = x
+    ax.plot([0, 1], [0, 1], linestyle='--', linewidth=2, alpha=1, c="firebrick")
+    ax.text(0.65, 0.1, "closer by \n metric learning", fontsize=10,
+            multialignment='center', color="firebrick", fontweight="bold")
+    ax.text(0.05, 0.75, "further by \n metric learning", fontsize=10,
+            multialignment='center', color="firebrick", fontweight="bold")
+
+    ax.set_xlabel("Distances before metric learning step", fontsize=10)
+    ax.set_ylabel("Distances after metric learning step", fontsize=10)
+
+    plt.legend(loc="upper left")
+    plt.tight_layout()
+
+    # save figures
+    path = os.path.join(path_jpeg, "distance comparison.jpeg")
+    plt.savefig(path)
+    path = os.path.join(path_pdf, "distance comparison.pdf")
+    plt.savefig(path)
+    path = os.path.join(path_png, "distance comparison.png")
+    plt.savefig(path)
+    path = os.path.join(path_svg, "distance comparison.svg")
+    plt.savefig(path)
+
+    plt.close("all")
+    return
 
 ###############################################################################
 
@@ -1019,6 +1174,10 @@ def main(general_directory, result_directory, d_best, n_top_words):
 
     # plot distribution distance within the topic space
     plot_distribution_distance(result_directory, df_log, w)
+
+    # compare distances in two topic spaces (before and after metric learning)
+    w, w_ml = compute_both_topic_space(tfidf, df_log, d_best)
+    plot_comparison_embeddings(result_directory, df_log, w, w_ml)
 
     # plot topic wordclouds
     # count_tag(result_directory, df_log)
