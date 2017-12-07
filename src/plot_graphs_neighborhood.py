@@ -578,6 +578,7 @@ def graph_neighbors_3d_local(result_directory, df_log, w, indices,
     all_indices = indices + [i_target]
 
     # apply local pca in three dimensions
+    # TODO centered?
     w_neighborhood = w[all_indices]
     pca = PCA(n_components=3, whiten=False, random_state=13)
     w_reduced_3d = pca.fit_transform(w_neighborhood)
